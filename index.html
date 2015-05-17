@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <title>FlMML on HTML5 Demo</title>
+    <style type="text/css">
+        body {
+            color: black;
+            background-color: white;
+            font-size: small;
+        }
+    </style>
+    <script src="flmmlonhtml5.js"></script>
+    <script src="flmmlplayer.js"></script>
+    <script type="text/javascript">
+        "use strict";
+
+        var flmml;
+
+        (function () {
+            var spanTime, spanBuffering, txtWarnings, rangeVolume, spanVolumeDisp;
+
+            function clear(elem) {
+                var child;
+
+                while ((child = elem.lastChild)) {
+                    elem.removeChild(child);
+                }
+            }
+            
+            function onInput() {
+                var vol = rangeVolume.value;
+                flmml.setMasterVolume(parseInt(vol));
+                clear(spanVolumeDisp);
+                spanVolumeDisp.appendChild(document.createTextNode("Volume: " + vol));
+            }
+
+            function onBuffering(e) {
+                clear(spanBuffering);
+                if (e.progress < 100) {
+                    spanBuffering.appendChild(document.createTextNode("Buffering (" + e.progress + "%)"));
+                }
+            }
+
+            function onCompileComplete() {
+                clear(spanBuffering);
+                clear(txtWarnings);
+                txtWarnings.value = flmml.getWarnings();
+            }
+
+            function onSyncInfo() {
+                clear(spanTime);
+                spanTime.appendChild(document.createTextNode(flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr()))
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                flmml = new FlMMLonHTML5();
+
+                document.getElementById("play").addEventListener("click", function () {
+                    flmml.play(document.getElementById("mml").value);
+                });
+                document.getElementById("pause").addEventListener("click", flmml.pause.bind(flmml));
+                document.getElementById("stop").addEventListener("click", flmml.stop.bind(flmml));
+                document.getElementById("volume").addEventListener("input", onInput);
+
+                spanBuffering = document.getElementById("buffering");
+                spanTime = document.getElementById("time");
+                txtWarnings = document.getElementById("warnings");
+                rangeVolume = document.getElementById("volume");
+                spanVolumeDisp = document.getElementById("volumedisp");
+
+                flmml.addEventListener("compilecomplete", onCompileComplete);
+                flmml.addEventListener("buffering", onBuffering);
+                flmml.addEventListener("syncinfo", onSyncInfo);
+            });
+        })();
+    </script>
+</head>
+<body>
+    <textarea id="mml" rows="18" cols="80">L8 O5CDEFGAB&lt;C</textarea><br />
+    <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
+    <span id="time">00:00/00:00</span>
+    <input type="range" id="volume" min="0" max="127" step="1" value="100" /><span id="volumedisp">Volume: 100</span>
+    <span id="buffering"></span><br />
+    <textarea id="warnings" rows="6" cols="50" readonly>(Warnings)</textarea><br />
+    <br />
+    <script type="text/javascript">
+        var flmmlPlayer = new FlMMLPlayer({
+            mml: "$L=16;$k=v10@e1,0,4,0,0o1c;$t=v7@e1,0,4,0,0o0f;$s=v7@e1,0,0,127,0o0f12r24;t196@5@w4@e1,0,32,0,0@q4v7q16l8o6eerercergr2../:$L/:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6rrgf+fd+re>rg+a<cr>a<cd/rrgf+fd+re<rcrccrrr:/rre-rrdrrcr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..:/;@5@w4@e1,0,32,0,0@q4v7q16l8o5f+f+rf+rf+f+rbrrrgrrr/:$L/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2o6rred+d>br<c>refgrcef<rred+d>br<crfrffrrrrred+d>br<c>refgrcefrra-rrfrrer2..:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/;@6-1@e1,0,0,135,0v15q16l8o4d4rdrd4r<grrr>grrr/:$L/:2/:2grrerrcrrfrgrf+&frer24<cr24er24frd&ercr>a&b&grr:///:2crrgrr<cr>frr<c4r>frcrrerrg&<c<rgrg4r>>grcrrgrr<cr>frr<c4r>frcra-rrb-rr<crr>g4rcr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr://:2/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr:/;@7q16l8$sr$t$sr$t$sr$srr$sr$t$t$t/:$L/:24$kr$tr24$t12$sr$tr24$t12://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$kr$tr24$t12$sr$tr24$t12://:16$trr$t$sr$tr://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$trr$t$sr$tr:/:/"
+        });
+    </script>
+</body>
+</html>
