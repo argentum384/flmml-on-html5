@@ -80,13 +80,13 @@ module FlMMLWorker.flmml {
                 else if (0x30 <= code && code <= 0x39) { //0-9
                     code -= 0x30 - 26 - 26;
                 }
-                else if (0x2b == code) { //+
+                else if (0x2b === code) { //+
                     code = 26 + 26 + 10;
                 }
-                else if (0x2f == code) { // /
+                else if (0x2f === code) { // /
                     code = 26 + 26 + 10 + 1;
                 }
-                else if (0x3d == code) { // =
+                else if (0x3d === code) { // =
                     code = 0;
                 }
                 else {
@@ -115,7 +115,7 @@ module FlMMLWorker.flmml {
             if (MOscFcDpcm.s_length[waveNo] > MOscFcDpcm.FC_DPCM_MAX_LEN * 8) {
                 MOscFcDpcm.s_length[waveNo] = MOscFcDpcm.FC_DPCM_MAX_LEN * 8;
             }
-            if (MOscFcDpcm.s_length[waveNo] == 0) {
+            if (MOscFcDpcm.s_length[waveNo] === 0) {
                 MOscFcDpcm.s_length[waveNo] = 8;
             }
             //長さが指定されていれば、それを格納
@@ -142,7 +142,7 @@ module FlMMLWorker.flmml {
                     this.m_address++;
                 }
                 this.m_length--;
-                if (this.m_length == 0) {
+                if (this.m_length === 0) {
                     if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                         this.m_address = 0;
                         this.m_bit = 0;
@@ -184,7 +184,7 @@ module FlMMLWorker.flmml {
                             this.m_address++;
                         }
                         this.m_length--;
-                        if (this.m_length == 0) {
+                        if (this.m_length === 0) {
                             if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                 this.m_address = 0;
                                 this.m_bit = 0;
@@ -220,7 +220,7 @@ module FlMMLWorker.flmml {
                             this.m_address++;
                         }
                         this.m_length--;
-                        if (this.m_length == 0) {
+                        if (this.m_length === 0) {
                             if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                 this.m_address = 0;
                                 this.m_bit = 0;
@@ -259,7 +259,7 @@ module FlMMLWorker.flmml {
                                 this.m_address++;
                             }
                             this.m_length--;
-                            if (this.m_length == 0) {
+                            if (this.m_length === 0) {
                                 if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                     this.m_address = 0;
                                     this.m_bit = 0;

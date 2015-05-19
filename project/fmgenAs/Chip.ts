@@ -28,7 +28,7 @@ module FlMMLWorker.fmgenAs {
         }
 
         SetRatio(ratio: number): void {
-            if (this.ratio_ != ratio) {
+            if (this.ratio_ !== ratio) {
                 this.ratio_ = ratio;
                 this.MakeTable();
             }
@@ -70,7 +70,7 @@ module FlMMLWorker.fmgenAs {
             for (h = 0; h < 4; h++) {
                 var rr: number = Chip.dt2lv[h] * this.ratio_ / (1 << (2 + FM.FM_RATIOBITS - FM.FM_PGBITS));
                 for (l = 0; l < 16; l++) {
-                    var mul: number = (l != 0) ? l * 2 : 1;
+                    var mul: number = (l !== 0) ? l * 2 : 1;
                     this.multable_[h][l] = (mul * rr) | 0;
                 }
             }
