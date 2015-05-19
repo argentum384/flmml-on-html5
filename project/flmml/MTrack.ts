@@ -266,7 +266,7 @@ module FlMMLWorker.flmml {
         }
 
         recChordStart(): void {
-            if (this.m_chordMode === false) {
+            if (this.m_chordMode == false) {
                 this.m_chordMode = true;
                 this.m_chordBegin = this.m_globalTick;
             }
@@ -304,7 +304,7 @@ module FlMMLWorker.flmml {
             for (var i: number = 0; i < n; i++) {
                 var en: MEvent = this.m_events[i];
                 var nextTick: number = preGlobalTick + en.getDelta();
-                if (nextTick > globalTick || (nextTick === globalTick && en.getStatus() !== MStatus.TEMPO)) {
+                if (nextTick > globalTick || (nextTick == globalTick && en.getStatus() != MStatus.TEMPO)) {
                     en.setDelta(nextTick - globalTick);
                     e.setDelta(globalTick - preGlobalTick);
                     this.m_events.splice(i, 0, e);
@@ -349,7 +349,7 @@ module FlMMLWorker.flmml {
 		
         // イベントを適切に追加する
         protected pushEvent(e: MEvent): void {
-            if (this.m_chordMode === false) {
+            if (this.m_chordMode == false) {
                 this.m_events.push(e);
             } else {
                 this.insertEvent(e);
@@ -385,15 +385,15 @@ module FlMMLWorker.flmml {
 
         recEnvelope(env: number, attack: number, times: Array<number>, levels: Array<number>, release: number): void {
             var e: MEvent = this.makeEvent();
-            if (env === 1) e.setEnvelope1Atk(attack); else e.setEnvelope2Atk(attack);
+            if (env == 1) e.setEnvelope1Atk(attack); else e.setEnvelope2Atk(attack);
             this.pushEvent(e);
             for (var i: number = 0, pts: number = times.length; i < pts; i++) {
                 e = this.makeEvent();
-                if (env === 1) e.setEnvelope1Point(times[i], levels[i]); else e.setEnvelope2Point(times[i], levels[i]);
+                if (env == 1) e.setEnvelope1Point(times[i], levels[i]); else e.setEnvelope2Point(times[i], levels[i]);
                 this.pushEvent(e);
             }
             e = this.makeEvent();
-            if (env === 1) e.setEnvelope1Rel(release); else e.setEnvelope2Rel(release);
+            if (env == 1) e.setEnvelope1Rel(release); else e.setEnvelope2Rel(release);
             this.pushEvent(e);
         }
 

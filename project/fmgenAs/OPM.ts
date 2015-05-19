@@ -112,7 +112,7 @@ module FlMMLWorker.fmgenAs {
                             a = c < 0x100 ? 0xff - c : c - 0x100;
                             break;
                         case 3:
-                            if ((c & 3) === 0)
+                            if ((c & 3) == 0)
                                 r = (this.rand() / 17) & 0xff;
                             a = r;
                             p = r - 0x80;
@@ -149,7 +149,7 @@ module FlMMLWorker.fmgenAs {
         //  チャンネルマスクの設定
         SetChannelMask(mask: number): void {
             for (var i: number = 0; i < 8; i++)
-                this.ch[i].Mute((mask & (1 << i)) !== 0);
+                this.ch[i].Mute((mask & (1 << i)) != 0);
         }
 
         //  リセット
@@ -179,7 +179,7 @@ module FlMMLWorker.fmgenAs {
 
         // タイマー A 発生時イベント (CSM)
         protected TimerA(): void {
-            if ((this.regtc & 0x80) !== 0) {
+            if ((this.regtc & 0x80) != 0) {
                 for (var i: number = 0; i < 8; i++) {
                     this.ch[i].KeyControl(0x0);
                     this.ch[i].KeyControl(0xf);
@@ -207,7 +207,7 @@ module FlMMLWorker.fmgenAs {
 
         //  ステータスフラグ設定
         protected SetStatus(bits: number): void {
-            if ((this.status & bits) === 0) {
+            if ((this.status & bits) == 0) {
                 this.status |= bits;
                 this.Intr(true);
             }
@@ -215,9 +215,9 @@ module FlMMLWorker.fmgenAs {
 
         //  ステータスフラグ解除
         protected ResetStatus(bits: number): void {
-            if ((this.status & bits) !== 0) {
+            if ((this.status & bits) != 0) {
                 this.status &= ~bits;
-                if (this.status === 0)
+                if (this.status == 0)
                     this.Intr(false);
             }
         }
@@ -230,7 +230,7 @@ module FlMMLWorker.fmgenAs {
             var c: number = addr & 7;
             switch (addr & 0xff) {
                 case 0x01:                  // TEST (lfo restart)
-                    if ((data & 2) !== 0) {
+                    if ((data & 2) != 0) {
                         this.lfo_count_ = 0;
                         this.lfo_count_prev_ = ~0;
                     }
@@ -238,15 +238,15 @@ module FlMMLWorker.fmgenAs {
                     break;
 
                 case 0x08:                  // KEYON
-                    if ((this.regtc & 0x80) === 0) {
+                    if ((this.regtc & 0x80) == 0) {
                         this.ch[data & 7].KeyControl(data >> 3);
                     }
                     else {
                         c = data & 7;
-                        if ((data & 0x08) === 0) this.ch[c].op[0].KeyOff();
-                        if ((data & 0x10) === 0) this.ch[c].op[1].KeyOff();
-                        if ((data & 0x20) === 0) this.ch[c].op[2].KeyOff();
-                        if ((data & 0x40) === 0) this.ch[c].op[3].KeyOff();
+                        if ((data & 0x08) == 0) this.ch[c].op[0].KeyOff();
+                        if ((data & 0x10) == 0) this.ch[c].op[1].KeyOff();
+                        if ((data & 0x20) == 0) this.ch[c].op[2].KeyOff();
+                        if ((data & 0x40) == 0) this.ch[c].op[3].KeyOff();
                     }
                     break;
 
@@ -270,7 +270,7 @@ module FlMMLWorker.fmgenAs {
 
                 case 0x19:                  // PMD/AMD
                     //              (data & 0x80 ? pmd : amd) = data & 0x7f;
-                    if ((data & 0x80) !== 0)
+                    if ((data & 0x80) != 0)
                         this.pmd = data & 0x7f;
                     else
                         this.amd = data & 0x7f;
@@ -331,7 +331,7 @@ module FlMMLWorker.fmgenAs {
                     op.SetMULTI(data & 0x0f);
                     break;
                 case 3: // 60-7F TL
-                    op.SetTL(data & 0x7f, (this.regtc & 0x80) !== 0);
+                    op.SetTL(data & 0x7f, (this.regtc & 0x80) != 0);
                     break;
                 case 4: // 80-9F KS/AR
                     op.SetKS((data >> 6) & 3);
@@ -339,7 +339,7 @@ module FlMMLWorker.fmgenAs {
                     break;
                 case 5: // A0-BF DR/AMON(D1R/AMS-EN)
                     op.SetDR((data & 0x1f) * 2);
-                    op.SetAMON((data & 0x80) !== 0);
+                    op.SetAMON((data & 0x80) != 0);
                     break;
                 case 6: // C0-DF SR(D2R), DT2
                     op.SetSR((data & 0x1f) * 2);
@@ -354,7 +354,7 @@ module FlMMLWorker.fmgenAs {
 
         private LFO(): void {
             var c: number;
-            if (this.lfowaveform !== 3) {
+            if (this.lfowaveform != 3) {
                 {
                     c = (this.lfo_count_ >> 15) & 0x1fe;
                     this.chip.SetPML(OPM.pmtable[this.lfowaveform][c] * this.pmd / 128 + 0x80 | 0);
@@ -362,7 +362,7 @@ module FlMMLWorker.fmgenAs {
                 }
             }
             else {
-                if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) != 0) {
                     c = (OPM.rand() / 17) & 0xff;
                     this.chip.SetPML((c - 0x80) * this.pmd / 128 + 0x80 | 0);
                     this.chip.SetAML(c * this.amd / 128 | 0);
@@ -370,7 +370,7 @@ module FlMMLWorker.fmgenAs {
             }
             this.lfo_count_prev_ = this.lfo_count_;
             this.lfo_step_++;
-            if ((this.lfo_step_ & 7) === 0) {
+            if ((this.lfo_step_ & 7) == 0) {
                 this.lfo_count_ += this.lfo_count_diff_;
             }
         }
@@ -379,27 +379,27 @@ module FlMMLWorker.fmgenAs {
             this.noisecount += 2 * this.rateratio;
             if (this.noisecount >= (32 << FM.FM_RATIOBITS)) {
                 var n: number = 32 - (this.noisedelta & 0x1f);
-                if (n === 1)
+                if (n == 1)
                     n = 2;
                 this.noisecount = this.noisecount - (n << FM.FM_RATIOBITS);
-                if ((this.noisedelta & 0x1f) === 0x1f)
+                if ((this.noisedelta & 0x1f) == 0x1f)
                     this.noisecount -= FM.FM_RATIOBITS;
-                this.noise = (this.noise >> 1) ^ ((this.noise & 1) !== 0 ? 0x8408 : 0);
+                this.noise = (this.noise >> 1) ^ ((this.noise & 1) != 0 ? 0x8408 : 0);
             }
             return this.noise;
         }
 
         //  合成の一部
         private MixSub(activech: number, ibuf: Array<number>): void {
-            if ((activech & 0x4000) !== 0) ibuf[this.pan[0]] = this.ch[0].Calc();
-            if ((activech & 0x1000) !== 0) ibuf[this.pan[1]] += this.ch[1].Calc();
-            if ((activech & 0x0400) !== 0) ibuf[this.pan[2]] += this.ch[2].Calc();
-            if ((activech & 0x0100) !== 0) ibuf[this.pan[3]] += this.ch[3].Calc();
-            if ((activech & 0x0040) !== 0) ibuf[this.pan[4]] += this.ch[4].Calc();
-            if ((activech & 0x0010) !== 0) ibuf[this.pan[5]] += this.ch[5].Calc();
-            if ((activech & 0x0004) !== 0) ibuf[this.pan[6]] += this.ch[6].Calc();
-            if ((activech & 0x0001) !== 0) {
-                if ((this.noisedelta & 0x80) !== 0)
+            if ((activech & 0x4000) != 0) ibuf[this.pan[0]] = this.ch[0].Calc();
+            if ((activech & 0x1000) != 0) ibuf[this.pan[1]] += this.ch[1].Calc();
+            if ((activech & 0x0400) != 0) ibuf[this.pan[2]] += this.ch[2].Calc();
+            if ((activech & 0x0100) != 0) ibuf[this.pan[3]] += this.ch[3].Calc();
+            if ((activech & 0x0040) != 0) ibuf[this.pan[4]] += this.ch[4].Calc();
+            if ((activech & 0x0010) != 0) ibuf[this.pan[5]] += this.ch[5].Calc();
+            if ((activech & 0x0004) != 0) ibuf[this.pan[6]] += this.ch[6].Calc();
+            if ((activech & 0x0001) != 0) {
+                if ((this.noisedelta & 0x80) != 0)
                     ibuf[this.pan[7]] += this.ch[7].CalcN(this.Noise());
                 else
                     ibuf[this.pan[7]] += this.ch[7].Calc();
@@ -407,15 +407,15 @@ module FlMMLWorker.fmgenAs {
         }
 
         private MixSubL(activech: number, ibuf: Array<number>): void {
-            if ((activech & 0x4000) !== 0) ibuf[this.pan[0]] = this.ch[0].CalcL();
-            if ((activech & 0x1000) !== 0) ibuf[this.pan[1]] += this.ch[1].CalcL();
-            if ((activech & 0x0400) !== 0) ibuf[this.pan[2]] += this.ch[2].CalcL();
-            if ((activech & 0x0100) !== 0) ibuf[this.pan[3]] += this.ch[3].CalcL();
-            if ((activech & 0x0040) !== 0) ibuf[this.pan[4]] += this.ch[4].CalcL();
-            if ((activech & 0x0010) !== 0) ibuf[this.pan[5]] += this.ch[5].CalcL();
-            if ((activech & 0x0004) !== 0) ibuf[this.pan[6]] += this.ch[6].CalcL();
-            if ((activech & 0x0001) !== 0) {
-                if ((this.noisedelta & 0x80) !== 0)
+            if ((activech & 0x4000) != 0) ibuf[this.pan[0]] = this.ch[0].CalcL();
+            if ((activech & 0x1000) != 0) ibuf[this.pan[1]] += this.ch[1].CalcL();
+            if ((activech & 0x0400) != 0) ibuf[this.pan[2]] += this.ch[2].CalcL();
+            if ((activech & 0x0100) != 0) ibuf[this.pan[3]] += this.ch[3].CalcL();
+            if ((activech & 0x0040) != 0) ibuf[this.pan[4]] += this.ch[4].CalcL();
+            if ((activech & 0x0010) != 0) ibuf[this.pan[5]] += this.ch[5].CalcL();
+            if ((activech & 0x0004) != 0) ibuf[this.pan[6]] += this.ch[6].CalcL();
+            if ((activech & 0x0001) != 0) {
+                if ((this.noisedelta & 0x80) != 0)
                     ibuf[this.pan[7]] += this.ch[7].CalcLN(this.Noise());
                 else
                     ibuf[this.pan[7]] += this.ch[7].CalcL();
@@ -439,9 +439,9 @@ module FlMMLWorker.fmgenAs {
             for (i = 0; i < 8; i++)
                 activech = (activech << 2) | this.ch[i].Prepare();
 
-            if ((activech & 0x5555) !== 0) {
+            if ((activech & 0x5555) != 0) {
                 // LFO 波形初期化ビット = 1 ならば LFO はかからない?
-                if ((this.reg01 & 0x02) !== 0)
+                if ((this.reg01 & 0x02) != 0)
                     activech &= 0x5555;
 
                 // Mix
@@ -458,7 +458,7 @@ module FlMMLWorker.fmgenAs {
                 for (i = start; i < start + nsamples; i++) {
                     // -----------------------------------------------------------
                     // LFO(); 
-                    if (this.lfowaveform !== 3) {
+                    if (this.lfowaveform != 3) {
                         {
                             c = (this.lfo_count_ >> 15) & 0x1fe;
                             this.chip.pml_ = (OPM.pmtable[this.lfowaveform][c] * this.pmd / 128 + 0x80) & (FM.FM_LFOENTS - 1);
@@ -466,7 +466,7 @@ module FlMMLWorker.fmgenAs {
                         }
                     }
                     else {
-                        if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                        if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) != 0) {
                             c = (OPM.rand() / 17) & 0xff;
                             this.chip.pml_ = ((c - 0x80) * this.pmd / 128 + 0x80) & (FM.FM_LFOENTS - 1);
                             this.chip.aml_ = (c * this.amd / 128) & (FM.FM_LFOENTS - 1);
@@ -474,15 +474,15 @@ module FlMMLWorker.fmgenAs {
                     }
                     this.lfo_count_prev_ = this.lfo_count_;
                     this.lfo_step_++;
-                    if ((this.lfo_step_ & 7) === 0) {
+                    if ((this.lfo_step_ & 7) == 0) {
                         this.lfo_count_ += this.lfo_count_diff_;
                     }
 
                     r = 0;
 
-                    if ((activech & 0x4000) !== 0) {
+                    if ((activech & 0x4000) != 0) {
                         // LFOあり*****************************************************************************************
-                        if ((activech & 0xaaaa) !== 0) {
+                        if ((activech & 0xaaaa) != 0) {
                             // MixSubL(activech, ibuf);
                             this.ch[0].chip_.pmv_ = this.ch[0].pms[this.ch[0].chip_.pml_];
                             this.buf[1] = this.buf[2] = this.buf[3] = 0;
@@ -494,7 +494,7 @@ module FlMMLWorker.fmgenAs {
                             op0.eg_count_ -= op0.eg_count_diff_;
                             if (op0.eg_count_ <= 0) {
                                 op0.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op0.eg_phase_ === EGPhase.attack) {
+                                if (op0.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op0.eg_rate_][op0.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op0.eg_level_ -= 1 + (op0.eg_level_ >> c);
@@ -533,7 +533,7 @@ module FlMMLWorker.fmgenAs {
                             op1.eg_count_ -= op1.eg_count_diff_;
                             if (op1.eg_count_ <= 0) {
                                 op1.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op1.eg_phase_ === EGPhase.attack) {
+                                if (op1.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op1.eg_rate_][op1.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op1.eg_level_ -= 1 + (op1.eg_level_ >> c);
@@ -572,7 +572,7 @@ module FlMMLWorker.fmgenAs {
                             op2.eg_count_ -= op2.eg_count_diff_;
                             if (op2.eg_count_ <= 0) {
                                 op2.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op2.eg_phase_ === EGPhase.attack) {
+                                if (op2.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op2.eg_rate_][op2.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op2.eg_level_ -= 1 + (op2.eg_level_ >> c);
@@ -611,7 +611,7 @@ module FlMMLWorker.fmgenAs {
                             op3.eg_count_ -= op3.eg_count_diff_;
                             if (op3.eg_count_ <= 0) {
                                 op3.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op3.eg_phase_ === EGPhase.attack) {
+                                if (op3.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op3.eg_rate_][op3.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op3.eg_level_ -= 1 + (op3.eg_level_ >> c);
@@ -655,7 +655,7 @@ module FlMMLWorker.fmgenAs {
                             op0.eg_count_ -= op0.eg_count_diff_;
                             if (op0.eg_count_ <= 0) {
                                 op0.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op0.eg_phase_ === EGPhase.attack) {
+                                if (op0.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op0.eg_rate_][op0.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op0.eg_level_ -= 1 + (op0.eg_level_ >> c);
@@ -693,7 +693,7 @@ module FlMMLWorker.fmgenAs {
                             op1.eg_count_ -= op1.eg_count_diff_;
                             if (op1.eg_count_ <= 0) {
                                 op1.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op1.eg_phase_ === EGPhase.attack) {
+                                if (op1.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op1.eg_rate_][op1.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op1.eg_level_ -= 1 + (op1.eg_level_ >> c);
@@ -731,7 +731,7 @@ module FlMMLWorker.fmgenAs {
                             op2.eg_count_ -= op2.eg_count_diff_;
                             if (op2.eg_count_ <= 0) {
                                 op2.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op2.eg_phase_ === EGPhase.attack) {
+                                if (op2.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op2.eg_rate_][op2.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op2.eg_level_ -= 1 + (op2.eg_level_ >> c);
@@ -769,7 +769,7 @@ module FlMMLWorker.fmgenAs {
                             op3.eg_count_ -= op3.eg_count_diff_;
                             if (op3.eg_count_ <= 0) {
                                 op3.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                                if (op3.eg_phase_ === EGPhase.attack) {
+                                if (op3.eg_phase_ == EGPhase.attack) {
                                     c = Operator.attacktable[op3.eg_rate_][op3.eg_curve_count_ & 7];
                                     if (c >= 0) {
                                         op3.eg_level_ -= 1 + (op3.eg_level_ >> c);
@@ -826,14 +826,14 @@ module FlMMLWorker.fmgenAs {
             switch (c4.algo_) {
                 case 0: case 1:
                 case 2: case 3:
-                    return (c4.op[3].eg_phase_ !== EGPhase.off);
+                    return (c4.op[3].eg_phase_ != EGPhase.off);
                 case 4:
-                    return (c4.op[1].eg_phase_ !== EGPhase.off) || (c4.op[3].eg_phase_ !== EGPhase.off);
+                    return (c4.op[1].eg_phase_ != EGPhase.off) || (c4.op[3].eg_phase_ != EGPhase.off);
                 case 5:
                 case 6:
-                    return (c4.op[1].eg_phase_ !== EGPhase.off) || (c4.op[2].eg_phase_ !== EGPhase.off) || (c4.op[3].eg_phase_ !== EGPhase.off);
+                    return (c4.op[1].eg_phase_ != EGPhase.off) || (c4.op[2].eg_phase_ != EGPhase.off) || (c4.op[3].eg_phase_ != EGPhase.off);
                 case 7:
-                    return (c4.op[0].eg_phase_ !== EGPhase.off) || (c4.op[1].eg_phase_ !== EGPhase.off) || (c4.op[2].eg_phase_ !== EGPhase.off) || (c4.op[3].eg_phase_ !== EGPhase.off);
+                    return (c4.op[0].eg_phase_ != EGPhase.off) || (c4.op[1].eg_phase_ != EGPhase.off) || (c4.op[2].eg_phase_ != EGPhase.off) || (c4.op[3].eg_phase_ != EGPhase.off);
             }
             return false;
         }

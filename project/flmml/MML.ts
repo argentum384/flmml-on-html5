@@ -50,14 +50,14 @@ module FlMMLWorker.flmml {
         }
 
         protected len2tick(len: number): number {
-            if (len === 0) return this.m_length;
+            if (len == 0) return this.m_length;
             return 384 / len | 0;
         }
 
         protected note(noteNo: number): void {
             //console.log("note"+noteNo);
             noteNo += this.m_noteShift + this.getKeySig();
-            if (this.getChar() === '*') {	// ポルタメント記号
+            if (this.getChar() == '*') {	// ポルタメント記号
                 this.m_beforeNote = noteNo + this.m_octave * 12;
                 this.m_portamento = 1;
                 this.next();
@@ -67,10 +67,10 @@ module FlMMLWorker.flmml {
                 var tick: number = 0;
                 var tickTemp: number;
                 var tie: number = 0;
-                var keyon: number = (this.m_keyoff === 0) ? 0 : 1;
+                var keyon: number = (this.m_keyoff == 0) ? 0 : 1;
                 this.m_keyoff = 1;
                 while (1) {
-                    if (this.getChar() !== '%') {
+                    if (this.getChar() != '%') {
                         lenMode = 0;
                     }
                     else {
@@ -78,14 +78,14 @@ module FlMMLWorker.flmml {
                         this.next();
                     }
                     len = this.getUInt(0);
-                    if (tie === 1 && len === 0) {
+                    if (tie == 1 && len == 0) {
                         this.m_keyoff = 0;
                         break;
                     }
                     tickTemp = (lenMode ? len : this.len2tick(len));
                     tick += this.getDot(tickTemp);
                     tie = 0;
-                    if (this.getChar() === '&') { // tie
+                    if (this.getChar() == '&') { // tie
                         tie = 1;
                         this.next();
                     }
@@ -93,11 +93,11 @@ module FlMMLWorker.flmml {
                         break;
                     }
                 }
-                if (this.m_portamento === 1) { // ポルタメントなら
+                if (this.m_portamento == 1) { // ポルタメントなら
                     this.m_tracks[this.m_trackNo].recPortamento(this.m_beforeNote - (noteNo + this.m_octave * 12), tick);
                 }
                 this.m_tracks[this.m_trackNo].recNote(noteNo + this.m_octave * 12, tick, this.m_velocity, keyon, this.m_keyoff);
-                if (this.m_portamento === 1) { // ポルタメントなら
+                if (this.m_portamento == 1) { // ポルタメントなら
                     this.m_tracks[this.m_trackNo].recPortamento(0, 0);
                     this.m_portamento = 0;
                 }
@@ -107,7 +107,7 @@ module FlMMLWorker.flmml {
         protected rest(): void {
             //console.log("rest");
             var lenMode: number = 0;
-            if (this.getChar() === '%') {
+            if (this.getChar() == '%') {
                 lenMode = 1;
                 this.next();
             }
@@ -142,18 +142,18 @@ module FlMMLWorker.flmml {
                         var t: Array<number> = new Array<number>(), l: Array<number> = new Array<number>();
                         this.next();
                         o = this.getUInt(o);
-                        if (this.getChar() === ',') this.next();
+                        if (this.getChar() == ',') this.next();
                         a = this.getUInt(a);
                         releasePos = this.m_letter;
                         while (true) {
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                             } else {
                                 break;
                             }
                             releasePos = this.m_letter - 1;
                             d = this.getUInt(d);
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                             } else {
                                 this.m_letter = releasePos;
@@ -163,11 +163,11 @@ module FlMMLWorker.flmml {
                             t.push(d);
                             l.push(s);
                         }
-                        if (t.length === 0) {
+                        if (t.length == 0) {
                             t.push(d);
                             l.push(s);
                         }
-                        if (this.getChar() === ',') this.next();
+                        if (this.getChar() == ',') this.next();
                         r = this.getUInt(r);
                         //console.log("A"+a+",D"+d+",S"+s+",R"+r);
                         this.m_tracks[this.m_trackNo].recEnvelope(o, a, t, l, r);
@@ -175,27 +175,27 @@ module FlMMLWorker.flmml {
                     break;
                 case 'm':
                     this.next();
-                    if (this.getChar() === 'h') {
+                    if (this.getChar() == 'h') {
                         this.next();
                         w = 0; f = 0; pmd = 0; amd = 0; pms = 0; ams = 0; s = 1;
                         do {
                             w = this.getUInt(w);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             f = this.getUInt(f);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             pmd = this.getUInt(pmd);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             amd = this.getUInt(amd);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             pms = this.getUInt(pms);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             ams = this.getUInt(ams);
-                            if (this.getChar() !== ',') break;
+                            if (this.getChar() != ',') break;
                             this.next();
                             s = this.getUInt(s);
                         } while (false);
@@ -204,7 +204,7 @@ module FlMMLWorker.flmml {
                     break;
                 case 'n': // Noise frequency
                     this.next();
-                    if (this.getChar() === 's') { // Note Shift (relative)
+                    if (this.getChar() == 's') { // Note Shift (relative)
                         this.next();
                         this.m_noteShift += this.getSInt(0);
                     }
@@ -229,7 +229,7 @@ module FlMMLWorker.flmml {
                     break;
                 case 'p': // Pan
                     this.next();
-                    if (this.getChar() === 'l') {	// poly mode
+                    if (this.getChar() == 'l') {	// poly mode
                         this.next();
                         o = this.getUInt(this.m_polyVoice);
                         o = Math.max(0, Math.min(this.m_polyVoice, o));
@@ -270,23 +270,23 @@ module FlMMLWorker.flmml {
                         var dp: number = 0, wd: number = 0, fm: number = 1, sf: number = 0, rv: number = 1, dl: number = 0, tm: number = 0, cn: number = 0, sw: number = 0;
                         this.next();
                         dp = this.getUInt(dp);
-                        if (this.getChar() === ',') this.next();
+                        if (this.getChar() == ',') this.next();
                         wd = this.getUInt(wd);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
-                            if (this.getChar() === '-') { rv = -1; this.next(); }
+                            if (this.getChar() == '-') { rv = -1; this.next(); }
                             fm = (this.getUInt(fm) + 1) * rv;
-                            if (this.getChar() === '-') {
+                            if (this.getChar() == '-') {
                                 this.next();
                                 sf = this.getUInt(0);
                             }
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                                 dl = this.getUInt(dl);
-                                if (this.getChar() === ',') {
+                                if (this.getChar() == ',') {
                                     this.next();
                                     tm = this.getUInt(tm);
-                                    if (this.getChar() === ',') {
+                                    if (this.getChar() == ',') {
                                         this.next();
                                         sw = this.getUInt(sw);
                                     }
@@ -302,13 +302,13 @@ module FlMMLWorker.flmml {
                         var swt: number = 0, amt: number = 0, frq: number = 0, res: number = 0;
                         this.next();
                         swt = this.getSInt(swt);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
                             amt = this.getSInt(amt);
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                                 frq = this.getUInt(frq);
-                                if (this.getChar() === ',') {
+                                if (this.getChar() == ',') {
                                     this.next();
                                     res = this.getUInt(res);
                                 }
@@ -325,21 +325,21 @@ module FlMMLWorker.flmml {
                     sens = 0;
                     this.next();
                     sens = this.getUInt(sens);
-                    if (this.getChar() === ',') {
+                    if (this.getChar() == ',') {
                         this.next();
                         a = this.getUInt(a);
                         if (a > this.m_maxPipe) a = this.m_maxPipe;
                     }
                     this.m_tracks[this.m_trackNo].recInput(sens, a);
                     // @i[n],[m]   m:pipe no
-                    // if (n === 0) off
+                    // if (n == 0) off
                     // else sensitivity = n (max:8)
                     break;
                 case 'o': // Output
                     mode = 0;
                     this.next();
                     mode = this.getUInt(mode);
-                    if (this.getChar() === ',') {
+                    if (this.getChar() == ',') {
                         this.next();
                         a = this.getUInt(a);
                         if (a > this.m_maxPipe) {
@@ -349,16 +349,16 @@ module FlMMLWorker.flmml {
                     }
                     this.m_tracks[this.m_trackNo].recOutput(mode, a);
                     // @o[n],[m]   m:pipe no
-                    // if (n === 0) off
-                    // if (n === 1) overwrite
-                    // if (n === 2) add
+                    // if (n == 0) off
+                    // if (n == 1) overwrite
+                    // if (n == 2) add
                     break;
                 case 'r': // Ring
                     (() => {
                         sens = 0;
                         this.next();
                         sens = this.getUInt(sens);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
                             a = this.getUInt(a);
                             if (a > this.m_maxPipe) a = this.m_maxPipe;
@@ -371,16 +371,16 @@ module FlMMLWorker.flmml {
                         mode = 0;
                         this.next();
                         mode = this.getUInt(mode);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
                             a = this.getUInt(a);
-                            if (mode === 1) {
+                            if (mode == 1) {
                                 // Sync out
                                 if (a > this.m_maxSyncSource) {
                                     this.m_maxSyncSource = a;
                                     if (this.m_maxSyncSource >= MML.MAX_SYNCSOURCE) this.m_maxSyncSource = a = MML.MAX_SYNCSOURCE;
                                 }
-                            } else if (mode === 2) {
+                            } else if (mode == 2) {
                                 // Sync in
                                 if (a > this.m_maxSyncSource) a = this.m_maxSyncSource;
                             }
@@ -399,7 +399,7 @@ module FlMMLWorker.flmml {
                             break;
                         case 2:
                             rate = 0;
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                                 rate = this.getUInt(0);
                                 if (rate < 0) rate = 0;
@@ -408,11 +408,11 @@ module FlMMLWorker.flmml {
                             this.m_tracks[this.m_trackNo].recMidiPortRate(rate * 1);
                             break;
                         case 3:
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                                 var oct: number;
                                 var baseNote: number = -1;
-                                if (this.getChar() !== 'o') {
+                                if (this.getChar() != 'o') {
                                     oct = this.m_octave;
                                 }
                                 else {
@@ -447,7 +447,7 @@ module FlMMLWorker.flmml {
                 default:
                     this.m_form = this.getUInt(this.m_form);
                     a = 0;
-                    if (this.getChar() === '-') {
+                    if (this.getChar() == '-') {
                         this.next();
                         a = this.getUInt(0);
                     }
@@ -483,8 +483,8 @@ module FlMMLWorker.flmml {
                 case "(": // vol up/down
                 case ")":
                     i = this.getUInt(1);
-                    if (c === "(" && this.m_velDir ||
-                        c === ")" && !this.m_velDir) { // up
+                    if (c == "(" && this.m_velDir ||
+                        c == ")" && !this.m_velDir) { // up
                         this.m_velocity += (this.m_velDetail) ? (1 * i) : (8 * i);
                         if (this.m_velocity > 127) this.m_velocity = 127;
                     }
@@ -527,7 +527,7 @@ module FlMMLWorker.flmml {
                     break;
                 case "n":
                     c0 = this.getChar();
-                    if (c0 === "s") { // Note Shift (absolute)
+                    if (c0 == "s") { // Note Shift (absolute)
                         this.next();
                         this.m_noteShift = this.getSInt(this.m_noteShift);
                     }
@@ -596,13 +596,13 @@ module FlMMLWorker.flmml {
                     default: f = 0; break;
                 }
             }
-            return (this.m_letter === l) ? def : ret;
+            return (this.m_letter == l) ? def : ret;
         }
 
         protected getUNumber(def: number): number {
             var ret: number = this.getUInt(def | 0);
             var l: number = 1;
-            if (this.getChar() === '.') {
+            if (this.getChar() == '.') {
                 this.next();
                 var f: boolean = true;
                 while (f) {
@@ -629,15 +629,15 @@ module FlMMLWorker.flmml {
         protected getSInt(def: number): number {
             var c: string = this.getChar();
             var s: number = 1;
-            if (c === '-') { s = -1; this.next(); }
-            else if (c === '+') this.next();
+            if (c == '-') { s = -1; this.next(); }
+            else if (c == '+') this.next();
             return this.getUInt(def) * s;
         }
 
         protected getDot(tick: number): number {
             var c: string = this.getChar();
             var intick: number = tick;
-            while (c === '.') {
+            while (c == '.') {
                 this.next();
                 intick /= 2;
                 tick += intick;
@@ -676,7 +676,7 @@ module FlMMLWorker.flmml {
                 var c: string = this.getCharNext();
                 switch (c) {
                     case '/':
-                        if (this.getChar() === ':') {
+                        if (this.getChar() == ':') {
                             this.next();
                             origin[++nest] = this.m_letter - 2;
                             repeat[nest] = this.getUInt(2);
@@ -692,7 +692,7 @@ module FlMMLWorker.flmml {
                         }
                         break;
                     case ':':
-                        if (this.getChar() === '/' && nest >= 0) {
+                        if (this.getChar() == '/' && nest >= 0) {
                             this.next();
                             var contents: string = this.m_string.substring(start[nest], this.m_letter - 2);
                             var newstr: string = this.m_string.substring(0, origin[nest]);
@@ -717,7 +717,7 @@ module FlMMLWorker.flmml {
         /*
         protected getIndex(idArr: Array<any>, id: string): number {
             for (var i: number = 0; i < idArr.length; i++)
-                if (idArr[i] === id) return i;
+                if (idArr[i] == id) return i;
             return -1;
         }
         */
@@ -726,7 +726,7 @@ module FlMMLWorker.flmml {
             // 下2行は for each(var macro in macroTable) { より
             for (var m in macroTable) {
                 var macro: any = macroTable[m];
-                if (this.m_string.substr(this.m_letter, macro.id.length) === macro.id) {
+                if (this.m_string.substr(this.m_letter, macro.id.length) == macro.id) {
                     var start: number = this.m_letter, last: number = this.m_letter + macro.id.length, code: string = macro.code;
                     this.m_letter += macro.id.length;
                     var c: string = this.getCharNext();
@@ -738,11 +738,11 @@ module FlMMLWorker.flmml {
 					
                     // 引数が0個の場合は引数処理をスキップするように変更
                     if (macro.args.length > 0) {
-                        if (c === "{") {
+                        if (c == "{") {
                             c = this.getCharNext();
-                            while (q === 1 || (c !== "}" && c !== "")) {
-                                if (c === '"') q = 1 - q;
-                                if (c === "$") {
+                            while (q == 1 || (c != "}" && c != "")) {
+                                if (c == '"') q = 1 - q;
+                                if (c == "$") {
                                     this.replaceMacro(macroTable);
                                 }
                                 c = this.getCharNext();
@@ -751,14 +751,14 @@ module FlMMLWorker.flmml {
                             var argstr: string = this.m_string.substring(start + macro.id.length + 1, last - 1);
                             var curarg: string = "", quoted: boolean = false;
                             for (var pos: number = 0; pos < argstr.length; pos++) {
-                                if (!quoted && argstr.charAt(pos) === '"') {
+                                if (!quoted && argstr.charAt(pos) == '"') {
                                     quoted = true;
-                                } else if (quoted && (pos + 1) < argstr.length && argstr.charAt(pos) === '\\' && argstr.charAt(pos + 1) === '"') {
+                                } else if (quoted && (pos + 1) < argstr.length && argstr.charAt(pos) == '\\' && argstr.charAt(pos + 1) == '"') {
                                     curarg += '"';
                                     pos++;
-                                } else if (quoted && argstr.charAt(pos) === '"') {
+                                } else if (quoted && argstr.charAt(pos) == '"') {
                                     quoted = false;
-                                } else if (!quoted && argstr.charAt(pos) === ',') {
+                                } else if (!quoted && argstr.charAt(pos) == ',') {
                                     args.push(curarg);
                                     curarg = "";
                                 } else {
@@ -776,7 +776,7 @@ module FlMMLWorker.flmml {
                                 if (j >= macro.args.length) {
                                     break;
                                 }
-                                if (code.substr(i, macro.args[j].id.length + 1) === ("%" + macro.args[j].id)) {
+                                if (code.substr(i, macro.args[j].id.length + 1) == ("%" + macro.args[j].id)) {
                                     code = code.substring(0, i) + code.substring(i).replace("%" + macro.args[j].id, args[macro.args[j].index]);
                                     i += args[macro.args[j].index].length - 1;
                                     break;
@@ -860,7 +860,7 @@ module FlMMLWorker.flmml {
                         this.m_polyVoice = Math.min(Math.max(1, parseInt(ss[0])), MML.MAX_POLYVOICE); // 1～MAX_POLYVOICE
                     }
                     for (i = 1; i < ss.length; i++) {
-                        if (ss[i] === "force") {
+                        if (ss[i] == "force") {
                             this.m_polyForce = true;
                         }
                     }
@@ -965,10 +965,10 @@ module FlMMLWorker.flmml {
                                     }
                                     var idPart: string = this.m_string.substring(start, argspos);
                                     var regexResult: RegExpMatchArray = idPart.match("[a-zA-Z_][a-zA-Z_0-9#\+\(\)]*");
-                                    if (regexResult !== null) {
+                                    if (regexResult != null) {
                                         var id: string = regexResult[0];
                                         idPart = idPart.replace(regTrimHead, '').replace(regTrimFoot, '');	// idString.Trim();								
-                                        if (idPart !== id) {
+                                        if (idPart != id) {
                                             this.warning(MWarning.INVALID_MACRO_NAME, idPart);
                                         }
                                         if (id.length > 0) {
@@ -978,20 +978,20 @@ module FlMMLWorker.flmml {
                                                 args = argstr.split(",");
                                                 for (i = 0; i < args.length; i++) {
                                                     var argid: RegExpMatchArray = args[i].match("[a-zA-Z_][a-zA-Z_0-9#\+\(\)]*");
-                                                    args[i] = { id: (argid !== null ? argid[0] : ""), index: i };
+                                                    args[i] = { id: (argid != null ? argid[0] : ""), index: i };
                                                 }
                                                 args.sort((a: any, b: any): number => {
                                                     if (a.id.length > b.id.length) return -1;
-                                                    if (a.id.length === b.id.length) return 0;
+                                                    if (a.id.length == b.id.length) return 0;
                                                     return 1;
                                                 });
                                             }
                                             this.m_letter = nameEnd + 1;
                                             c = this.getCharNext();
                                             while (this.m_letter < last) {
-                                                if (c === "$") {
+                                                if (c == "$") {
                                                     if (!this.replaceMacro(macroTable)) {
-                                                        if (this.m_string.substr(this.m_letter, id.length) === id) {
+                                                        if (this.m_string.substr(this.m_letter, id.length) == id) {
                                                             this.m_letter--;
                                                             this.m_string = MML.remove(this.m_string, this.m_letter, this.m_letter + id.length);
                                                             this.warning(MWarning.RECURSIVE_MACRO, id);
@@ -1003,7 +1003,7 @@ module FlMMLWorker.flmml {
                                             }
                                             var pos: number = 0;
                                             for (; pos < macroTable.length; pos++) {
-                                                if (macroTable[pos].id === id) {
+                                                if (macroTable[pos].id == id) {
                                                     macroTable.splice(pos, 1);
                                                     pos--;
                                                     continue;
@@ -1108,13 +1108,13 @@ module FlMMLWorker.flmml {
                 var c: string = this.getCharNext();
                 switch (c) {
                     case '/':
-                        if (this.getChar() === '*') {
+                        if (this.getChar() == '*') {
                             if (commentStart < 0) commentStart = this.m_letter - 1;
                             this.next();
                         }
                         break;
                     case '*':
-                        if (this.getChar() === '/') {
+                        if (this.getChar() == '/') {
                             if (commentStart >= 0) {
                                 this.m_string = MML.remove(this.m_string, commentStart, this.m_letter);
                                 this.m_letter = commentStart;
@@ -1135,7 +1135,7 @@ module FlMMLWorker.flmml {
             this.begin();
             commentStart = -1;
             while (this.m_letter < this.m_string.length) {
-                if (this.getCharNext() === '`') {
+                if (this.getCharNext() == '`') {
                     if (commentStart < 0) {
                         commentStart = this.m_letter - 1;
                     }
@@ -1176,7 +1176,7 @@ module FlMMLWorker.flmml {
                         }
                         tick = 0;
                         while (1) {
-                            if (this.getChar() !== '%') {
+                            if (this.getChar() != '%') {
                                 lenMode = 0;
                             }
                             else {
@@ -1184,14 +1184,14 @@ module FlMMLWorker.flmml {
                                 this.next();
                             }
                             len = this.getUInt(0);
-                            if (len === 0) {
-                                if (tick === 0) tick = defLen;
+                            if (len == 0) {
+                                if (tick == 0) tick = defLen;
                                 break;
                             }
                             tick2 = (lenMode ? len : this.len2tick(len));
                             tick2 = this.getDot(tick2);
                             tick += tick2;
-                            if (this.getChar() !== '&') {
+                            if (this.getChar() != '&') {
                                 break;
                             }
                             this.next();
@@ -1212,13 +1212,13 @@ module FlMMLWorker.flmml {
                                     break;
 
                                 default:
-                                    if ((c >= 'a' && c <= 'g') || c === 'r') {
-                                        if (noteOn === 0) {
+                                    if ((c >= 'a' && c <= 'g') || c == 'r') {
+                                        if (noteOn == 0) {
                                             noteOn = 1;
                                             break;
                                         }
                                     }
-                                    if (noteOn === 1) {
+                                    if (noteOn == 1) {
                                         noteTick = Math.round(Number(noteCount) * tickdiv - Number(tick2));
                                         noteCount++;
                                         tick2 += noteTick;
@@ -1230,12 +1230,12 @@ module FlMMLWorker.flmml {
                                         newstr += noteTick.toString();
                                     }
                                     noteOn = 0;
-                                    if ((c >= 'a' && c <= 'g') || c === 'r') {
+                                    if ((c >= 'a' && c <= 'g') || c == 'r') {
                                         noteOn = 1;
                                     }
                                     break;
                             }
-                            if (c !== '}') {
+                            if (c != '}') {
                                 newstr += c;
                             }
                         }
@@ -1245,7 +1245,7 @@ module FlMMLWorker.flmml {
                         GroupNotesStart = -1;
                         break;
                     default:
-                        if ((c >= 'a' && c <= 'g') || c === 'r') {
+                        if ((c >= 'a' && c <= 'g') || c == 'r') {
                             noteCount++;
                         }
                         break;
@@ -1255,7 +1255,7 @@ module FlMMLWorker.flmml {
         }
 
         static isWhitespace(c: string): boolean {
-            if (c === " " || c === "\t" || c === "\n" || c === "\r" || c === "　") {
+            if (c == " " || c == "\t" || c == "\n" || c == "\r" || c == "　") {
                 return true;
             } else {
                 return false;
@@ -1324,7 +1324,7 @@ module FlMMLWorker.flmml {
             this.process();
 
             // omit
-            if (this.m_tracks[this.m_tracks.length - 1].getNumEvents() === 0) this.m_tracks.pop();
+            if (this.m_tracks[this.m_tracks.length - 1].getNumEvents() == 0) this.m_tracks.pop();
 
             // conduct
             this.m_tracks[MTrack.TEMPO_TRACK].conduct(this.m_tracks);

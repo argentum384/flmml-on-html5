@@ -27,7 +27,7 @@ module FlMMLWorker.fmgenAs {
         Count(us: number): boolean {
             var f: boolean = false;
 
-            if (this.timera_count !== 0) {
+            if (this.timera_count != 0) {
                 this.timera_count -= us << 16;
                 if (this.timera_count <= 0) {
                     f = true;
@@ -36,18 +36,18 @@ module FlMMLWorker.fmgenAs {
                     while (this.timera_count <= 0)
                         this.timera_count += this.timera;
 
-                    if ((this.regtc & 4) !== 0)
+                    if ((this.regtc & 4) != 0)
                         this.SetStatus(1);
                 }
             }
-            if (this.timerb_count !== 0) {
+            if (this.timerb_count != 0) {
                 this.timerb_count -= us << 12;
                 if (this.timerb_count <= 0) {
                     f = true;
                     while (this.timerb_count <= 0)
                         this.timerb_count += this.timerb;
 
-                    if ((this.regtc & 8) !== 0)
+                    if ((this.regtc & 8) != 0)
                         this.SetStatus(2);
                 }
             }
@@ -83,15 +83,15 @@ module FlMMLWorker.fmgenAs {
             var tmp: number = this.regtc ^ data;
             this.regtc = data | 0;
 
-            if ((data & 0x10) !== 0)
+            if ((data & 0x10) != 0)
                 this.ResetStatus(1);
-            if ((data & 0x20) !== 0)
+            if ((data & 0x20) != 0)
                 this.ResetStatus(2);
 
-            if ((tmp & 0x01) !== 0)
-                this.timera_count = ((data & 1) !== 0) ? this.timera : 0;
-            if ((tmp & 0x02) !== 0)
-                this.timerb_count = ((data & 2) !== 0) ? this.timerb : 0;
+            if ((tmp & 0x01) != 0)
+                this.timera_count = ((data & 1) != 0) ? this.timera : 0;
+            if ((tmp & 0x02) != 0)
+                this.timerb_count = ((data & 2) != 0) ? this.timerb : 0;
         }
 
         protected /*abstract*/ TimerA(): void { }		

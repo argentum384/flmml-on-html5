@@ -47,7 +47,7 @@ module FlMMLWorker.flmml {
                     val = code << 4;
                 }
             }
-            if (MOscWave.s_length[waveNo] === 0) MOscWave.s_length[waveNo] = 1;
+            if (MOscWave.s_length[waveNo] == 0) MOscWave.s_length[waveNo] = 1;
             MOscWave.s_length[waveNo] = (MOscWave.PHASE_MSK + 1) / MOscWave.s_length[waveNo];
         }
 

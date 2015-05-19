@@ -266,7 +266,7 @@ module FlMMLWorker.fmgenAs {
         
         //  準備
         Prepare(): void {
-            if (this.param_changed_ === false) {
+            if (this.param_changed_ == false) {
                 return;
             }
             this.param_changed_ = false;
@@ -280,14 +280,14 @@ module FlMMLWorker.fmgenAs {
 
             switch (this.eg_phase_) {
                 case EGPhase.attack:
-                    this.SetEGRate(this.ar_ !== 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
+                    this.SetEGRate(this.ar_ != 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
                     break;
                 case EGPhase.decay:
-                    this.SetEGRate(this.dr_ !== 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
+                    this.SetEGRate(this.dr_ != 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
                     this.eg_level_on_next_phase_ = this.sl_ * 8;
                     break;
                 case EGPhase.sustain:
-                    this.SetEGRate(this.sr_ !== 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
+                    this.SetEGRate(this.sr_ != 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
                     break;
                 case EGPhase.release:
                     this.SetEGRate(Math.min(63, this.rr_ + this.key_scale_rate_));
@@ -295,8 +295,8 @@ module FlMMLWorker.fmgenAs {
             }
 
             // SSG-EG
-            if (this.ssg_type_ !== 0 && (this.eg_phase_ !== EGPhase.release)) {
-                var m: number = (this.ar_ >= ((this.ssg_type_ === 8 || this.ssg_type_ === 12) ? 56 : 60)) ? 1 : 0;
+            if (this.ssg_type_ != 0 && (this.eg_phase_ != EGPhase.release)) {
+                var m: number = (this.ar_ >= ((this.ssg_type_ == 8 || this.ssg_type_ == 12) ? 56 : 60)) ? 1 : 0;
                 this.ssg_offset_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][0] * 0x200;
                 this.ssg_vector_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][1];
             }
@@ -311,46 +311,46 @@ module FlMMLWorker.fmgenAs {
             switch (nextphase) {
                 case EGPhase.attack:        // Attack Phase
                     this.tl_ = this.tl_latch_;
-                    if (this.ssg_type_ !== 0) {
+                    if (this.ssg_type_ != 0) {
                         this.ssg_phase_ = this.ssg_phase_ + 1;
                         if (this.ssg_phase_ > 2)
                             this.ssg_phase_ = 1;
 
-                        var m: number = (this.ar_ >= ((this.ssg_type_ === 8 || this.ssg_type_ === 12) ? 56 : 60)) ? 1 : 0;
+                        var m: number = (this.ar_ >= ((this.ssg_type_ == 8 || this.ssg_type_ == 12) ? 56 : 60)) ? 1 : 0;
 
                         this.ssg_offset_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][0] * 0x200;
                         this.ssg_vector_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][1];
                     }
                     if ((this.ar_ + this.key_scale_rate_) < 62) {
-                        this.SetEGRate(this.ar_ !== 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
+                        this.SetEGRate(this.ar_ != 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
                         this.eg_phase_ = EGPhase.attack;
                         break;
                     }
                 // C#               goto case EGPhase.decay;
                 case EGPhase.decay:         // Decay Phase
-                    if (this.sl_ !== 0) {
+                    if (this.sl_ != 0) {
                         this.eg_level_ = 0;
-                        this.eg_level_on_next_phase_ = ((this.ssg_type_ !== 0) ? Math.min(this.sl_ * 8, 0x200) : this.sl_ * 8);
+                        this.eg_level_on_next_phase_ = ((this.ssg_type_ != 0) ? Math.min(this.sl_ * 8, 0x200) : this.sl_ * 8);
 
-                        this.SetEGRate(this.dr_ !== 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
+                        this.SetEGRate(this.dr_ != 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
                         this.eg_phase_ = EGPhase.decay;
                         break;
                     }
                 // C#               goto case EGPhase.sustain;
                 case EGPhase.sustain:       // Sustain Phase
                     this.eg_level_ = this.sl_ * 8;
-                    this.eg_level_on_next_phase_ = (this.ssg_type_ !== 0) ? 0x200 : 0x400;
+                    this.eg_level_on_next_phase_ = (this.ssg_type_ != 0) ? 0x200 : 0x400;
 
-                    this.SetEGRate(this.sr_ !== 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
+                    this.SetEGRate(this.sr_ != 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
                     this.eg_phase_ = EGPhase.sustain;
                     break;
                 case EGPhase.release:       // Release Phase
-                    if (this.ssg_type_ !== 0) {
+                    if (this.ssg_type_ != 0) {
                         this.eg_level_ = this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
                         this.ssg_vector_ = 1;
                         this.ssg_offset_ = 0;
                     }
-                    if (this.eg_phase_ === EGPhase.attack || (this.eg_level_ < FM.FM_EG_BOTTOM)) {
+                    if (this.eg_phase_ == EGPhase.attack || (this.eg_level_ < FM.FM_EG_BOTTOM)) {
                         this.eg_level_on_next_phase_ = 0x400;
                         this.SetEGRate(Math.min(63, this.rr_ + this.key_scale_rate_));
                         this.eg_phase_ = EGPhase.release;
@@ -388,14 +388,14 @@ module FlMMLWorker.fmgenAs {
         }
 
         private EGUpdate(): void {
-            //          if (this.ssg_type_ === 0) {
+            //          if (this.ssg_type_ == 0) {
             //              this.eg_out_ = Math.min(tl_out_ + this.eg_level_, 0x3ff) << (1 + 2);
             //          }
             //          else {
             //              this.eg_out_ = Math.min(tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_, 0x3ff) << (1 + 2);
             //          }
             var a: number;
-            if (this.ssg_type_ === 0) a = this.tl_out_ + this.eg_level_;
+            if (this.ssg_type_ == 0) a = this.tl_out_ + this.eg_level_;
             else a = this.tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
             if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
             else this.eg_out_ = 0x3ff << (1 + 2);
@@ -410,7 +410,7 @@ module FlMMLWorker.fmgenAs {
         private EGCalc(): void {
             this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;              // ##この手抜きは再現性を低下させる
 
-            if (this.eg_phase_ === EGPhase.attack) {
+            if (this.eg_phase_ == EGPhase.attack) {
                 var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                 if (c >= 0) {
                     this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -420,7 +420,7 @@ module FlMMLWorker.fmgenAs {
                 this.EGUpdate();
             }
             else {
-                if (this.ssg_type_ === 0) {
+                if (this.ssg_type_ == 0) {
                     this.eg_level_ += Operator.decaytable1[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (this.eg_level_ >= this.eg_level_on_next_phase_)
                         this.ShiftPhase(this.eg_phase_ + 1);
@@ -477,7 +477,7 @@ module FlMMLWorker.fmgenAs {
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
                 this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                if (this.eg_phase_ === EGPhase.attack) {
+                if (this.eg_phase_ == EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
                         this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -519,7 +519,7 @@ module FlMMLWorker.fmgenAs {
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
                 this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                if (this.eg_phase_ === EGPhase.attack) {
+                if (this.eg_phase_ == EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
                         this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -573,7 +573,7 @@ module FlMMLWorker.fmgenAs {
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
                 this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                if (this.eg_phase_ === EGPhase.attack) {
+                if (this.eg_phase_ == EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
                         this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -620,7 +620,7 @@ module FlMMLWorker.fmgenAs {
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
                 this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
-                if (this.eg_phase_ === EGPhase.attack) {
+                if (this.eg_phase_ == EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
                         this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -672,7 +672,7 @@ module FlMMLWorker.fmgenAs {
         KeyOn(): void {
             if (!this.keyon_) {
                 this.keyon_ = true;
-                if (this.eg_phase_ === EGPhase.off || this.eg_phase_ === EGPhase.release) {
+                if (this.eg_phase_ == EGPhase.off || this.eg_phase_ == EGPhase.release) {
                     this.ssg_phase_ = -1;
                     this.ShiftPhase(EGPhase.attack);
                     this.EGUpdate();
@@ -692,7 +692,7 @@ module FlMMLWorker.fmgenAs {
 
         //  オペレータは稼働中か？
         IsOn(): boolean {
-            return this.eg_phase_ !== EGPhase.off;
+            return this.eg_phase_ != EGPhase.off;
         }
 
         //  Detune (0-7)
@@ -759,7 +759,7 @@ module FlMMLWorker.fmgenAs {
 
         //      //  SSG-type Envelop (0-15)
         //      SetSSGEC(ssgec: number): void {
-        //          if ((ssgec & 8) !== 0)
+        //          if ((ssgec & 8) != 0)
         //              this.ssg_type_ = ssgec;
         //          else
         //              this.ssg_type_ = 0;

@@ -1,6 +1,6 @@
 ﻿"use strict";
 
-var FlMMLonHTML5 = function (window) {
+var FlMMLonHTML5 = function () {
     var BUFFER_SIZE = 8192; // MSequencer.tsと合わせる
 
     var COM_BOOT      =  1, // Main->Worker
@@ -13,25 +13,9 @@ var FlMMLonHTML5 = function (window) {
 		COM_COMPLETE  =  8, // Worker->Main
 		COM_SYNCINFO  =  9, // Main->Worker->Main
 		COM_PLAYSOUND = 10, // Worker->Main
-		COM_STOPSOUND = 11, // Worker->Main->Worker
-		COM_DEBUG     = 12; // Worker->Main
+		COM_STOPSOUND = 11; // Worker->Main->Worker
 
     var ZEROBUFFER = new Float32Array(BUFFER_SIZE);
-
-    var divDebug;
-
-    function debug(str) {
-        if (!divDebug) {
-            divDebug = document.createElement("div");
-            document.body.appendChild(divDebug);
-        }
-        var div = document.createElement("div");
-        div.appendChild(document.createTextNode(str));
-        divDebug.appendChild(div);
-        
-        var divs = divDebug.getElementsByTagName("div");
-        if (divs.length > 10) divDebug.removeChild(divDebug.firstChild);
-    }
 
     function extend (target) {
         var i, options, name,
@@ -54,9 +38,7 @@ var FlMMLonHTML5 = function (window) {
 	    this.worker.addEventListener("message", this.onMessage.bind(this));
 
 	    var AudioContext = window.AudioContext || window.webkitAudioContext;
-	    var audioCtx = this.audioCtx = new AudioContext();
-
-        window.addEventListener("touchstart", this.onTouchStartBinded = this.onTouchStart.bind(this));
+	    this.audioCtx = new AudioContext();
 
 	    this.warnings = "";
 	    this.totalTimeStr = "00:00";
@@ -65,7 +47,7 @@ var FlMMLonHTML5 = function (window) {
 
 	    this.events = {};
         
-	    this.worker.postMessage({ type: COM_BOOT, sampleRate: audioCtx.sampleRate });
+	    this.worker.postMessage({ type: COM_BOOT, sampleRate: this.audioCtx.sampleRate });
         this.setInfoInterval(125);
     }
 
@@ -106,27 +88,23 @@ var FlMMLonHTML5 = function (window) {
                 this.stopSound(data.isFlushBuf);
                 this.worker.postMessage({ type: COM_STOPSOUND });
                 break;
-            case COM_DEBUG:
-                debug(data.str);
         }
     };
 
     FlMMLonHTML5.prototype.playSound = function () {
         if (this.gain || this.scrProc || this.oscDmy) return;
 
-        var audioCtx = this.audioCtx;
-
-        this.gain = audioCtx.createGain();
+        this.gain = this.audioCtx.createGain();
         this.gain.gain.value = this.volume / 127.0;
-        this.gain.connect(audioCtx.destination);
+        this.gain.connect(this.audioCtx.destination);
 
-        this.scrProc = audioCtx.createScriptProcessor(BUFFER_SIZE, 1, 2);
+        this.scrProc = this.audioCtx.createScriptProcessor(BUFFER_SIZE);
         this.onAudioProcessBinded = this.onAudioProcess.bind(this);
         this.scrProc.addEventListener("audioprocess", this.onAudioProcessBinded);
         this.scrProc.connect(this.gain);
 
-        // iOS Safari対策
-        this.oscDmy = audioCtx.createOscillator();
+        // iOS Safari対策 (不要?)
+        this.oscDmy = this.audioCtx.createOscillator();
         this.oscDmy.connect(this.scrProc);
         this.oscDmy.start(0);
     };
@@ -139,15 +117,6 @@ var FlMMLonHTML5 = function (window) {
             if (this.scrProc) { this.scrProc.disconnect(); this.scrProc = null; }
             if (this.oscDmy) { this.oscDmy.disconnect(); this.oscDmy = null; }
         }
-    };
-
-    // iOS Safari 対策
-    FlMMLonHTML5.prototype.onTouchStart = function (e) {
-        var audioCtx = this.audioCtx;
-        var bufSrc = audioCtx.createBufferSource();
-        bufSrc.connect(audioCtx.destination);
-        bufSrc.start(0);
-        window.removeEventListener("touchstart", this.onTouchStartBinded);
     };
     
     FlMMLonHTML5.prototype.onAudioProcess = function (e) {
@@ -165,6 +134,10 @@ var FlMMLonHTML5 = function (window) {
         }
     };
 
+    FlMMLonHTML5.prototype.onInfoTimer = function () {
+        if (this._isPlaying) this.syncInfo();
+    };
+
     FlMMLonHTML5.prototype.trigger = function (type, args) {
         var handlers = this.events[type];
         if (!handlers) return;
@@ -177,6 +150,11 @@ var FlMMLonHTML5 = function (window) {
 
 
     FlMMLonHTML5.prototype.play = function (mml) {
+        // iOS Safari対策 (不要?)
+        if (!this.isPlayedOnce) {
+            this.audioCtx.createBufferSource().start(0);
+            this.isPlayedOnce = true;
+        }
         this.worker.postMessage({ type: COM_PLAY, mml: mml });
     };
 
@@ -206,7 +184,7 @@ var FlMMLonHTML5 = function (window) {
     };
 
     FlMMLonHTML5.prototype.getTotalMSec = function () {
-        return this.totalMSec | 0;
+        return this.totalMSec;
     };
 
     FlMMLonHTML5.prototype.getTotalTimeStr = function () {
@@ -214,7 +192,7 @@ var FlMMLonHTML5 = function (window) {
     };
 
     FlMMLonHTML5.prototype.getNowMSec = function () {
-        return this.nowMSec | 0;
+        return this.nowMSec;
     };
 
     FlMMLonHTML5.prototype.getNowTimeStr = function () {
@@ -242,7 +220,10 @@ var FlMMLonHTML5 = function (window) {
     };
 
     FlMMLonHTML5.prototype.setInfoInterval = function (interval) {
-        this.worker.postMessage({ type: COM_SYNCINFO, interval: interval });
+        clearInterval(this.infoTimer);
+        if (interval) {
+            this.infoTimer = setInterval(this.onInfoTimer.bind(this), interval);
+        }
     };
 
     FlMMLonHTML5.prototype.syncInfo = function () {
@@ -273,10 +254,5 @@ var FlMMLonHTML5 = function (window) {
         return false;
     };
 
-    FlMMLonHTML5.prototype.release = function () {
-        if (this.tIDSendTime) clearInterval(this.tIDSendTime);
-        this.worker.terminate();
-    };
-
     return FlMMLonHTML5;
-}(window);
+}();

@@ -15,23 +15,15 @@ module FlMMLWorker {
 		COM_COMPLETE  =  8, // Worker->Main
 		COM_SYNCINFO  =  9, // Main->Worker->Main
 		COM_PLAYSOUND = 10, // Worker->Main
-		COM_STOPSOUND = 11, // Worker->Main->Worker
-		COM_DEBUG     = 12; // Worker->Main
+		COM_STOPSOUND = 11; // Worker->Main->Worker
 
     export class Worker {
         private m_mml: MML;
         private sampleRate: number;
         private onStopSound: Function = null;
         onRequestBuffer: Function = null;
-        tIDInfo: number;
-        infoInterval: number;
-        lastInfoTime: number;
-
-        onInfoTimerBinded: Function;
 
         constructor() {
-            this.onInfoTimerBinded = this.onInfoTimer.bind(this);
-
             global.addEventListener("message", this.onMessage.bind(this));
         }
 
@@ -44,7 +36,7 @@ module FlMMLWorker {
             //console.log("Worker received " + type);
             switch (type) {
                 case COM_BOOT:
-                    this.sampleRate = data.sampleRate;
+                    this.sampleRate = e.data.sampleRate;
                     this.m_mml = new MML();
                     break;
                 case COM_PLAY:
@@ -62,15 +54,7 @@ module FlMMLWorker {
                     if (this.onRequestBuffer) this.onRequestBuffer(data);
                     break;
                 case COM_SYNCINFO:
-                    if (typeof data.interval === "number") {
-                        this.infoInterval = data.interval;
-                        clearInterval(this.tIDInfo);
-                        if (this.infoInterval !== 0) {
-                            setInterval(this.onInfoTimerBinded, this.infoInterval);
-                        }
-                    } else {
-                        this.syncInfo();
-                    }
+                    this.syncInfo();
                     break;
                 case COM_STOPSOUND:
                     if (this.onStopSound) this.onStopSound();
@@ -129,7 +113,6 @@ module FlMMLWorker {
         syncInfo(): void {
             var mml: MML = this.m_mml;
 
-            this.lastInfoTime = this.getTime();
             global.postMessage({
                 type: COM_SYNCINFO,
                 info: {
@@ -140,19 +123,6 @@ module FlMMLWorker {
                     voiceCount: mml.getVoiceCount()
                 }
             });
-        }
-
-        onInfoTimer(): void {
-            if (this.m_mml.isPlaying()) this.syncInfo();
-        }
-
-        getTime(): number {
-            return global.performance ? global.performance.now() : new Date().getTime();
-        }
-
-        debug(str: string): void {
-            if (!str) str = "";
-            global.postMessage({ type: COM_DEBUG, str: str });
         }
     }
 

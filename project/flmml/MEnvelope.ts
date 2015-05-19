@@ -60,11 +60,11 @@ module FlMMLWorker.flmml {
             if (this.m_playing && !this.m_releasing) {
                 this.m_counter = this.m_timeInSamples;
                 this.m_currentPoint = this.m_envelopePoint;
-                while (this.m_currentPoint.next !== null && this.m_counter >= this.m_currentPoint.next.time) {
+                while (this.m_currentPoint.next != null && this.m_counter >= this.m_currentPoint.next.time) {
                     this.m_currentPoint = this.m_currentPoint.next;
                     this.m_counter -= this.m_currentPoint.time;
                 }
-                if (this.m_currentPoint.next === null) {
+                if (this.m_currentPoint.next == null) {
                     this.m_currentVal = this.m_currentPoint.level;
                 } else {
                     this.m_step = (this.m_currentPoint.next.level - this.m_currentPoint.level) / this.m_currentPoint.next.time;
@@ -104,14 +104,14 @@ module FlMMLWorker.flmml {
             if (!this.m_playing) return 0;
 
             if (!this.m_releasing) {
-                if (this.m_currentPoint.next === null) {	// sustain phase
+                if (this.m_currentPoint.next == null) {	// sustain phase
                     this.m_currentVal = this.m_currentPoint.level;
                 } else {
                     var processed: boolean = false;
                     while (this.m_counter >= this.m_currentPoint.next.time) {
                         this.m_counter = 0;
                         this.m_currentPoint = this.m_currentPoint.next;
-                        if (this.m_currentPoint.next === null) {
+                        if (this.m_currentPoint.next == null) {
                             this.m_currentVal = this.m_currentPoint.level;
                             processed = true;
                             break;
@@ -146,14 +146,14 @@ module FlMMLWorker.flmml {
                 }
 
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {	// sustain phase
+                    if (this.m_currentPoint.next == null) {	// sustain phase
                         // this.m_currentVal = this.m_currentPoint.level;
                     } else {
                         var processed: boolean = false;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -191,14 +191,14 @@ module FlMMLWorker.flmml {
                 }
 
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {	// sustain phase
+                    if (this.m_currentPoint.next == null) {	// sustain phase
                         this.m_currentVal = this.m_currentPoint.level;
                     } else {
                         var processed: boolean = false;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;

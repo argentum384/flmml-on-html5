@@ -169,70 +169,66 @@ var FlMMLWorker;
 (function (FlMMLWorker) {
     var flmml;
     (function (flmml) {
-        var BUFFER_SIZE = 8192, BACKBUF_MULTIPLE = 32;
-        var STATUS_STOP = 0, STATUS_PAUSE = 1, STATUS_BUFFERING = 2, STATUS_PLAY = 3, STATUS_LAST = 4, STEP_NONE = 0, STEP_PRE = 1, STEP_TRACK = 2, STEP_POST = 3, STEP_COMPLETE = 4;
         var MSequencer = (function () {
             function MSequencer() {
                 var i;
-                var sLen = BUFFER_SIZE * BACKBUF_MULTIPLE;
+                var bufSize = MSequencer.BUFFER_SIZE;
+                var sLen = bufSize * MSequencer.BACK_MULTIPLE;
                 MSequencer.SAMPLE_RATE = global.worker.sampleRate;
+                this.m_output = false;
                 flmml.MChannel.boot(sLen);
                 flmml.MOscillator.boot();
                 flmml.MEnvelope.boot();
                 this.m_trackArr = new Array();
                 this.m_playSide = 1;
                 this.m_playSize = 0;
-                this.m_step = STEP_NONE;
+                this.m_step = MSequencer.STEP_NONE;
+                this.m_maxProcTime = bufSize / MSequencer.SAMPLE_RATE * 1000 * MSequencer.PROC_MULTIPLE;
                 this.m_buffer = [
                     [new Float32Array(sLen), new Float32Array(sLen)],
                     [new Float32Array(sLen), new Float32Array(sLen)]
                 ];
-                this.m_maxProcTime = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000 * 0.9;
-                this.m_lastTime = 0;
-                this.processAllBinded = this.processAll.bind(this);
                 global.worker.onRequestBuffer = this.onSampleData.bind(this);
                 this.stop();
             }
             MSequencer.prototype.play = function () {
-                if (this.m_status === STATUS_PAUSE) {
-                    var bufMSec = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
+                if (this.m_status == MSequencer.STATUS_PAUSE) {
+                    var bufMSec = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
                     this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
                     var totl = this.getTotalMSec();
                     var rest = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
-                    this.m_status = STATUS_PLAY;
-                    this.m_startTime = global.worker.getTime();
+                    this.m_status = MSequencer.STATUS_PLAY;
+                    this.m_startTime = global.performance.now();
                     this.startRestTimer(rest);
                     global.worker.playSound();
-                    this.m_lastTime = global.worker.getTime();
                 }
                 else {
                     this.m_globalTick = 0;
                     for (var i = 0; i < this.m_trackArr.length; i++) {
                         this.m_trackArr[i].seekTop();
                     }
-                    this.m_status = STATUS_BUFFERING;
+                    this.m_status = MSequencer.STATUS_BUFFERING;
                     this.processStart();
                 }
             };
             MSequencer.prototype.stop = function (onStopSound) {
                 if (onStopSound === void 0) { onStopSound = null; }
                 clearTimeout(this.m_restTimer);
-                clearTimeout(this.m_procTimer);
                 global.worker.stopSound(onStopSound, true);
-                this.m_status = STATUS_STOP;
+                this.m_status = MSequencer.STATUS_STOP;
                 this.m_pausedPos = 0;
             };
             MSequencer.prototype.pause = function () {
-                if (this.m_status !== STATUS_PLAY)
+                if (this.m_status != MSequencer.STATUS_PLAY)
                     return;
                 clearTimeout(this.m_restTimer);
                 global.worker.stopSound();
                 this.m_pausedPos = this.getNowMSec();
-                this.m_status = STATUS_PAUSE;
+                this.m_status = MSequencer.STATUS_PAUSE;
             };
             MSequencer.prototype.disconnectAll = function () {
                 while (this.m_trackArr.pop()) { }
-                this.m_status = STATUS_STOP;
+                this.m_status = MSequencer.STATUS_STOP;
             };
             MSequencer.prototype.connect = function (track) {
                 this.m_trackArr.push(track);
@@ -246,18 +242,17 @@ var FlMMLWorker;
             };
             MSequencer.prototype.reqBuffering = function () {
                 clearTimeout(this.m_buffTimer);
-                this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this), 0);
+                this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this), 0, this);
             };
             MSequencer.prototype.onBufferingReq = function () {
                 clearTimeout(this.m_restTimer);
                 this.m_pausedPos = this.getNowMSec();
-                this.m_status = STATUS_BUFFERING;
-                this.startProcTimer();
+                this.m_status = MSequencer.STATUS_BUFFERING;
             };
             MSequencer.prototype.startProcTimer = function (interval) {
                 if (interval === void 0) { interval = 0; }
                 clearTimeout(this.m_procTimer);
-                this.m_procTimer = setTimeout(this.processAllBinded, interval);
+                this.m_procTimer = setTimeout(this.processAll.bind(this), interval);
             };
             MSequencer.prototype.startRestTimer = function (interval) {
                 if (interval === void 0) { interval = 0; }
@@ -265,67 +260,76 @@ var FlMMLWorker;
                 this.m_restTimer = setTimeout(this.onStopReq.bind(this), interval);
             };
             MSequencer.prototype.processStart = function () {
-                this.m_step = STEP_PRE;
+                this.m_step = MSequencer.STEP_PRE;
                 this.startProcTimer();
             };
             MSequencer.prototype.processAll = function () {
-                var worker = global.worker, buffer = this.m_buffer[1 - this.m_playSide], sLen = BUFFER_SIZE * BACKBUF_MULTIPLE, bLen = BUFFER_SIZE * 2, nLen = this.m_trackArr.length;
+                var buffer = this.m_buffer[1 - this.m_playSide];
+                var bufSize = MSequencer.BUFFER_SIZE;
+                var sLen = bufSize * MSequencer.BACK_MULTIPLE;
+                var bLen = bufSize * 2;
+                var nLen = this.m_trackArr.length;
+                var beginProcTime;
+                var progress;
                 switch (this.m_step) {
-                    case STEP_PRE:
+                    case MSequencer.STEP_PRE:
+                        if (this.m_output) {
+                            this.startProcTimer();
+                            return;
+                        }
                         buffer = this.m_buffer[1 - this.m_playSide];
                         buffer[0].set(MSequencer.ZEROBUFFER);
                         buffer[1].set(MSequencer.ZEROBUFFER);
                         if (nLen > 0) {
                             var track = this.m_trackArr[flmml.MTrack.TEMPO_TRACK];
-                            track.onSampleData(null, 0, BUFFER_SIZE * BACKBUF_MULTIPLE, true);
+                            track.onSampleData(null, 0, bufSize * MSequencer.BACK_MULTIPLE, true);
                         }
                         this.m_processTrack = flmml.MTrack.FIRST_TRACK;
                         this.m_processOffset = 0;
                         this.m_step++;
-                        if (this.m_status !== STATUS_PLAY)
-                            this.startProcTimer();
+                        this.startProcTimer();
                         break;
-                    case STEP_TRACK:
-                        var status = this.m_status, endTime = this.m_maxProcTime + this.m_lastTime, infoInterval = worker.infoInterval, infoTime = worker.lastInfoTime + infoInterval;
+                    case MSequencer.STEP_TRACK:
+                        if (this.m_output) {
+                            this.startProcTimer();
+                            return;
+                        }
+                        beginProcTime = global.performance.now();
+                        progress = 0;
                         do {
-                            this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
-                            this.m_processOffset += bLen;
-                            if (this.m_processOffset >= sLen) {
-                                this.m_processTrack++;
-                                this.m_processOffset = 0;
-                            }
-                            if (status === STATUS_BUFFERING) {
-                                worker.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100 | 0);
-                            }
                             if (this.m_processTrack >= nLen) {
                                 this.m_step++;
                                 break;
                             }
-                            if (worker.getTime() > infoTime) {
-                                worker.syncInfo();
-                                infoTime = worker.lastInfoTime + infoInterval;
+                            else {
+                                this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
+                                this.m_processOffset += bLen;
+                                if (this.m_processOffset >= sLen) {
+                                    this.m_processTrack++;
+                                    this.m_processOffset = 0;
+                                }
+                                progress = (this.m_processTrack * sLen + this.m_processOffset) / (this.m_trackArr.length * sLen) * 100 | 0;
                             }
-                        } while (status !== STATUS_PLAY || worker.getTime() < endTime);
-                        worker.syncInfo();
-                        setInterval(worker.onInfoTimerBinded, worker.infoInterval);
-                        if (status !== STATUS_PLAY || this.m_step === STEP_POST)
-                            this.startProcTimer();
+                        } while (global.performance.now() - beginProcTime < this.m_maxProcTime);
+                        if (this.m_status == MSequencer.STATUS_BUFFERING) {
+                            global.worker.buffering(progress);
+                        }
+                        this.startProcTimer();
                         break;
-                    case STEP_POST:
-                        this.m_step = STEP_COMPLETE;
-                        if (this.m_status === STATUS_BUFFERING) {
-                            var bufMSec = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
+                    case MSequencer.STEP_POST:
+                        this.m_step = MSequencer.STEP_COMPLETE;
+                        if (this.m_status == MSequencer.STATUS_BUFFERING) {
+                            var bufMSec = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
                             this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
                             var totl = this.getTotalMSec();
                             var rest = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
-                            this.m_status = STATUS_PLAY;
+                            this.m_status = MSequencer.STATUS_PLAY;
                             this.m_playSide = 1 - this.m_playSide;
                             this.m_playSize = 0;
-                            this.m_startTime = worker.getTime();
+                            this.m_startTime = global.performance.now();
                             this.processStart();
                             this.startRestTimer(rest);
-                            worker.playSound();
-                            this.m_lastTime = worker.getTime();
+                            global.worker.playSound();
                         }
                         break;
                     default:
@@ -335,26 +339,27 @@ var FlMMLWorker;
             MSequencer.prototype.onSampleData = function (e) {
                 var i;
                 var base;
+                var bufSize = MSequencer.BUFFER_SIZE;
                 var sendBuf;
-                this.m_lastTime = global.worker.getTime();
-                if (this.m_status === STATUS_PLAY && this.m_step === STEP_TRACK)
-                    this.startProcTimer();
-                if (this.m_playSize >= BACKBUF_MULTIPLE) {
-                    if (this.m_step === STEP_COMPLETE) {
+                this.m_output = true;
+                if (this.m_playSize >= MSequencer.BACK_MULTIPLE) {
+                    if (this.m_step == MSequencer.STEP_COMPLETE) {
                         this.m_playSide = 1 - this.m_playSide;
                         this.m_playSize = 0;
                         this.processStart();
                     }
                     else {
+                        this.m_output = false;
                         this.reqBuffering();
                         return;
                     }
-                    if (this.m_status === STATUS_LAST) {
+                    if (this.m_status == MSequencer.STATUS_LAST) {
+                        this.m_output = false;
                         return;
                     }
-                    else if (this.m_status === STATUS_PLAY) {
+                    else if (this.m_status == MSequencer.STATUS_PLAY) {
                         if (this.m_trackArr[flmml.MTrack.TEMPO_TRACK].isEnd()) {
-                            this.m_status = STATUS_LAST;
+                            this.m_status = MSequencer.STATUS_LAST;
                         }
                     }
                 }
@@ -362,14 +367,15 @@ var FlMMLWorker;
                     sendBuf = e.retBuf;
                 }
                 else {
-                    sendBuf = [new Float32Array(BUFFER_SIZE), new Float32Array(BUFFER_SIZE)];
+                    sendBuf = [new Float32Array(bufSize), new Float32Array(bufSize)];
                 }
-                base = BUFFER_SIZE * this.m_playSize;
+                base = bufSize * this.m_playSize;
                 for (i = 0; i < 2; i++) {
-                    sendBuf[i].set(this.m_buffer[this.m_playSide][i].subarray(base, base + BUFFER_SIZE));
+                    sendBuf[i].set(this.m_buffer[this.m_playSide][i].subarray(base, base + bufSize));
                 }
                 global.worker.sendBuffer(sendBuf);
                 this.m_playSize++;
+                this.m_output = false;
             };
             MSequencer.prototype.createPipes = function (num) {
                 flmml.MChannel.createPipes(num);
@@ -378,10 +384,10 @@ var FlMMLWorker;
                 flmml.MChannel.createSyncSources(num);
             };
             MSequencer.prototype.isPlaying = function () {
-                return (this.m_status > STATUS_PAUSE);
+                return (this.m_status > MSequencer.STATUS_PAUSE);
             };
             MSequencer.prototype.isPaused = function () {
-                return (this.m_status === STATUS_PAUSE);
+                return (this.m_status == MSequencer.STATUS_PAUSE);
             };
             MSequencer.prototype.getTotalMSec = function () {
                 if (this.m_trackArr[flmml.MTrack.TEMPO_TRACK]) {
@@ -395,12 +401,12 @@ var FlMMLWorker;
                 var now;
                 var tot = this.getTotalMSec();
                 switch (this.m_status) {
-                    case STATUS_PLAY:
-                    case STATUS_LAST:
-                        now = global.worker.getTime() - this.m_startTime + this.m_pausedPos;
+                    case MSequencer.STATUS_PLAY:
+                    case MSequencer.STATUS_LAST:
+                        now = global.performance.now() - this.m_startTime + this.m_pausedPos;
                         break;
-                    case STATUS_PAUSE:
-                    case STATUS_BUFFERING:
+                    case MSequencer.STATUS_PAUSE:
+                    case MSequencer.STATUS_BUFFERING:
                         now = this.m_pausedPos;
                         break;
                     default:
@@ -414,7 +420,20 @@ var FlMMLWorker;
                 var ssec = "0" + (sec % 60 | 0);
                 return smin.substr(smin.length - 2, 2) + ":" + ssec.substr(ssec.length - 2, 2);
             };
-            MSequencer.ZEROBUFFER = new Float32Array(BUFFER_SIZE * BACKBUF_MULTIPLE);
+            MSequencer.BUFFER_SIZE = 8192;
+            MSequencer.BACK_MULTIPLE = 32;
+            MSequencer.PROC_MULTIPLE = 0.5;
+            MSequencer.ZEROBUFFER = new Float32Array(MSequencer.BUFFER_SIZE * MSequencer.BACK_MULTIPLE);
+            MSequencer.STATUS_STOP = 0;
+            MSequencer.STATUS_PAUSE = 1;
+            MSequencer.STATUS_BUFFERING = 2;
+            MSequencer.STATUS_PLAY = 3;
+            MSequencer.STATUS_LAST = 4;
+            MSequencer.STEP_NONE = 0;
+            MSequencer.STEP_PRE = 1;
+            MSequencer.STEP_TRACK = 2;
+            MSequencer.STEP_POST = 3;
+            MSequencer.STEP_COMPLETE = 4;
             return MSequencer;
         })();
         flmml.MSequencer = MSequencer;
@@ -528,11 +547,11 @@ var FlMMLWorker;
                 if (this.m_playing && !this.m_releasing) {
                     this.m_counter = this.m_timeInSamples;
                     this.m_currentPoint = this.m_envelopePoint;
-                    while (this.m_currentPoint.next !== null && this.m_counter >= this.m_currentPoint.next.time) {
+                    while (this.m_currentPoint.next != null && this.m_counter >= this.m_currentPoint.next.time) {
                         this.m_currentPoint = this.m_currentPoint.next;
                         this.m_counter -= this.m_currentPoint.time;
                     }
-                    if (this.m_currentPoint.next === null) {
+                    if (this.m_currentPoint.next == null) {
                         this.m_currentVal = this.m_currentPoint.level;
                     }
                     else {
@@ -568,7 +587,7 @@ var FlMMLWorker;
                 if (!this.m_playing)
                     return 0;
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {
+                    if (this.m_currentPoint.next == null) {
                         this.m_currentVal = this.m_currentPoint.level;
                     }
                     else {
@@ -576,7 +595,7 @@ var FlMMLWorker;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -611,14 +630,14 @@ var FlMMLWorker;
                         continue;
                     }
                     if (!this.m_releasing) {
-                        if (this.m_currentPoint.next === null) {
+                        if (this.m_currentPoint.next == null) {
                         }
                         else {
                             var processed = false;
                             while (this.m_counter >= this.m_currentPoint.next.time) {
                                 this.m_counter = 0;
                                 this.m_currentPoint = this.m_currentPoint.next;
-                                if (this.m_currentPoint.next === null) {
+                                if (this.m_currentPoint.next == null) {
                                     this.m_currentVal = this.m_currentPoint.level;
                                     processed = true;
                                     break;
@@ -656,7 +675,7 @@ var FlMMLWorker;
                         continue;
                     }
                     if (!this.m_releasing) {
-                        if (this.m_currentPoint.next === null) {
+                        if (this.m_currentPoint.next == null) {
                             this.m_currentVal = this.m_currentPoint.level;
                         }
                         else {
@@ -664,7 +683,7 @@ var FlMMLWorker;
                             while (this.m_counter >= this.m_currentPoint.next.time) {
                                 this.m_counter = 0;
                                 this.m_currentPoint = this.m_currentPoint.next;
-                                if (this.m_currentPoint.next === null) {
+                                if (this.m_currentPoint.next == null) {
                                     this.m_currentVal = this.m_currentPoint.level;
                                     processed = true;
                                     break;
@@ -983,7 +1002,7 @@ var FlMMLWorker;
                 return this.getMod(this.m_form);
             };
             MOscillator.prototype.getMod = function (form) {
-                return (form !== MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
+                return (form != MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
             };
             MOscillator.prototype.setNoiseToPulse = function () {
                 var modPulse = this.getMod(MOscillator.PULSE);
@@ -1120,7 +1139,7 @@ var FlMMLWorker;
                 this.m_noteNo = noteNo;
                 this.m_freqNo = this.m_noteNo * MChannel.PITCH_RESOLUTION + this.m_detune;
                 this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
-                if (this.m_portamento === 1) {
+                if (this.m_portamento == 1) {
                     if (!tie) {
                         this.m_portDepth = this.m_lastFreqNo - this.m_freqNo;
                     }
@@ -1140,7 +1159,7 @@ var FlMMLWorker;
                 return this.m_noteNo;
             };
             MChannel.prototype.isPlaying = function () {
-                if (this.m_oscSet1.getForm() === flmml.MOscillator.OPM) {
+                if (this.m_oscSet1.getForm() == flmml.MOscillator.OPM) {
                     return this.m_oscSet1.getCurrent().IsPlaying();
                 }
                 else {
@@ -1178,7 +1197,7 @@ var FlMMLWorker;
                 this.m_oscSet1.getMod(flmml.MOscillator.OPM).setNoteNo(this.m_noteNo);
             };
             MChannel.prototype.noteOff = function (noteNo) {
-                if (noteNo < 0 || noteNo === this.m_noteNo) {
+                if (noteNo < 0 || noteNo == this.m_noteNo) {
                     this.m_envelope1.releaseEnvelope();
                     this.m_envelope2.releaseEnvelope();
                     this.m_oscSet1.getMod(flmml.MOscillator.OPM).noteOff();
@@ -1219,7 +1238,7 @@ var FlMMLWorker;
                 this.m_envelope2.setRelease(release * (1.0 / 127.0));
             };
             MChannel.prototype.setPWM = function (pwm) {
-                if (this.m_oscSet1.getForm() !== flmml.MOscillator.FC_PULSE) {
+                if (this.m_oscSet1.getForm() != flmml.MOscillator.FC_PULSE) {
                     var modPulse = this.m_oscSet1.getMod(flmml.MOscillator.PULSE);
                     if (pwm < 0) {
                         modPulse.setMIX(1);
@@ -1261,7 +1280,7 @@ var FlMMLWorker;
             };
             MChannel.prototype.setLFODPWD = function (depth, freq) {
                 this.m_lfoDepth = depth;
-                this.m_osc2Connect = (depth === 0) ? 0 : 1;
+                this.m_osc2Connect = (depth == 0) ? 0 : 1;
                 this.m_oscMod2.setFrequency(freq);
                 this.m_oscMod2.resetPhase();
                 this.m_oscSet2.getMod(flmml.MOscillator.NOISE).setNoiseFreq(freq / flmml.MSequencer.SAMPLE_RATE);
@@ -1274,7 +1293,7 @@ var FlMMLWorker;
                 this.m_lfoTarget = target;
             };
             MChannel.prototype.setLpfSwtAmt = function (swt, amt) {
-                if (-3 < swt && swt < 3 && swt !== this.m_filterConnect) {
+                if (-3 < swt && swt < 3 && swt != this.m_filterConnect) {
                     this.m_filterConnect = swt;
                     this.m_filter.setSwitch(swt);
                 }
@@ -1380,7 +1399,7 @@ var FlMMLWorker;
                 this.m_portRate = 0;
             };
             MChannel.prototype.clearOutPipe = function (max, start, delta) {
-                if (this.m_outMode === 1) {
+                if (this.m_outMode == 1) {
                     MChannel.s_pipeArr[this.m_outPipe].set(flmml.MSequencer.ZEROBUFFER.subarray(0, delta), start);
                 }
             };
@@ -1401,50 +1420,50 @@ var FlMMLWorker;
                 if (end >= max)
                     end = max;
                 var key = MChannel.getFrequency(this.m_freqNo);
-                if (this.m_outMode === 1 && this.m_slaveVoice === false) {
+                if (this.m_outMode == 1 && this.m_slaveVoice == false) {
                     trackBuffer = MChannel.s_pipeArr[this.m_outPipe];
                 }
                 if (playing) {
-                    if (this.m_portDepth === 0) {
+                    if (this.m_portDepth == 0) {
                         if (this.m_inSens >= 0.000001) {
-                            if (this.m_osc2Connect === 0) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesF__(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesFP_(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesFW_(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_FM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_FM) {
                                 this.getSamplesFF_(trackBuffer, start, end);
                             }
                             else {
                                 this.getSamplesF__(trackBuffer, start, end);
                             }
                         }
-                        else if (this.m_syncMode === 2) {
-                            if (this.m_osc2Connect === 0) {
+                        else if (this.m_syncMode == 2) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesI__(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesIP_(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesIW_(trackBuffer, start, end);
                             }
                             else {
                                 this.getSamplesI__(trackBuffer, start, end);
                             }
                         }
-                        else if (this.m_syncMode === 1) {
-                            if (this.m_osc2Connect === 0) {
+                        else if (this.m_syncMode == 1) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesO__(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesOP_(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesOW_(trackBuffer, start, end);
                             }
                             else {
@@ -1452,13 +1471,13 @@ var FlMMLWorker;
                             }
                         }
                         else {
-                            if (this.m_osc2Connect === 0) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamples___(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamples_P_(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamples_W_(trackBuffer, start, end);
                             }
                             else {
@@ -1468,44 +1487,44 @@ var FlMMLWorker;
                     }
                     else {
                         if (this.m_inSens >= 0.000001) {
-                            if (this.m_osc2Connect === 0) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesF_P(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesFPP(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesFWP(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_FM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_FM) {
                                 this.getSamplesFFP(trackBuffer, start, end);
                             }
                             else {
                                 this.getSamplesF_P(trackBuffer, start, end);
                             }
                         }
-                        else if (this.m_syncMode === 2) {
-                            if (this.m_osc2Connect === 0) {
+                        else if (this.m_syncMode == 2) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesI_P(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesIPP(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesIWP(trackBuffer, start, end);
                             }
                             else {
                                 this.getSamplesI_P(trackBuffer, start, end);
                             }
                         }
-                        else if (this.m_syncMode === 1) {
-                            if (this.m_osc2Connect === 0) {
+                        else if (this.m_syncMode == 1) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamplesO_P(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamplesOPP(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamplesOWP(trackBuffer, start, end);
                             }
                             else {
@@ -1513,13 +1532,13 @@ var FlMMLWorker;
                             }
                         }
                         else {
-                            if (this.m_osc2Connect === 0) {
+                            if (this.m_osc2Connect == 0) {
                                 this.getSamples__P(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PITCH) {
                                 this.getSamples_PP(trackBuffer, start, end);
                             }
-                            else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                            else if (this.m_lfoTarget == MChannel.LFO_TARGET_PWM) {
                                 this.getSamples_WP(trackBuffer, start, end);
                             }
                             else {
@@ -1528,20 +1547,20 @@ var FlMMLWorker;
                         }
                     }
                 }
-                if (this.m_oscSet1.getForm() !== flmml.MOscillator.OPM) {
-                    if (this.m_volMode === 0) {
+                if (this.m_oscSet1.getForm() != flmml.MOscillator.OPM) {
+                    if (this.m_volMode == 0) {
                         this.m_envelope1.ampSamplesLinear(trackBuffer, start, end, this.m_ampLevel);
                     }
                     else {
                         this.m_envelope1.ampSamplesNonLinear(trackBuffer, start, end, this.m_ampLevel, this.m_volMode);
                     }
                 }
-                if (this.m_lfoTarget === MChannel.LFO_TARGET_AMPLITUDE && this.m_osc2Connect !== 0) {
+                if (this.m_lfoTarget == MChannel.LFO_TARGET_AMPLITUDE && this.m_osc2Connect != 0) {
                     depth = this.m_osc2Sign * this.m_lfoDepth / 127.0;
                     s = start;
                     for (i = start; i < end; i++) {
                         vol = 1.0;
-                        if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                        if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                             vol += this.m_oscMod2.getNextSample() * depth;
                         }
                         if (vol < 0) {
@@ -1560,7 +1579,7 @@ var FlMMLWorker;
                 }
                 tmpFlag = playing;
                 playing = playing || this.m_formant.checkToSilence();
-                if (playing !== tmpFlag) {
+                if (playing != tmpFlag) {
                     trackBuffer.set(flmml.MSequencer.ZEROBUFFER.subarray(0, delta), start);
                 }
                 if (playing) {
@@ -1568,11 +1587,11 @@ var FlMMLWorker;
                 }
                 tmpFlag = playing;
                 playing = playing || this.m_filter.checkToSilence();
-                if (playing !== tmpFlag) {
+                if (playing != tmpFlag) {
                     trackBuffer.set(flmml.MSequencer.ZEROBUFFER.subarray(0, delta), start);
                 }
                 if (playing) {
-                    if (this.m_lfoTarget === MChannel.LFO_TARGET_CUTOFF && this.m_osc2Connect !== 0) {
+                    if (this.m_lfoTarget == MChannel.LFO_TARGET_CUTOFF && this.m_osc2Connect != 0) {
                         depth = this.m_osc2Sign * this.m_lfoDepth;
                         s = start;
                         do {
@@ -1580,7 +1599,7 @@ var FlMMLWorker;
                             if (e > end)
                                 e = end;
                             lpffrq = this.m_lpfFrq;
-                            if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                            if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                                 lpffrq += this.m_oscMod2.getNextSample() * depth | 0;
                                 this.m_oscMod2.addPhase(e - s - 1);
                             }
@@ -1602,7 +1621,7 @@ var FlMMLWorker;
                 if (playing) {
                     switch (this.m_outMode) {
                         case 0:
-                            if (this.m_lfoTarget === MChannel.LFO_TARGET_PANPOT && this.m_osc2Connect !== 0) {
+                            if (this.m_lfoTarget == MChannel.LFO_TARGET_PANPOT && this.m_osc2Connect != 0) {
                                 depth = this.m_osc2Sign * this.m_lfoDepth * (1.0 / 127.0);
                                 for (i = start; i < end; i++) {
                                     pan = this.m_pan + this.m_oscMod2.getNextSample() * depth;
@@ -1629,7 +1648,7 @@ var FlMMLWorker;
                             break;
                         case 1:
                             pipe = MChannel.s_pipeArr[this.m_outPipe];
-                            if (this.m_slaveVoice === false) {
+                            if (this.m_slaveVoice == false) {
                                 for (i = start; i < end; i++) {
                                     pipe[i] = trackBuffer[i];
                                 }
@@ -1648,9 +1667,9 @@ var FlMMLWorker;
                             break;
                     }
                 }
-                else if (this.m_outMode === 1) {
+                else if (this.m_outMode == 1) {
                     pipe = MChannel.s_pipeArr[this.m_outPipe];
-                    if (this.m_slaveVoice === false) {
+                    if (this.m_slaveVoice == false) {
                         pipe.set(flmml.MSequencer.ZEROBUFFER.subarray(0, delta), start);
                     }
                 }
@@ -1665,7 +1684,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1682,7 +1701,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1709,7 +1728,7 @@ var FlMMLWorker;
                 var i, freqNo, sens = this.m_inSens, depth = this.m_osc2Sign * this.m_lfoDepth, pipe = MChannel.s_pipeArr[this.m_inPipe];
                 for (i = start; i < end; i++) {
                     freqNo = this.m_freqNo;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
@@ -1722,7 +1741,7 @@ var FlMMLWorker;
                 this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 for (i = start; i < end; i++) {
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                     }
                     if (pwm < 0) {
@@ -1741,7 +1760,7 @@ var FlMMLWorker;
                 this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 for (i = start; i < end; i++) {
                     sens = this.m_inSens;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         sens *= this.m_oscMod2.getNextSample() * depth;
                     }
                     samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
@@ -1758,7 +1777,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1775,7 +1794,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1801,7 +1820,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1818,7 +1837,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1841,7 +1860,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1851,7 +1870,7 @@ var FlMMLWorker;
                     this.m_oscMod1.getSamples(samples, s, e);
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -1862,13 +1881,13 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
                             this.m_portDepth = 0;
                     }
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1887,7 +1906,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1895,7 +1914,7 @@ var FlMMLWorker;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -1910,7 +1929,7 @@ var FlMMLWorker;
                     this.m_onCounter += e - s;
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -1918,7 +1937,7 @@ var FlMMLWorker;
                 var freqNo, i, sens = this.m_inSens, pipe = MChannel.s_pipeArr[this.m_inPipe];
                 for (i = start; i < end; i++) {
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += this.m_portDepthAdd;
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1932,13 +1951,13 @@ var FlMMLWorker;
                 var i, freqNo, sens = this.m_inSens, depth = this.m_osc2Sign * this.m_lfoDepth, pipe = MChannel.s_pipeArr[this.m_inPipe];
                 for (i = start; i < end; i++) {
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += this.m_portDepthAdd;
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
                             this.m_portDepth = 0;
                     }
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += this.m_oscMod2.getNextSample() * depth | 0;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
@@ -1950,7 +1969,7 @@ var FlMMLWorker;
                 var i, freqNo, pwm, depth = this.m_osc2Sign * this.m_lfoDepth * 0.01, modPulse = this.m_oscSet1.getMod(flmml.MOscillator.PULSE), sens = this.m_inSens, pipe = MChannel.s_pipeArr[this.m_inPipe];
                 for (i = start; i < end; i++) {
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += this.m_portDepthAdd;
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1958,7 +1977,7 @@ var FlMMLWorker;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                     }
                     if (pwm < 0) {
@@ -1976,7 +1995,7 @@ var FlMMLWorker;
                 var i, freqNo, sens, depth = this.m_osc2Sign * this.m_lfoDepth * (1.0 / 127.0), pipe = MChannel.s_pipeArr[this.m_inPipe];
                 for (i = start; i < end; i++) {
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += this.m_portDepthAdd;
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -1984,7 +2003,7 @@ var FlMMLWorker;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                     sens = this.m_inSens;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         sens *= this.m_oscMod2.getNextSample() * depth;
                     }
                     samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
@@ -1998,7 +2017,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -2009,7 +2028,7 @@ var FlMMLWorker;
                     this.m_onCounter += e - s;
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -2020,13 +2039,13 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
                             this.m_portDepth = 0;
                     }
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += this.m_oscMod2.getNextSample() * depth | 0;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -2043,7 +2062,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -2051,7 +2070,7 @@ var FlMMLWorker;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -2066,7 +2085,7 @@ var FlMMLWorker;
                     this.m_onCounter += e - s;
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -2077,7 +2096,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -2088,7 +2107,7 @@ var FlMMLWorker;
                     this.m_onCounter += e - s;
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -2099,13 +2118,13 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
                             this.m_portDepth = 0;
                     }
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         freqNo += this.m_oscMod2.getNextSample() * depth | 0;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -2122,7 +2141,7 @@ var FlMMLWorker;
                     if (e > end)
                         e = end;
                     freqNo = this.m_freqNo;
-                    if (this.m_portDepth !== 0) {
+                    if (this.m_portDepth != 0) {
                         freqNo += this.m_portDepth | 0;
                         this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                         if (this.m_portDepth * this.m_portDepthAdd > 0)
@@ -2130,7 +2149,7 @@ var FlMMLWorker;
                     }
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                     pwm = this.m_pulseWidth;
-                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
+                    if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd == 0 || this.m_onCounter < this.m_lfoEnd)) {
                         pwm += this.m_oscMod2.getNextSample() * depth;
                         this.m_oscMod2.addPhase(e - s - 1);
                     }
@@ -2145,7 +2164,7 @@ var FlMMLWorker;
                     this.m_onCounter += e - s;
                     s = e;
                 } while (s < end);
-                if (this.m_portDepth === 0) {
+                if (this.m_portDepth == 0) {
                     this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
                 }
             };
@@ -2408,7 +2427,7 @@ var FlMMLWorker;
                 }
             };
             MTrack.prototype.recChordStart = function () {
-                if (this.m_chordMode === false) {
+                if (this.m_chordMode == false) {
                     this.m_chordMode = true;
                     this.m_chordBegin = this.m_globalTick;
                 }
@@ -2440,7 +2459,7 @@ var FlMMLWorker;
                 for (var i = 0; i < n; i++) {
                     var en = this.m_events[i];
                     var nextTick = preGlobalTick + en.getDelta();
-                    if (nextTick > globalTick || (nextTick === globalTick && en.getStatus() !== flmml.MStatus.TEMPO)) {
+                    if (nextTick > globalTick || (nextTick == globalTick && en.getStatus() != flmml.MStatus.TEMPO)) {
                         en.setDelta(nextTick - globalTick);
                         e.setDelta(globalTick - preGlobalTick);
                         this.m_events.splice(i, 0, e);
@@ -2476,7 +2495,7 @@ var FlMMLWorker;
                 return e;
             };
             MTrack.prototype.pushEvent = function (e) {
-                if (this.m_chordMode === false) {
+                if (this.m_chordMode == false) {
                     this.m_events.push(e);
                 }
                 else {
@@ -2508,21 +2527,21 @@ var FlMMLWorker;
             };
             MTrack.prototype.recEnvelope = function (env, attack, times, levels, release) {
                 var e = this.makeEvent();
-                if (env === 1)
+                if (env == 1)
                     e.setEnvelope1Atk(attack);
                 else
                     e.setEnvelope2Atk(attack);
                 this.pushEvent(e);
                 for (var i = 0, pts = times.length; i < pts; i++) {
                     e = this.makeEvent();
-                    if (env === 1)
+                    if (env == 1)
                         e.setEnvelope1Point(times[i], levels[i]);
                     else
                         e.setEnvelope2Point(times[i], levels[i]);
                     this.pushEvent(e);
                 }
                 e = this.makeEvent();
-                if (env === 1)
+                if (env == 1)
                     e.setEnvelope1Rel(release);
                 else
                     e.setEnvelope2Rel(release);
@@ -2946,13 +2965,13 @@ var FlMMLWorker;
                 this.m_warning += flmml.MWarning.getString(warnId, str) + "\n";
             };
             MML.prototype.len2tick = function (len) {
-                if (len === 0)
+                if (len == 0)
                     return this.m_length;
                 return 384 / len | 0;
             };
             MML.prototype.note = function (noteNo) {
                 noteNo += this.m_noteShift + this.getKeySig();
-                if (this.getChar() === '*') {
+                if (this.getChar() == '*') {
                     this.m_beforeNote = noteNo + this.m_octave * 12;
                     this.m_portamento = 1;
                     this.next();
@@ -2963,10 +2982,10 @@ var FlMMLWorker;
                     var tick = 0;
                     var tickTemp;
                     var tie = 0;
-                    var keyon = (this.m_keyoff === 0) ? 0 : 1;
+                    var keyon = (this.m_keyoff == 0) ? 0 : 1;
                     this.m_keyoff = 1;
                     while (1) {
-                        if (this.getChar() !== '%') {
+                        if (this.getChar() != '%') {
                             lenMode = 0;
                         }
                         else {
@@ -2974,14 +2993,14 @@ var FlMMLWorker;
                             this.next();
                         }
                         len = this.getUInt(0);
-                        if (tie === 1 && len === 0) {
+                        if (tie == 1 && len == 0) {
                             this.m_keyoff = 0;
                             break;
                         }
                         tickTemp = (lenMode ? len : this.len2tick(len));
                         tick += this.getDot(tickTemp);
                         tie = 0;
-                        if (this.getChar() === '&') {
+                        if (this.getChar() == '&') {
                             tie = 1;
                             this.next();
                         }
@@ -2989,11 +3008,11 @@ var FlMMLWorker;
                             break;
                         }
                     }
-                    if (this.m_portamento === 1) {
+                    if (this.m_portamento == 1) {
                         this.m_tracks[this.m_trackNo].recPortamento(this.m_beforeNote - (noteNo + this.m_octave * 12), tick);
                     }
                     this.m_tracks[this.m_trackNo].recNote(noteNo + this.m_octave * 12, tick, this.m_velocity, keyon, this.m_keyoff);
-                    if (this.m_portamento === 1) {
+                    if (this.m_portamento == 1) {
                         this.m_tracks[this.m_trackNo].recPortamento(0, 0);
                         this.m_portamento = 0;
                     }
@@ -3001,7 +3020,7 @@ var FlMMLWorker;
             };
             MML.prototype.rest = function () {
                 var lenMode = 0;
-                if (this.getChar() === '%') {
+                if (this.getChar() == '%') {
                     lenMode = 1;
                     this.next();
                 }
@@ -3038,12 +3057,12 @@ var FlMMLWorker;
                             var t = new Array(), l = new Array();
                             _this.next();
                             o = _this.getUInt(o);
-                            if (_this.getChar() === ',')
+                            if (_this.getChar() == ',')
                                 _this.next();
                             a = _this.getUInt(a);
                             releasePos = _this.m_letter;
                             while (true) {
-                                if (_this.getChar() === ',') {
+                                if (_this.getChar() == ',') {
                                     _this.next();
                                 }
                                 else {
@@ -3051,7 +3070,7 @@ var FlMMLWorker;
                                 }
                                 releasePos = _this.m_letter - 1;
                                 d = _this.getUInt(d);
-                                if (_this.getChar() === ',') {
+                                if (_this.getChar() == ',') {
                                     _this.next();
                                 }
                                 else {
@@ -3062,11 +3081,11 @@ var FlMMLWorker;
                                 t.push(d);
                                 l.push(s);
                             }
-                            if (t.length === 0) {
+                            if (t.length == 0) {
                                 t.push(d);
                                 l.push(s);
                             }
-                            if (_this.getChar() === ',')
+                            if (_this.getChar() == ',')
                                 _this.next();
                             r = _this.getUInt(r);
                             _this.m_tracks[_this.m_trackNo].recEnvelope(o, a, t, l, r);
@@ -3074,7 +3093,7 @@ var FlMMLWorker;
                         break;
                     case 'm':
                         this.next();
-                        if (this.getChar() === 'h') {
+                        if (this.getChar() == 'h') {
                             this.next();
                             w = 0;
                             f = 0;
@@ -3085,27 +3104,27 @@ var FlMMLWorker;
                             s = 1;
                             do {
                                 w = this.getUInt(w);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 f = this.getUInt(f);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 pmd = this.getUInt(pmd);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 amd = this.getUInt(amd);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 pms = this.getUInt(pms);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 ams = this.getUInt(ams);
-                                if (this.getChar() !== ',')
+                                if (this.getChar() != ',')
                                     break;
                                 this.next();
                                 s = this.getUInt(s);
@@ -3115,7 +3134,7 @@ var FlMMLWorker;
                         break;
                     case 'n':
                         this.next();
-                        if (this.getChar() === 's') {
+                        if (this.getChar() == 's') {
                             this.next();
                             this.m_noteShift += this.getSInt(0);
                         }
@@ -3145,7 +3164,7 @@ var FlMMLWorker;
                         break;
                     case 'p':
                         this.next();
-                        if (this.getChar() === 'l') {
+                        if (this.getChar() == 'l') {
                             this.next();
                             o = this.getUInt(this.m_polyVoice);
                             o = Math.max(0, Math.min(this.m_polyVoice, o));
@@ -3200,27 +3219,27 @@ var FlMMLWorker;
                             var dp = 0, wd = 0, fm = 1, sf = 0, rv = 1, dl = 0, tm = 0, cn = 0, sw = 0;
                             _this.next();
                             dp = _this.getUInt(dp);
-                            if (_this.getChar() === ',')
+                            if (_this.getChar() == ',')
                                 _this.next();
                             wd = _this.getUInt(wd);
-                            if (_this.getChar() === ',') {
+                            if (_this.getChar() == ',') {
                                 _this.next();
-                                if (_this.getChar() === '-') {
+                                if (_this.getChar() == '-') {
                                     rv = -1;
                                     _this.next();
                                 }
                                 fm = (_this.getUInt(fm) + 1) * rv;
-                                if (_this.getChar() === '-') {
+                                if (_this.getChar() == '-') {
                                     _this.next();
                                     sf = _this.getUInt(0);
                                 }
-                                if (_this.getChar() === ',') {
+                                if (_this.getChar() == ',') {
                                     _this.next();
                                     dl = _this.getUInt(dl);
-                                    if (_this.getChar() === ',') {
+                                    if (_this.getChar() == ',') {
                                         _this.next();
                                         tm = _this.getUInt(tm);
-                                        if (_this.getChar() === ',') {
+                                        if (_this.getChar() == ',') {
                                             _this.next();
                                             sw = _this.getUInt(sw);
                                         }
@@ -3235,13 +3254,13 @@ var FlMMLWorker;
                             var swt = 0, amt = 0, frq = 0, res = 0;
                             _this.next();
                             swt = _this.getSInt(swt);
-                            if (_this.getChar() === ',') {
+                            if (_this.getChar() == ',') {
                                 _this.next();
                                 amt = _this.getSInt(amt);
-                                if (_this.getChar() === ',') {
+                                if (_this.getChar() == ',') {
                                     _this.next();
                                     frq = _this.getUInt(frq);
-                                    if (_this.getChar() === ',') {
+                                    if (_this.getChar() == ',') {
                                         _this.next();
                                         res = _this.getUInt(res);
                                     }
@@ -3258,7 +3277,7 @@ var FlMMLWorker;
                         sens = 0;
                         this.next();
                         sens = this.getUInt(sens);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
                             a = this.getUInt(a);
                             if (a > this.m_maxPipe)
@@ -3270,7 +3289,7 @@ var FlMMLWorker;
                         mode = 0;
                         this.next();
                         mode = this.getUInt(mode);
-                        if (this.getChar() === ',') {
+                        if (this.getChar() == ',') {
                             this.next();
                             a = this.getUInt(a);
                             if (a > this.m_maxPipe) {
@@ -3286,7 +3305,7 @@ var FlMMLWorker;
                             sens = 0;
                             _this.next();
                             sens = _this.getUInt(sens);
-                            if (_this.getChar() === ',') {
+                            if (_this.getChar() == ',') {
                                 _this.next();
                                 a = _this.getUInt(a);
                                 if (a > _this.m_maxPipe)
@@ -3300,17 +3319,17 @@ var FlMMLWorker;
                             mode = 0;
                             this.next();
                             mode = this.getUInt(mode);
-                            if (this.getChar() === ',') {
+                            if (this.getChar() == ',') {
                                 this.next();
                                 a = this.getUInt(a);
-                                if (mode === 1) {
+                                if (mode == 1) {
                                     if (a > this.m_maxSyncSource) {
                                         this.m_maxSyncSource = a;
                                         if (this.m_maxSyncSource >= MML.MAX_SYNCSOURCE)
                                             this.m_maxSyncSource = a = MML.MAX_SYNCSOURCE;
                                     }
                                 }
-                                else if (mode === 2) {
+                                else if (mode == 2) {
                                     if (a > this.m_maxSyncSource)
                                         a = this.m_maxSyncSource;
                                 }
@@ -3329,7 +3348,7 @@ var FlMMLWorker;
                                 break;
                             case 2:
                                 rate = 0;
-                                if (this.getChar() === ',') {
+                                if (this.getChar() == ',') {
                                     this.next();
                                     rate = this.getUInt(0);
                                     if (rate < 0)
@@ -3340,11 +3359,11 @@ var FlMMLWorker;
                                 this.m_tracks[this.m_trackNo].recMidiPortRate(rate * 1);
                                 break;
                             case 3:
-                                if (this.getChar() === ',') {
+                                if (this.getChar() == ',') {
                                     this.next();
                                     var oct;
                                     var baseNote = -1;
-                                    if (this.getChar() !== 'o') {
+                                    if (this.getChar() != 'o') {
                                         oct = this.m_octave;
                                     }
                                     else {
@@ -3395,7 +3414,7 @@ var FlMMLWorker;
                     default:
                         this.m_form = this.getUInt(this.m_form);
                         a = 0;
-                        if (this.getChar() === '-') {
+                        if (this.getChar() == '-') {
                             this.next();
                             a = this.getUInt(0);
                         }
@@ -3450,8 +3469,8 @@ var FlMMLWorker;
                     case "(":
                     case ")":
                         i = this.getUInt(1);
-                        if (c === "(" && this.m_velDir ||
-                            c === ")" && !this.m_velDir) {
+                        if (c == "(" && this.m_velDir ||
+                            c == ")" && !this.m_velDir) {
                             this.m_velocity += (this.m_velDetail) ? (1 * i) : (8 * i);
                             if (this.m_velocity > 127)
                                 this.m_velocity = 127;
@@ -3503,7 +3522,7 @@ var FlMMLWorker;
                         break;
                     case "n":
                         c0 = this.getChar();
-                        if (c0 === "s") {
+                        if (c0 == "s") {
                             this.next();
                             this.m_noteShift = this.getSInt(this.m_noteShift);
                         }
@@ -3609,12 +3628,12 @@ var FlMMLWorker;
                             break;
                     }
                 }
-                return (this.m_letter === l) ? def : ret;
+                return (this.m_letter == l) ? def : ret;
             };
             MML.prototype.getUNumber = function (def) {
                 var ret = this.getUInt(def | 0);
                 var l = 1;
-                if (this.getChar() === '.') {
+                if (this.getChar() == '.') {
                     this.next();
                     var f = true;
                     while (f) {
@@ -3672,18 +3691,18 @@ var FlMMLWorker;
             MML.prototype.getSInt = function (def) {
                 var c = this.getChar();
                 var s = 1;
-                if (c === '-') {
+                if (c == '-') {
                     s = -1;
                     this.next();
                 }
-                else if (c === '+')
+                else if (c == '+')
                     this.next();
                 return this.getUInt(def) * s;
             };
             MML.prototype.getDot = function (tick) {
                 var c = this.getChar();
                 var intick = tick;
-                while (c === '.') {
+                while (c == '.') {
                     this.next();
                     intick /= 2;
                     tick += intick;
@@ -3718,7 +3737,7 @@ var FlMMLWorker;
                     var c = this.getCharNext();
                     switch (c) {
                         case '/':
-                            if (this.getChar() === ':') {
+                            if (this.getChar() == ':') {
                                 this.next();
                                 origin[++nest] = this.m_letter - 2;
                                 repeat[nest] = this.getUInt(2);
@@ -3734,7 +3753,7 @@ var FlMMLWorker;
                             }
                             break;
                         case ':':
-                            if (this.getChar() === '/' && nest >= 0) {
+                            if (this.getChar() == '/' && nest >= 0) {
                                 this.next();
                                 var contents = this.m_string.substring(start[nest], this.m_letter - 2);
                                 var newstr = this.m_string.substring(0, origin[nest]);
@@ -3761,7 +3780,7 @@ var FlMMLWorker;
             MML.prototype.replaceMacro = function (macroTable) {
                 for (var m in macroTable) {
                     var macro = macroTable[m];
-                    if (this.m_string.substr(this.m_letter, macro.id.length) === macro.id) {
+                    if (this.m_string.substr(this.m_letter, macro.id.length) == macro.id) {
                         var start = this.m_letter, last = this.m_letter + macro.id.length, code = macro.code;
                         this.m_letter += macro.id.length;
                         var c = this.getCharNext();
@@ -3771,12 +3790,12 @@ var FlMMLWorker;
                         var args = new Array();
                         var q = 0;
                         if (macro.args.length > 0) {
-                            if (c === "{") {
+                            if (c == "{") {
                                 c = this.getCharNext();
-                                while (q === 1 || (c !== "}" && c !== "")) {
-                                    if (c === '"')
+                                while (q == 1 || (c != "}" && c != "")) {
+                                    if (c == '"')
                                         q = 1 - q;
-                                    if (c === "$") {
+                                    if (c == "$") {
                                         this.replaceMacro(macroTable);
                                     }
                                     c = this.getCharNext();
@@ -3785,17 +3804,17 @@ var FlMMLWorker;
                                 var argstr = this.m_string.substring(start + macro.id.length + 1, last - 1);
                                 var curarg = "", quoted = false;
                                 for (var pos = 0; pos < argstr.length; pos++) {
-                                    if (!quoted && argstr.charAt(pos) === '"') {
+                                    if (!quoted && argstr.charAt(pos) == '"') {
                                         quoted = true;
                                     }
-                                    else if (quoted && (pos + 1) < argstr.length && argstr.charAt(pos) === '\\' && argstr.charAt(pos + 1) === '"') {
+                                    else if (quoted && (pos + 1) < argstr.length && argstr.charAt(pos) == '\\' && argstr.charAt(pos + 1) == '"') {
                                         curarg += '"';
                                         pos++;
                                     }
-                                    else if (quoted && argstr.charAt(pos) === '"') {
+                                    else if (quoted && argstr.charAt(pos) == '"') {
                                         quoted = false;
                                     }
-                                    else if (!quoted && argstr.charAt(pos) === ',') {
+                                    else if (!quoted && argstr.charAt(pos) == ',') {
                                         args.push(curarg);
                                         curarg = "";
                                     }
@@ -3813,7 +3832,7 @@ var FlMMLWorker;
                                     if (j >= macro.args.length) {
                                         break;
                                     }
-                                    if (code.substr(i, macro.args[j].id.length + 1) === ("%" + macro.args[j].id)) {
+                                    if (code.substr(i, macro.args[j].id.length + 1) == ("%" + macro.args[j].id)) {
                                         code = code.substring(0, i) + code.substring(i).replace("%" + macro.args[j].id, args[macro.args[j].index]);
                                         i += args[macro.args[j].index].length - 1;
                                         break;
@@ -3885,7 +3904,7 @@ var FlMMLWorker;
                             this.m_polyVoice = Math.min(Math.max(1, parseInt(ss[0])), MML.MAX_POLYVOICE);
                         }
                         for (i = 1; i < ss.length; i++) {
-                            if (ss[i] === "force") {
+                            if (ss[i] == "force") {
                                 this.m_polyForce = true;
                             }
                         }
@@ -3982,10 +4001,10 @@ var FlMMLWorker;
                                         }
                                         var idPart = this.m_string.substring(start, argspos);
                                         var regexResult = idPart.match("[a-zA-Z_][a-zA-Z_0-9#\+\(\)]*");
-                                        if (regexResult !== null) {
+                                        if (regexResult != null) {
                                             var id = regexResult[0];
                                             idPart = idPart.replace(regTrimHead, '').replace(regTrimFoot, '');
-                                            if (idPart !== id) {
+                                            if (idPart != id) {
                                                 this.warning(flmml.MWarning.INVALID_MACRO_NAME, idPart);
                                             }
                                             if (id.length > 0) {
@@ -3995,12 +4014,12 @@ var FlMMLWorker;
                                                     args = argstr.split(",");
                                                     for (i = 0; i < args.length; i++) {
                                                         var argid = args[i].match("[a-zA-Z_][a-zA-Z_0-9#\+\(\)]*");
-                                                        args[i] = { id: (argid !== null ? argid[0] : ""), index: i };
+                                                        args[i] = { id: (argid != null ? argid[0] : ""), index: i };
                                                     }
                                                     args.sort(function (a, b) {
                                                         if (a.id.length > b.id.length)
                                                             return -1;
-                                                        if (a.id.length === b.id.length)
+                                                        if (a.id.length == b.id.length)
                                                             return 0;
                                                         return 1;
                                                     });
@@ -4008,9 +4027,9 @@ var FlMMLWorker;
                                                 this.m_letter = nameEnd + 1;
                                                 c = this.getCharNext();
                                                 while (this.m_letter < last) {
-                                                    if (c === "$") {
+                                                    if (c == "$") {
                                                         if (!this.replaceMacro(macroTable)) {
-                                                            if (this.m_string.substr(this.m_letter, id.length) === id) {
+                                                            if (this.m_string.substr(this.m_letter, id.length) == id) {
                                                                 this.m_letter--;
                                                                 this.m_string = MML.remove(this.m_string, this.m_letter, this.m_letter + id.length);
                                                                 this.warning(flmml.MWarning.RECURSIVE_MACRO, id);
@@ -4022,7 +4041,7 @@ var FlMMLWorker;
                                                 }
                                                 var pos = 0;
                                                 for (; pos < macroTable.length; pos++) {
-                                                    if (macroTable[pos].id === id) {
+                                                    if (macroTable[pos].id == id) {
                                                         macroTable.splice(pos, 1);
                                                         pos--;
                                                         continue;
@@ -4116,14 +4135,14 @@ var FlMMLWorker;
                     var c = this.getCharNext();
                     switch (c) {
                         case '/':
-                            if (this.getChar() === '*') {
+                            if (this.getChar() == '*') {
                                 if (commentStart < 0)
                                     commentStart = this.m_letter - 1;
                                 this.next();
                             }
                             break;
                         case '*':
-                            if (this.getChar() === '/') {
+                            if (this.getChar() == '/') {
                                 if (commentStart >= 0) {
                                     this.m_string = MML.remove(this.m_string, commentStart, this.m_letter);
                                     this.m_letter = commentStart;
@@ -4143,7 +4162,7 @@ var FlMMLWorker;
                 this.begin();
                 commentStart = -1;
                 while (this.m_letter < this.m_string.length) {
-                    if (this.getCharNext() === '`') {
+                    if (this.getCharNext() == '`') {
                         if (commentStart < 0) {
                             commentStart = this.m_letter - 1;
                         }
@@ -4182,7 +4201,7 @@ var FlMMLWorker;
                             }
                             tick = 0;
                             while (1) {
-                                if (this.getChar() !== '%') {
+                                if (this.getChar() != '%') {
                                     lenMode = 0;
                                 }
                                 else {
@@ -4190,15 +4209,15 @@ var FlMMLWorker;
                                     this.next();
                                 }
                                 len = this.getUInt(0);
-                                if (len === 0) {
-                                    if (tick === 0)
+                                if (len == 0) {
+                                    if (tick == 0)
                                         tick = defLen;
                                     break;
                                 }
                                 tick2 = (lenMode ? len : this.len2tick(len));
                                 tick2 = this.getDot(tick2);
                                 tick += tick2;
-                                if (this.getChar() !== '&') {
+                                if (this.getChar() != '&') {
                                     break;
                                 }
                                 this.next();
@@ -4218,13 +4237,13 @@ var FlMMLWorker;
                                     case '-':
                                         break;
                                     default:
-                                        if ((c >= 'a' && c <= 'g') || c === 'r') {
-                                            if (noteOn === 0) {
+                                        if ((c >= 'a' && c <= 'g') || c == 'r') {
+                                            if (noteOn == 0) {
                                                 noteOn = 1;
                                                 break;
                                             }
                                         }
-                                        if (noteOn === 1) {
+                                        if (noteOn == 1) {
                                             noteTick = Math.round(Number(noteCount) * tickdiv - Number(tick2));
                                             noteCount++;
                                             tick2 += noteTick;
@@ -4236,12 +4255,12 @@ var FlMMLWorker;
                                             newstr += noteTick.toString();
                                         }
                                         noteOn = 0;
-                                        if ((c >= 'a' && c <= 'g') || c === 'r') {
+                                        if ((c >= 'a' && c <= 'g') || c == 'r') {
                                             noteOn = 1;
                                         }
                                         break;
                                 }
-                                if (c !== '}') {
+                                if (c != '}') {
                                     newstr += c;
                                 }
                             }
@@ -4251,7 +4270,7 @@ var FlMMLWorker;
                             GroupNotesStart = -1;
                             break;
                         default:
-                            if ((c >= 'a' && c <= 'g') || c === 'r') {
+                            if ((c >= 'a' && c <= 'g') || c == 'r') {
                                 noteCount++;
                             }
                             break;
@@ -4261,7 +4280,7 @@ var FlMMLWorker;
                     this.warning(flmml.MWarning.UNCLOSED_GROUPNOTES, "");
             };
             MML.isWhitespace = function (c) {
-                if (c === " " || c === "\t" || c === "\n" || c === "\r" || c === "　") {
+                if (c == " " || c == "\t" || c == "\n" || c == "\r" || c == "　") {
                     return true;
                 }
                 else {
@@ -4317,7 +4336,7 @@ var FlMMLWorker;
                 this.processRepeat();
                 this.processGroupNotes();
                 this.process();
-                if (this.m_tracks[this.m_tracks.length - 1].getNumEvents() === 0)
+                if (this.m_tracks[this.m_tracks.length - 1].getNumEvents() == 0)
                     this.m_tracks.pop();
                 this.m_tracks[flmml.MTrack.TEMPO_TRACK].conduct(this.m_tracks);
                 for (var i = flmml.MTrack.TEMPO_TRACK; i < this.m_tracks.length; i++) {
@@ -4452,13 +4471,13 @@ var FlMMLWorker;
                     else if (0x30 <= code && code <= 0x39) {
                         code -= 0x30 - 26 - 26;
                     }
-                    else if (0x2b === code) {
+                    else if (0x2b == code) {
                         code = 26 + 26 + 10;
                     }
-                    else if (0x2f === code) {
+                    else if (0x2f == code) {
                         code = 26 + 26 + 10 + 1;
                     }
-                    else if (0x3d === code) {
+                    else if (0x3d == code) {
                         code = 0;
                     }
                     else {
@@ -4485,7 +4504,7 @@ var FlMMLWorker;
                 if (MOscFcDpcm.s_length[waveNo] > MOscFcDpcm.FC_DPCM_MAX_LEN * 8) {
                     MOscFcDpcm.s_length[waveNo] = MOscFcDpcm.FC_DPCM_MAX_LEN * 8;
                 }
-                if (MOscFcDpcm.s_length[waveNo] === 0) {
+                if (MOscFcDpcm.s_length[waveNo] == 0) {
                     MOscFcDpcm.s_length[waveNo] = 8;
                 }
             };
@@ -4512,7 +4531,7 @@ var FlMMLWorker;
                         this.m_address++;
                     }
                     this.m_length--;
-                    if (this.m_length === 0) {
+                    if (this.m_length == 0) {
                         if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                             this.m_address = 0;
                             this.m_bit = 0;
@@ -4554,7 +4573,7 @@ var FlMMLWorker;
                                 this.m_address++;
                             }
                             this.m_length--;
-                            if (this.m_length === 0) {
+                            if (this.m_length == 0) {
                                 if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                     this.m_address = 0;
                                     this.m_bit = 0;
@@ -4591,7 +4610,7 @@ var FlMMLWorker;
                                 this.m_address++;
                             }
                             this.m_length--;
-                            if (this.m_length === 0) {
+                            if (this.m_length == 0) {
                                 if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                     this.m_address = 0;
                                     this.m_bit = 0;
@@ -4631,7 +4650,7 @@ var FlMMLWorker;
                                     this.m_address++;
                                 }
                                 this.m_length--;
-                                if (this.m_length === 0) {
+                                if (this.m_length == 0) {
                                     if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
                                         this.m_address = 0;
                                         this.m_bit = 0;
@@ -4881,7 +4900,7 @@ var FlMMLWorker;
                 var gbr = 0xffff;
                 var output = 1;
                 for (var i = 0; i < MOscGbSNoise.GB_NOISE_TABLE_LEN; i++) {
-                    if (gbr === 0)
+                    if (gbr == 0)
                         gbr = 1;
                     gbr += gbr + (((gbr >> 6) ^ (gbr >> 5)) & 1) | 0;
                     output ^= gbr & 1;
@@ -4986,7 +5005,7 @@ var FlMMLWorker;
                 var gbr = 0xffff;
                 var output = 1;
                 for (var i = 0; i < MOscGbLNoise.GB_NOISE_TABLE_LEN; i++) {
-                    if (gbr === 0)
+                    if (gbr == 0)
                         gbr = 1;
                     gbr += gbr + (((gbr >> 14) ^ (gbr >> 13)) & 1) | 0;
                     output ^= gbr & 1;
@@ -5356,7 +5375,7 @@ var FlMMLWorker;
                 this.MakeTable();
             };
             Chip.prototype.SetRatio = function (ratio) {
-                if (this.ratio_ !== ratio) {
+                if (this.ratio_ != ratio) {
                     this.ratio_ = ratio;
                     this.MakeTable();
                 }
@@ -5390,7 +5409,7 @@ var FlMMLWorker;
                 for (h = 0; h < 4; h++) {
                     var rr = Chip.dt2lv[h] * this.ratio_ / (1 << (2 + fmgenAs.FM.FM_RATIOBITS - fmgenAs.FM.FM_PGBITS));
                     for (l = 0; l < 16; l++) {
-                        var mul = (l !== 0) ? l * 2 : 1;
+                        var mul = (l != 0) ? l * 2 : 1;
                         this.multable_[h][l] = (mul * rr) | 0;
                     }
                 }
@@ -5417,24 +5436,24 @@ var FlMMLWorker;
             };
             Timer.prototype.Count = function (us) {
                 var f = false;
-                if (this.timera_count !== 0) {
+                if (this.timera_count != 0) {
                     this.timera_count -= us << 16;
                     if (this.timera_count <= 0) {
                         f = true;
                         this.TimerA();
                         while (this.timera_count <= 0)
                             this.timera_count += this.timera;
-                        if ((this.regtc & 4) !== 0)
+                        if ((this.regtc & 4) != 0)
                             this.SetStatus(1);
                     }
                 }
-                if (this.timerb_count !== 0) {
+                if (this.timerb_count != 0) {
                     this.timerb_count -= us << 12;
                     if (this.timerb_count <= 0) {
                         f = true;
                         while (this.timerb_count <= 0)
                             this.timerb_count += this.timerb;
-                        if ((this.regtc & 8) !== 0)
+                        if ((this.regtc & 8) != 0)
                             this.SetStatus(2);
                     }
                 }
@@ -5462,14 +5481,14 @@ var FlMMLWorker;
             Timer.prototype.SetTimerControl = function (data) {
                 var tmp = this.regtc ^ data;
                 this.regtc = data | 0;
-                if ((data & 0x10) !== 0)
+                if ((data & 0x10) != 0)
                     this.ResetStatus(1);
-                if ((data & 0x20) !== 0)
+                if ((data & 0x20) != 0)
                     this.ResetStatus(2);
-                if ((tmp & 0x01) !== 0)
-                    this.timera_count = ((data & 1) !== 0) ? this.timera : 0;
-                if ((tmp & 0x02) !== 0)
-                    this.timerb_count = ((data & 2) !== 0) ? this.timerb : 0;
+                if ((tmp & 0x01) != 0)
+                    this.timera_count = ((data & 1) != 0) ? this.timera : 0;
+                if ((tmp & 0x02) != 0)
+                    this.timerb_count = ((data & 2) != 0) ? this.timerb : 0;
             };
             Timer.prototype.TimerA = function () { };
             return Timer;
@@ -5574,7 +5593,7 @@ var FlMMLWorker;
                 this.op[3].Prepare();
                 this.pms = fmgenAs.FM.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
                 var key = (this.op[0].IsOn() || this.op[1].IsOn() || this.op[2].IsOn() || this.op[3].IsOn()) ? 1 : 0;
-                var lfo = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) !== 0 ? 2 : 0;
+                var lfo = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) != 0 ? 2 : 0;
                 return key | lfo;
             };
             Channel4.prototype.SetFNum = function (f) {
@@ -5596,19 +5615,19 @@ var FlMMLWorker;
                 this.op[3].SetDPBN(dp, bn);
             };
             Channel4.prototype.KeyControl = function (key) {
-                if ((key & 0x1) !== 0)
+                if ((key & 0x1) != 0)
                     this.op[0].KeyOn();
                 else
                     this.op[0].KeyOff();
-                if ((key & 0x2) !== 0)
+                if ((key & 0x2) != 0)
                     this.op[1].KeyOn();
                 else
                     this.op[1].KeyOff();
-                if ((key & 0x4) !== 0)
+                if ((key & 0x4) != 0)
                     this.op[2].KeyOn();
                 else
                     this.op[2].KeyOff();
-                if ((key & 0x8) !== 0)
+                if ((key & 0x8) != 0)
                     this.op[3].KeyOn();
                 else
                     this.op[3].KeyOff();
@@ -5855,7 +5874,7 @@ var FlMMLWorker;
                                 a = c < 0x100 ? 0xff - c : c - 0x100;
                                 break;
                             case 3:
-                                if ((c & 3) === 0)
+                                if ((c & 3) == 0)
                                     r = (this.rand() / 17) & 0xff;
                                 a = r;
                                 p = r - 0x80;
@@ -5884,7 +5903,7 @@ var FlMMLWorker;
             };
             OPM.prototype.SetChannelMask = function (mask) {
                 for (var i = 0; i < 8; i++)
-                    this.ch[i].Mute((mask & (1 << i)) !== 0);
+                    this.ch[i].Mute((mask & (1 << i)) != 0);
             };
             OPM.prototype.Reset = function () {
                 var i;
@@ -5905,7 +5924,7 @@ var FlMMLWorker;
                 this.chip.SetRatio(this.rateratio);
             };
             OPM.prototype.TimerA = function () {
-                if ((this.regtc & 0x80) !== 0) {
+                if ((this.regtc & 0x80) != 0) {
                     for (var i = 0; i < 8; i++) {
                         this.ch[i].KeyControl(0x0);
                         this.ch[i].KeyControl(0xf);
@@ -5926,15 +5945,15 @@ var FlMMLWorker;
                 return this.status & 0x03;
             };
             OPM.prototype.SetStatus = function (bits) {
-                if ((this.status & bits) === 0) {
+                if ((this.status & bits) == 0) {
                     this.status |= bits;
                     this.Intr(true);
                 }
             };
             OPM.prototype.ResetStatus = function (bits) {
-                if ((this.status & bits) !== 0) {
+                if ((this.status & bits) != 0) {
                     this.status &= ~bits;
-                    if (this.status === 0)
+                    if (this.status == 0)
                         this.Intr(false);
                 }
             };
@@ -5944,25 +5963,25 @@ var FlMMLWorker;
                 var c = addr & 7;
                 switch (addr & 0xff) {
                     case 0x01:
-                        if ((data & 2) !== 0) {
+                        if ((data & 2) != 0) {
                             this.lfo_count_ = 0;
                             this.lfo_count_prev_ = ~0;
                         }
                         this.reg01 = data;
                         break;
                     case 0x08:
-                        if ((this.regtc & 0x80) === 0) {
+                        if ((this.regtc & 0x80) == 0) {
                             this.ch[data & 7].KeyControl(data >> 3);
                         }
                         else {
                             c = data & 7;
-                            if ((data & 0x08) === 0)
+                            if ((data & 0x08) == 0)
                                 this.ch[c].op[0].KeyOff();
-                            if ((data & 0x10) === 0)
+                            if ((data & 0x10) == 0)
                                 this.ch[c].op[1].KeyOff();
-                            if ((data & 0x20) === 0)
+                            if ((data & 0x20) == 0)
                                 this.ch[c].op[2].KeyOff();
-                            if ((data & 0x40) === 0)
+                            if ((data & 0x40) == 0)
                                 this.ch[c].op[3].KeyOff();
                         }
                         break;
@@ -5981,7 +6000,7 @@ var FlMMLWorker;
                         this.lfo_count_diff_ = this.rateratio * ((16 + (this.lfofreq & 15)) << (16 - 4 - fmgenAs.FM.FM_RATIOBITS)) / (1 << (15 - (this.lfofreq >> 4)));
                         break;
                     case 0x19:
-                        if ((data & 0x80) !== 0)
+                        if ((data & 0x80) != 0)
                             this.pmd = data & 0x7f;
                         else
                             this.amd = data & 0x7f;
@@ -6052,7 +6071,7 @@ var FlMMLWorker;
                         op.SetMULTI(data & 0x0f);
                         break;
                     case 3:
-                        op.SetTL(data & 0x7f, (this.regtc & 0x80) !== 0);
+                        op.SetTL(data & 0x7f, (this.regtc & 0x80) != 0);
                         break;
                     case 4:
                         op.SetKS((data >> 6) & 3);
@@ -6060,7 +6079,7 @@ var FlMMLWorker;
                         break;
                     case 5:
                         op.SetDR((data & 0x1f) * 2);
-                        op.SetAMON((data & 0x80) !== 0);
+                        op.SetAMON((data & 0x80) != 0);
                         break;
                     case 6:
                         op.SetSR((data & 0x1f) * 2);
@@ -6074,7 +6093,7 @@ var FlMMLWorker;
             };
             OPM.prototype.LFO = function () {
                 var c;
-                if (this.lfowaveform !== 3) {
+                if (this.lfowaveform != 3) {
                     {
                         c = (this.lfo_count_ >> 15) & 0x1fe;
                         this.chip.SetPML(OPM.pmtable[this.lfowaveform][c] * this.pmd / 128 + 0x80 | 0);
@@ -6082,7 +6101,7 @@ var FlMMLWorker;
                     }
                 }
                 else {
-                    if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                    if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) != 0) {
                         c = (OPM.rand() / 17) & 0xff;
                         this.chip.SetPML((c - 0x80) * this.pmd / 128 + 0x80 | 0);
                         this.chip.SetAML(c * this.amd / 128 | 0);
@@ -6090,7 +6109,7 @@ var FlMMLWorker;
                 }
                 this.lfo_count_prev_ = this.lfo_count_;
                 this.lfo_step_++;
-                if ((this.lfo_step_ & 7) === 0) {
+                if ((this.lfo_step_ & 7) == 0) {
                     this.lfo_count_ += this.lfo_count_diff_;
                 }
             };
@@ -6098,54 +6117,54 @@ var FlMMLWorker;
                 this.noisecount += 2 * this.rateratio;
                 if (this.noisecount >= (32 << fmgenAs.FM.FM_RATIOBITS)) {
                     var n = 32 - (this.noisedelta & 0x1f);
-                    if (n === 1)
+                    if (n == 1)
                         n = 2;
                     this.noisecount = this.noisecount - (n << fmgenAs.FM.FM_RATIOBITS);
-                    if ((this.noisedelta & 0x1f) === 0x1f)
+                    if ((this.noisedelta & 0x1f) == 0x1f)
                         this.noisecount -= fmgenAs.FM.FM_RATIOBITS;
-                    this.noise = (this.noise >> 1) ^ ((this.noise & 1) !== 0 ? 0x8408 : 0);
+                    this.noise = (this.noise >> 1) ^ ((this.noise & 1) != 0 ? 0x8408 : 0);
                 }
                 return this.noise;
             };
             OPM.prototype.MixSub = function (activech, ibuf) {
-                if ((activech & 0x4000) !== 0)
+                if ((activech & 0x4000) != 0)
                     ibuf[this.pan[0]] = this.ch[0].Calc();
-                if ((activech & 0x1000) !== 0)
+                if ((activech & 0x1000) != 0)
                     ibuf[this.pan[1]] += this.ch[1].Calc();
-                if ((activech & 0x0400) !== 0)
+                if ((activech & 0x0400) != 0)
                     ibuf[this.pan[2]] += this.ch[2].Calc();
-                if ((activech & 0x0100) !== 0)
+                if ((activech & 0x0100) != 0)
                     ibuf[this.pan[3]] += this.ch[3].Calc();
-                if ((activech & 0x0040) !== 0)
+                if ((activech & 0x0040) != 0)
                     ibuf[this.pan[4]] += this.ch[4].Calc();
-                if ((activech & 0x0010) !== 0)
+                if ((activech & 0x0010) != 0)
                     ibuf[this.pan[5]] += this.ch[5].Calc();
-                if ((activech & 0x0004) !== 0)
+                if ((activech & 0x0004) != 0)
                     ibuf[this.pan[6]] += this.ch[6].Calc();
-                if ((activech & 0x0001) !== 0) {
-                    if ((this.noisedelta & 0x80) !== 0)
+                if ((activech & 0x0001) != 0) {
+                    if ((this.noisedelta & 0x80) != 0)
                         ibuf[this.pan[7]] += this.ch[7].CalcN(this.Noise());
                     else
                         ibuf[this.pan[7]] += this.ch[7].Calc();
                 }
             };
             OPM.prototype.MixSubL = function (activech, ibuf) {
-                if ((activech & 0x4000) !== 0)
+                if ((activech & 0x4000) != 0)
                     ibuf[this.pan[0]] = this.ch[0].CalcL();
-                if ((activech & 0x1000) !== 0)
+                if ((activech & 0x1000) != 0)
                     ibuf[this.pan[1]] += this.ch[1].CalcL();
-                if ((activech & 0x0400) !== 0)
+                if ((activech & 0x0400) != 0)
                     ibuf[this.pan[2]] += this.ch[2].CalcL();
-                if ((activech & 0x0100) !== 0)
+                if ((activech & 0x0100) != 0)
                     ibuf[this.pan[3]] += this.ch[3].CalcL();
-                if ((activech & 0x0040) !== 0)
+                if ((activech & 0x0040) != 0)
                     ibuf[this.pan[4]] += this.ch[4].CalcL();
-                if ((activech & 0x0010) !== 0)
+                if ((activech & 0x0010) != 0)
                     ibuf[this.pan[5]] += this.ch[5].CalcL();
-                if ((activech & 0x0004) !== 0)
+                if ((activech & 0x0004) != 0)
                     ibuf[this.pan[6]] += this.ch[6].CalcL();
-                if ((activech & 0x0001) !== 0) {
-                    if ((this.noisedelta & 0x80) !== 0)
+                if ((activech & 0x0001) != 0) {
+                    if ((this.noisedelta & 0x80) != 0)
                         ibuf[this.pan[7]] += this.ch[7].CalcLN(this.Noise());
                     else
                         ibuf[this.pan[7]] += this.ch[7].CalcL();
@@ -6156,8 +6175,8 @@ var FlMMLWorker;
                 var activech = 0;
                 for (i = 0; i < 8; i++)
                     activech = (activech << 2) | this.ch[i].Prepare();
-                if ((activech & 0x5555) !== 0) {
-                    if ((this.reg01 & 0x02) !== 0)
+                if ((activech & 0x5555) != 0) {
+                    if ((this.reg01 & 0x02) != 0)
                         activech &= 0x5555;
                     var a, c, r, o, ii;
                     var pgex, pgin, sino;
@@ -6168,7 +6187,7 @@ var FlMMLWorker;
                     var op2 = this.ch[0].op[2];
                     var op3 = this.ch[0].op[3];
                     for (i = start; i < start + nsamples; i++) {
-                        if (this.lfowaveform !== 3) {
+                        if (this.lfowaveform != 3) {
                             {
                                 c = (this.lfo_count_ >> 15) & 0x1fe;
                                 this.chip.pml_ = (OPM.pmtable[this.lfowaveform][c] * this.pmd / 128 + 0x80) & (fmgenAs.FM.FM_LFOENTS - 1);
@@ -6176,7 +6195,7 @@ var FlMMLWorker;
                             }
                         }
                         else {
-                            if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                            if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) != 0) {
                                 c = (OPM.rand() / 17) & 0xff;
                                 this.chip.pml_ = ((c - 0x80) * this.pmd / 128 + 0x80) & (fmgenAs.FM.FM_LFOENTS - 1);
                                 this.chip.aml_ = (c * this.amd / 128) & (fmgenAs.FM.FM_LFOENTS - 1);
@@ -6184,19 +6203,19 @@ var FlMMLWorker;
                         }
                         this.lfo_count_prev_ = this.lfo_count_;
                         this.lfo_step_++;
-                        if ((this.lfo_step_ & 7) === 0) {
+                        if ((this.lfo_step_ & 7) == 0) {
                             this.lfo_count_ += this.lfo_count_diff_;
                         }
                         r = 0;
-                        if ((activech & 0x4000) !== 0) {
-                            if ((activech & 0xaaaa) !== 0) {
+                        if ((activech & 0x4000) != 0) {
+                            if ((activech & 0xaaaa) != 0) {
                                 this.ch[0].chip_.pmv_ = this.ch[0].pms[this.ch[0].chip_.pml_];
                                 this.buf[1] = this.buf[2] = this.buf[3] = 0;
                                 this.buf[0] = op0.out_;
                                 op0.eg_count_ -= op0.eg_count_diff_;
                                 if (op0.eg_count_ <= 0) {
                                     op0.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op0.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op0.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op0.eg_rate_][op0.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op0.eg_level_ -= 1 + (op0.eg_level_ >> c);
@@ -6232,7 +6251,7 @@ var FlMMLWorker;
                                 op1.eg_count_ -= op1.eg_count_diff_;
                                 if (op1.eg_count_ <= 0) {
                                     op1.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op1.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op1.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op1.eg_rate_][op1.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op1.eg_level_ -= 1 + (op1.eg_level_ >> c);
@@ -6267,7 +6286,7 @@ var FlMMLWorker;
                                 op2.eg_count_ -= op2.eg_count_diff_;
                                 if (op2.eg_count_ <= 0) {
                                     op2.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op2.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op2.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op2.eg_rate_][op2.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op2.eg_level_ -= 1 + (op2.eg_level_ >> c);
@@ -6302,7 +6321,7 @@ var FlMMLWorker;
                                 op3.eg_count_ -= op3.eg_count_diff_;
                                 if (op3.eg_count_ <= 0) {
                                     op3.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op3.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op3.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op3.eg_rate_][op3.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op3.eg_level_ -= 1 + (op3.eg_level_ >> c);
@@ -6341,7 +6360,7 @@ var FlMMLWorker;
                                 op0.eg_count_ -= op0.eg_count_diff_;
                                 if (op0.eg_count_ <= 0) {
                                     op0.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op0.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op0.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op0.eg_rate_][op0.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op0.eg_level_ -= 1 + (op0.eg_level_ >> c);
@@ -6377,7 +6396,7 @@ var FlMMLWorker;
                                 op1.eg_count_ -= op1.eg_count_diff_;
                                 if (op1.eg_count_ <= 0) {
                                     op1.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op1.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op1.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op1.eg_rate_][op1.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op1.eg_level_ -= 1 + (op1.eg_level_ >> c);
@@ -6412,7 +6431,7 @@ var FlMMLWorker;
                                 op2.eg_count_ -= op2.eg_count_diff_;
                                 if (op2.eg_count_ <= 0) {
                                     op2.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op2.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op2.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op2.eg_rate_][op2.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op2.eg_level_ -= 1 + (op2.eg_level_ >> c);
@@ -6447,7 +6466,7 @@ var FlMMLWorker;
                                 op3.eg_count_ -= op3.eg_count_diff_;
                                 if (op3.eg_count_ <= 0) {
                                     op3.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                                    if (op3.eg_phase_ === fmgenAs.EGPhase.attack) {
+                                    if (op3.eg_phase_ == fmgenAs.EGPhase.attack) {
                                         c = fmgenAs.Operator.attacktable[op3.eg_rate_][op3.eg_curve_count_ & 7];
                                         if (c >= 0) {
                                             op3.eg_level_ -= 1 + (op3.eg_level_ >> c);
@@ -6497,14 +6516,14 @@ var FlMMLWorker;
                     case 1:
                     case 2:
                     case 3:
-                        return (c4.op[3].eg_phase_ !== fmgenAs.EGPhase.off);
+                        return (c4.op[3].eg_phase_ != fmgenAs.EGPhase.off);
                     case 4:
-                        return (c4.op[1].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ !== fmgenAs.EGPhase.off);
+                        return (c4.op[1].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ != fmgenAs.EGPhase.off);
                     case 5:
                     case 6:
-                        return (c4.op[1].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[2].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ !== fmgenAs.EGPhase.off);
+                        return (c4.op[1].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[2].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ != fmgenAs.EGPhase.off);
                     case 7:
-                        return (c4.op[0].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[1].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[2].eg_phase_ !== fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ !== fmgenAs.EGPhase.off);
+                        return (c4.op[0].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[1].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[2].eg_phase_ != fmgenAs.EGPhase.off) || (c4.op[3].eg_phase_ != fmgenAs.EGPhase.off);
                 }
                 return false;
             };
@@ -6596,7 +6615,7 @@ var FlMMLWorker;
                 this.param_changed_ = true;
             };
             Operator.prototype.Prepare = function () {
-                if (this.param_changed_ === false) {
+                if (this.param_changed_ == false) {
                     return;
                 }
                 this.param_changed_ = false;
@@ -6606,21 +6625,21 @@ var FlMMLWorker;
                 this.tl_out_ = this.mute_ ? 0x3ff : this.tl_ * 8;
                 switch (this.eg_phase_) {
                     case fmgenAs.EGPhase.attack:
-                        this.SetEGRate(this.ar_ !== 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
+                        this.SetEGRate(this.ar_ != 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
                         break;
                     case fmgenAs.EGPhase.decay:
-                        this.SetEGRate(this.dr_ !== 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
+                        this.SetEGRate(this.dr_ != 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
                         this.eg_level_on_next_phase_ = this.sl_ * 8;
                         break;
                     case fmgenAs.EGPhase.sustain:
-                        this.SetEGRate(this.sr_ !== 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
+                        this.SetEGRate(this.sr_ != 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
                         break;
                     case fmgenAs.EGPhase.release:
                         this.SetEGRate(Math.min(63, this.rr_ + this.key_scale_rate_));
                         break;
                 }
-                if (this.ssg_type_ !== 0 && (this.eg_phase_ !== fmgenAs.EGPhase.release)) {
-                    var m = (this.ar_ >= ((this.ssg_type_ === 8 || this.ssg_type_ === 12) ? 56 : 60)) ? 1 : 0;
+                if (this.ssg_type_ != 0 && (this.eg_phase_ != fmgenAs.EGPhase.release)) {
+                    var m = (this.ar_ >= ((this.ssg_type_ == 8 || this.ssg_type_ == 12) ? 56 : 60)) ? 1 : 0;
                     this.ssg_offset_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][0] * 0x200;
                     this.ssg_vector_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][1];
                 }
@@ -6631,40 +6650,40 @@ var FlMMLWorker;
                 switch (nextphase) {
                     case fmgenAs.EGPhase.attack:
                         this.tl_ = this.tl_latch_;
-                        if (this.ssg_type_ !== 0) {
+                        if (this.ssg_type_ != 0) {
                             this.ssg_phase_ = this.ssg_phase_ + 1;
                             if (this.ssg_phase_ > 2)
                                 this.ssg_phase_ = 1;
-                            var m = (this.ar_ >= ((this.ssg_type_ === 8 || this.ssg_type_ === 12) ? 56 : 60)) ? 1 : 0;
+                            var m = (this.ar_ >= ((this.ssg_type_ == 8 || this.ssg_type_ == 12) ? 56 : 60)) ? 1 : 0;
                             this.ssg_offset_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][0] * 0x200;
                             this.ssg_vector_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][1];
                         }
                         if ((this.ar_ + this.key_scale_rate_) < 62) {
-                            this.SetEGRate(this.ar_ !== 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
+                            this.SetEGRate(this.ar_ != 0 ? Math.min(63, this.ar_ + this.key_scale_rate_) : 0);
                             this.eg_phase_ = fmgenAs.EGPhase.attack;
                             break;
                         }
                     case fmgenAs.EGPhase.decay:
-                        if (this.sl_ !== 0) {
+                        if (this.sl_ != 0) {
                             this.eg_level_ = 0;
-                            this.eg_level_on_next_phase_ = ((this.ssg_type_ !== 0) ? Math.min(this.sl_ * 8, 0x200) : this.sl_ * 8);
-                            this.SetEGRate(this.dr_ !== 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
+                            this.eg_level_on_next_phase_ = ((this.ssg_type_ != 0) ? Math.min(this.sl_ * 8, 0x200) : this.sl_ * 8);
+                            this.SetEGRate(this.dr_ != 0 ? Math.min(63, this.dr_ + this.key_scale_rate_) : 0);
                             this.eg_phase_ = fmgenAs.EGPhase.decay;
                             break;
                         }
                     case fmgenAs.EGPhase.sustain:
                         this.eg_level_ = this.sl_ * 8;
-                        this.eg_level_on_next_phase_ = (this.ssg_type_ !== 0) ? 0x200 : 0x400;
-                        this.SetEGRate(this.sr_ !== 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
+                        this.eg_level_on_next_phase_ = (this.ssg_type_ != 0) ? 0x200 : 0x400;
+                        this.SetEGRate(this.sr_ != 0 ? Math.min(63, this.sr_ + this.key_scale_rate_) : 0);
                         this.eg_phase_ = fmgenAs.EGPhase.sustain;
                         break;
                     case fmgenAs.EGPhase.release:
-                        if (this.ssg_type_ !== 0) {
+                        if (this.ssg_type_ != 0) {
                             this.eg_level_ = this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
                             this.ssg_vector_ = 1;
                             this.ssg_offset_ = 0;
                         }
-                        if (this.eg_phase_ === fmgenAs.EGPhase.attack || (this.eg_level_ < fmgenAs.FM.FM_EG_BOTTOM)) {
+                        if (this.eg_phase_ == fmgenAs.EGPhase.attack || (this.eg_level_ < fmgenAs.FM.FM_EG_BOTTOM)) {
                             this.eg_level_on_next_phase_ = 0x400;
                             this.SetEGRate(Math.min(63, this.rr_ + this.key_scale_rate_));
                             this.eg_phase_ = fmgenAs.EGPhase.release;
@@ -6693,7 +6712,7 @@ var FlMMLWorker;
             };
             Operator.prototype.EGUpdate = function () {
                 var a;
-                if (this.ssg_type_ === 0)
+                if (this.ssg_type_ == 0)
                     a = this.tl_out_ + this.eg_level_;
                 else
                     a = this.tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
@@ -6708,7 +6727,7 @@ var FlMMLWorker;
             };
             Operator.prototype.EGCalc = function () {
                 this.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                if (this.eg_phase_ === fmgenAs.EGPhase.attack) {
+                if (this.eg_phase_ == fmgenAs.EGPhase.attack) {
                     var c = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
                         this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -6718,7 +6737,7 @@ var FlMMLWorker;
                     this.EGUpdate();
                 }
                 else {
-                    if (this.ssg_type_ === 0) {
+                    if (this.ssg_type_ == 0) {
                         this.eg_level_ += Operator.decaytable1[this.eg_rate_][this.eg_curve_count_ & 7];
                         if (this.eg_level_ >= this.eg_level_on_next_phase_)
                             this.ShiftPhase(this.eg_phase_ + 1);
@@ -6763,7 +6782,7 @@ var FlMMLWorker;
                 this.eg_count_ -= this.eg_count_diff_;
                 if (this.eg_count_ <= 0) {
                     this.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                    if (this.eg_phase_ === fmgenAs.EGPhase.attack) {
+                    if (this.eg_phase_ == fmgenAs.EGPhase.attack) {
                         var c = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                         if (c >= 0) {
                             this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -6799,7 +6818,7 @@ var FlMMLWorker;
                 this.eg_count_ -= this.eg_count_diff_;
                 if (this.eg_count_ <= 0) {
                     this.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                    if (this.eg_phase_ === fmgenAs.EGPhase.attack) {
+                    if (this.eg_phase_ == fmgenAs.EGPhase.attack) {
                         var c = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                         if (c >= 0) {
                             this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -6841,7 +6860,7 @@ var FlMMLWorker;
                 this.eg_count_ -= this.eg_count_diff_;
                 if (this.eg_count_ <= 0) {
                     this.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                    if (this.eg_phase_ === fmgenAs.EGPhase.attack) {
+                    if (this.eg_phase_ == fmgenAs.EGPhase.attack) {
                         var c = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                         if (c >= 0) {
                             this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -6880,7 +6899,7 @@ var FlMMLWorker;
                 this.eg_count_ -= this.eg_count_diff_;
                 if (this.eg_count_ <= 0) {
                     this.eg_count_ = (2047 * 3) << fmgenAs.FM.FM_RATIOBITS;
-                    if (this.eg_phase_ === fmgenAs.EGPhase.attack) {
+                    if (this.eg_phase_ == fmgenAs.EGPhase.attack) {
                         var c = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                         if (c >= 0) {
                             this.eg_level_ -= 1 + (this.eg_level_ >> c);
@@ -6921,7 +6940,7 @@ var FlMMLWorker;
             Operator.prototype.KeyOn = function () {
                 if (!this.keyon_) {
                     this.keyon_ = true;
-                    if (this.eg_phase_ === fmgenAs.EGPhase.off || this.eg_phase_ === fmgenAs.EGPhase.release) {
+                    if (this.eg_phase_ == fmgenAs.EGPhase.off || this.eg_phase_ == fmgenAs.EGPhase.release) {
                         this.ssg_phase_ = -1;
                         this.ShiftPhase(fmgenAs.EGPhase.attack);
                         this.EGUpdate();
@@ -6937,7 +6956,7 @@ var FlMMLWorker;
                 }
             };
             Operator.prototype.IsOn = function () {
-                return this.eg_phase_ !== fmgenAs.EGPhase.off;
+                return this.eg_phase_ != fmgenAs.EGPhase.off;
             };
             Operator.prototype.SetDT = function (dt) {
                 this.detune_ = dt * 0x20;
@@ -7153,7 +7172,7 @@ var FlMMLWorker;
                 this.setWaveNo(0);
             }
             MOscOPM.boot = function () {
-                if (MOscOPM.s_init !== 0)
+                if (MOscOPM.s_init != 0)
                     return;
                 MOscOPM.s_table = new Array(MOscOPM.MAX_WAVE);
                 MOscOPM.s_table[0] = MOscOPM.defTimbre;
@@ -7162,7 +7181,7 @@ var FlMMLWorker;
             };
             MOscOPM.clearTimber = function () {
                 for (var i = 0; i < MOscOPM.s_table.length; i++) {
-                    if (i === 0)
+                    if (i == 0)
                         MOscOPM.s_table[i] = MOscOPM.defTimbre;
                     else
                         MOscOPM.s_table[i] = null;
@@ -7207,7 +7226,7 @@ var FlMMLWorker;
                             b[i] = parseInt(a[j]);
                         }
                         for (; i < 46; i++) {
-                            if ((i - 2) % 11 === 9)
+                            if ((i - 2) % 11 == 9)
                                 b[i] = 0;
                             else
                                 b[i] = parseInt(a[j++]);
@@ -7304,7 +7323,7 @@ var FlMMLWorker;
             MOscOPM.prototype.setWaveNo = function (waveNo) {
                 if (waveNo >= MOscOPM.MAX_WAVE)
                     waveNo = MOscOPM.MAX_WAVE - 1;
-                if (MOscOPM.s_table[waveNo] === null)
+                if (MOscOPM.s_table[waveNo] == null)
                     waveNo = 0;
                 this.m_fm.SetVolume(MOscOPM.s_comGain);
                 this.loadTimbre(MOscOPM.s_table[waveNo]);
@@ -7319,19 +7338,19 @@ var FlMMLWorker;
                 var carrierop = MOscOPM.carrierop;
                 var slottable = MOscOPM.slottable;
                 this.m_velocity = vel;
-                if ((carrierop[this.m_al] & 0x08) !== 0)
+                if ((carrierop[this.m_al] & 0x08) != 0)
                     this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity));
                 else
                     this.SetTL(slottable[0], this.m_tl[0]);
-                if ((carrierop[this.m_al] & 0x10) !== 0)
+                if ((carrierop[this.m_al] & 0x10) != 0)
                     this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity));
                 else
                     this.SetTL(slottable[1], this.m_tl[1]);
-                if ((carrierop[this.m_al] & 0x20) !== 0)
+                if ((carrierop[this.m_al] & 0x20) != 0)
                     this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity));
                 else
                     this.SetTL(slottable[2], this.m_tl[2]);
-                if ((carrierop[this.m_al] & 0x40) !== 0)
+                if ((carrierop[this.m_al] & 0x40) != 0)
                     this.SetTL(slottable[3], this.m_tl[3] + (127 - this.m_velocity));
                 else
                     this.SetTL(slottable[3], this.m_tl[3]);
@@ -7340,7 +7359,7 @@ var FlMMLWorker;
                 this.m_fm.SetExpression(ex);
             };
             MOscOPM.prototype.setFrequency = function (frequency) {
-                if (this.m_frequency === frequency) {
+                if (this.m_frequency == frequency) {
                     return;
                 }
                 _super.prototype.setFrequency.call(this, frequency);
@@ -7786,7 +7805,7 @@ var FlMMLWorker;
                         val = code << 4;
                     }
                 }
-                if (MOscWave.s_length[waveNo] === 0)
+                if (MOscWave.s_length[waveNo] == 0)
                     MOscWave.s_length[waveNo] = 1;
                 MOscWave.s_length[waveNo] = (MOscWave.PHASE_MSK + 1) / MOscWave.s_length[waveNo];
             };
@@ -7871,7 +7890,7 @@ var FlMMLWorker;
             };
             MPolyChannel.prototype.setNoteNo = function (noteNo, tie) {
                 if (tie === void 0) { tie = true; }
-                if (this.m_lastVoice !== null && this.m_lastVoice.isPlaying()) {
+                if (this.m_lastVoice != null && this.m_lastVoice.isPlaying()) {
                     this.m_lastVoice.setNoteNo(noteNo, tie);
                 }
             };
@@ -7892,13 +7911,13 @@ var FlMMLWorker;
                 var vo = null;
                 if (this.getVoiceCount() <= this.m_voiceLimit) {
                     for (i = 0; i < this.m_voiceLen; i++) {
-                        if (this.m_voices[i].isPlaying() === false) {
+                        if (this.m_voices[i].isPlaying() == false) {
                             vo = this.m_voices[i];
                             break;
                         }
                     }
                 }
-                if (vo === null) {
+                if (vo == null) {
                     var minId = Number.MAX_VALUE;
                     for (i = 0; i < this.m_voiceLen; i++) {
                         if (minId > this.m_voices[i].getId()) {
@@ -7914,7 +7933,7 @@ var FlMMLWorker;
             };
             MPolyChannel.prototype.noteOff = function (noteNo) {
                 for (var i = 0; i < this.m_voiceLen; i++) {
-                    if (this.m_voices[i].getNoteNo() === noteNo) {
+                    if (this.m_voices[i].getNoteNo() == noteNo) {
                         this.m_voices[i].noteOff(noteNo);
                     }
                 }
@@ -8054,7 +8073,7 @@ var FlMMLWorker;
                         slave = true;
                     }
                 }
-                if (slave === false) {
+                if (slave == false) {
                     this.m_voices[0].clearOutPipe(max, start, delta);
                 }
             };
@@ -8103,12 +8122,11 @@ var global = this;
 var FlMMLWorker;
 (function (FlMMLWorker) {
     var MML = FlMMLWorker.flmml.MML;
-    var COM_BOOT = 1, COM_PLAY = 2, COM_STOP = 3, COM_PAUSE = 4, COM_BUFFER = 5, COM_COMPCOMP = 6, COM_BUFRING = 7, COM_COMPLETE = 8, COM_SYNCINFO = 9, COM_PLAYSOUND = 10, COM_STOPSOUND = 11, COM_DEBUG = 12;
+    var COM_BOOT = 1, COM_PLAY = 2, COM_STOP = 3, COM_PAUSE = 4, COM_BUFFER = 5, COM_COMPCOMP = 6, COM_BUFRING = 7, COM_COMPLETE = 8, COM_SYNCINFO = 9, COM_PLAYSOUND = 10, COM_STOPSOUND = 11;
     var Worker = (function () {
         function Worker() {
             this.onStopSound = null;
             this.onRequestBuffer = null;
-            this.onInfoTimerBinded = this.onInfoTimer.bind(this);
             global.addEventListener("message", this.onMessage.bind(this));
         }
         Worker.prototype.onMessage = function (e) {
@@ -8117,7 +8135,7 @@ var FlMMLWorker;
                 return;
             switch (type) {
                 case COM_BOOT:
-                    this.sampleRate = data.sampleRate;
+                    this.sampleRate = e.data.sampleRate;
                     this.m_mml = new MML();
                     break;
                 case COM_PLAY:
@@ -8136,16 +8154,7 @@ var FlMMLWorker;
                         this.onRequestBuffer(data);
                     break;
                 case COM_SYNCINFO:
-                    if (typeof data.interval === "number") {
-                        this.infoInterval = data.interval;
-                        clearInterval(this.tIDInfo);
-                        if (this.infoInterval !== 0) {
-                            setInterval(this.onInfoTimerBinded, this.infoInterval);
-                        }
-                    }
-                    else {
-                        this.syncInfo();
-                    }
+                    this.syncInfo();
                     break;
                 case COM_STOPSOUND:
                     if (this.onStopSound)
@@ -8200,7 +8209,6 @@ var FlMMLWorker;
         };
         Worker.prototype.syncInfo = function () {
             var mml = this.m_mml;
-            this.lastInfoTime = this.getTime();
             global.postMessage({
                 type: COM_SYNCINFO,
                 info: {
@@ -8211,18 +8219,6 @@ var FlMMLWorker;
                     voiceCount: mml.getVoiceCount()
                 }
             });
-        };
-        Worker.prototype.onInfoTimer = function () {
-            if (this.m_mml.isPlaying())
-                this.syncInfo();
-        };
-        Worker.prototype.getTime = function () {
-            return global.performance ? global.performance.now() : new Date().getTime();
-        };
-        Worker.prototype.debug = function (str) {
-            if (!str)
-                str = "";
-            global.postMessage({ type: COM_DEBUG, str: str });
         };
         return Worker;
     })();

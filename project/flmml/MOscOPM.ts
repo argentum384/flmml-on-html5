@@ -112,7 +112,7 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscOPM.s_init !== 0) return;
+            if (MOscOPM.s_init != 0) return;
             MOscOPM.s_table = new Array<Array<number>>(MOscOPM.MAX_WAVE);
             MOscOPM.s_table[0] = MOscOPM.defTimbre;
             FM.MakeLFOTable();
@@ -121,7 +121,7 @@ module FlMMLWorker.flmml {
 
         static clearTimber(): void {
             for (var i: number = 0; i < MOscOPM.s_table.length; i++) {
-                if (i === 0) MOscOPM.s_table[i] = MOscOPM.defTimbre;
+                if (i == 0) MOscOPM.s_table[i] = MOscOPM.defTimbre;
                 else MOscOPM.s_table[i] = null;
             }
         }
@@ -170,7 +170,7 @@ module FlMMLWorker.flmml {
                     }
                     // AR DR SR RR SL TL KS ML DT AM 4セット
                     for (; i < 46; i++) {
-                        if ((i - 2) % 11 === 9) b[i] = 0; // DT2
+                        if ((i - 2) % 11 == 9) b[i] = 0; // DT2
                         else b[i] = parseInt(a[j++]);
                     }
                     l = Math.min(MOscOPM.TIMB_SZ_N, a.length);
@@ -274,7 +274,7 @@ module FlMMLWorker.flmml {
         // 音色選択
         setWaveNo(waveNo: number): void {
             if (waveNo >= MOscOPM.MAX_WAVE) waveNo = MOscOPM.MAX_WAVE - 1;
-            if (MOscOPM.s_table[waveNo] === null) waveNo = 0;
+            if (MOscOPM.s_table[waveNo] == null) waveNo = 0;
             this.m_fm.SetVolume(MOscOPM.s_comGain); // コモンゲイン適用
             this.loadTimbre(MOscOPM.s_table[waveNo]);
         }
@@ -294,10 +294,10 @@ module FlMMLWorker.flmml {
             var carrierop = MOscOPM.carrierop;
             var slottable = MOscOPM.slottable;
             this.m_velocity = vel;
-            if ((carrierop[this.m_al] & 0x08) !== 0) this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity)); else this.SetTL(slottable[0], this.m_tl[0]);
-            if ((carrierop[this.m_al] & 0x10) !== 0) this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity)); else this.SetTL(slottable[1], this.m_tl[1]);
-            if ((carrierop[this.m_al] & 0x20) !== 0) this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity)); else this.SetTL(slottable[2], this.m_tl[2]);
-            if ((carrierop[this.m_al] & 0x40) !== 0) this.SetTL(slottable[3], this.m_tl[3] + (127 - this.m_velocity)); else this.SetTL(slottable[3], this.m_tl[3]);
+            if ((carrierop[this.m_al] & 0x08) != 0) this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity)); else this.SetTL(slottable[0], this.m_tl[0]);
+            if ((carrierop[this.m_al] & 0x10) != 0) this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity)); else this.SetTL(slottable[1], this.m_tl[1]);
+            if ((carrierop[this.m_al] & 0x20) != 0) this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity)); else this.SetTL(slottable[2], this.m_tl[2]);
+            if ((carrierop[this.m_al] & 0x40) != 0) this.SetTL(slottable[3], this.m_tl[3] + (127 - this.m_velocity)); else this.SetTL(slottable[3], this.m_tl[3]);
         }       
 
         // 0～1.0のエクスプレッションを設定
@@ -306,7 +306,7 @@ module FlMMLWorker.flmml {
         }
 
         setFrequency(frequency: number): void {
-            if (this.m_frequency === frequency) {
+            if (this.m_frequency == frequency) {
                 return;
             }
             super.setFrequency(frequency);
