@@ -36,7 +36,7 @@ module FlMMLWorker.flmml {
             var gbr: number = 0xffff;
             var output: number = 1;
             for (var i: number = 0; i < MOscGbSNoise.GB_NOISE_TABLE_LEN; i++) {
-                if (gbr == 0) gbr = 1;
+                if (gbr === 0) gbr = 1;
                 gbr += gbr + (((gbr >> 6) ^ (gbr >> 5)) & 1) | 0;
                 output ^= gbr & 1;
                 MOscGbSNoise.s_table[i] = output * 2 - 1;

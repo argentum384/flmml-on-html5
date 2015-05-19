@@ -39,7 +39,7 @@ module FlMMLWorker.flmml {
         }
 
         setNoteNo(noteNo: number, tie: boolean = true): void {
-            if (this.m_lastVoice != null && this.m_lastVoice.isPlaying()) {
+            if (this.m_lastVoice !== null && this.m_lastVoice.isPlaying()) {
                 this.m_lastVoice.setNoteNo(noteNo, tie);
             }
         }
@@ -64,14 +64,14 @@ module FlMMLWorker.flmml {
             // ボイススロットに空きがあるようだ
             if (this.getVoiceCount() <= this.m_voiceLimit) {
                 for (i = 0; i < this.m_voiceLen; i++) {
-                    if (this.m_voices[i].isPlaying() == false) {
+                    if (this.m_voices[i].isPlaying() === false) {
                         vo = this.m_voices[i];
                         break;
                     }
                 }
             }
             // やっぱ埋まってたので一番古いボイスを探す
-            if (vo == null) {
+            if (vo === null) {
                 var minId: number = Number.MAX_VALUE;
                 for (i = 0; i < this.m_voiceLen; i++) {
                     if (minId > this.m_voices[i].getId()) {
@@ -89,7 +89,7 @@ module FlMMLWorker.flmml {
 
         noteOff(noteNo: number): void {
             for (var i: number = 0; i < this.m_voiceLen; i++) {
-                if (this.m_voices[i].getNoteNo() == noteNo) {
+                if (this.m_voices[i].getNoteNo() === noteNo) {
                     this.m_voices[i].noteOff(noteNo);
                 }
             }
@@ -235,7 +235,7 @@ module FlMMLWorker.flmml {
                     slave = true;
                 }
             }
-            if (slave == false) {
+            if (slave === false) {
                 this.m_voices[0].clearOutPipe(max, start, delta);
             }
         }	

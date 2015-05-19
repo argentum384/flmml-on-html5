@@ -99,7 +99,7 @@
         }
 
         getMod(form: number): MOscMod {
-            return (form != MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
+            return (form !== MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
         }
 
         private setNoiseToPulse(): void {

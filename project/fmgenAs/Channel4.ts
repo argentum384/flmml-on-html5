@@ -111,7 +111,7 @@ module FlMMLWorker.fmgenAs {
 
             this.pms = FM.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
             var key: number = (this.op[0].IsOn() || this.op[1].IsOn() || this.op[2].IsOn() || this.op[3].IsOn()) ? 1 : 0;
-            var lfo: number = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) != 0 ? 2 : 0;
+            var lfo: number = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) !== 0 ? 2 : 0;
             return key | lfo;
         }
 
@@ -138,10 +138,10 @@ module FlMMLWorker.fmgenAs {
 
         //	キー制御
         KeyControl(key: number): void {
-            if ((key & 0x1) != 0) this.op[0].KeyOn(); else this.op[0].KeyOff();
-            if ((key & 0x2) != 0) this.op[1].KeyOn(); else this.op[1].KeyOff();
-            if ((key & 0x4) != 0) this.op[2].KeyOn(); else this.op[2].KeyOff();
-            if ((key & 0x8) != 0) this.op[3].KeyOn(); else this.op[3].KeyOff();
+            if ((key & 0x1) !== 0) this.op[0].KeyOn(); else this.op[0].KeyOff();
+            if ((key & 0x2) !== 0) this.op[1].KeyOn(); else this.op[1].KeyOff();
+            if ((key & 0x4) !== 0) this.op[2].KeyOn(); else this.op[2].KeyOff();
+            if ((key & 0x8) !== 0) this.op[3].KeyOn(); else this.op[3].KeyOff();
         }
 
         //	アルゴリズムを設定
