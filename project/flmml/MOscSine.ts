@@ -1,11 +1,11 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscSine extends MOscMod {
         static MAX_WAVE: number = 3;
-        protected static s_init: number = 0;
-        protected static s_table: Array<Array<number>>;
         protected m_waveNo: number;
+        protected static s_init: number = 0;
+        protected static s_table: Array<Array<number>> = new Array<Array<number>>(MOscSine.MAX_WAVE);;
 
         constructor() {
             MOscSine.boot();
@@ -14,21 +14,20 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscSine.s_init) return;
+            if (this.s_init) return;
             var d0: number = 2.0 * Math.PI / this.TABLE_LEN;
             var p0: number;
             var i: number;
-            MOscSine.s_table = new Array<Array<number>>(this.MAX_WAVE);
             for (i = 0; i < this.MAX_WAVE; i++) {
-                MOscSine.s_table[i] = new Array<number>(this.TABLE_LEN); // 固定長
+                this.s_table[i] = new Array<number>(this.TABLE_LEN); // 固定長
             }
             for (i = 0, p0 = 0.0; i < this.TABLE_LEN; i++) {
-                MOscSine.s_table[0][i] = Math.sin(p0);
-                MOscSine.s_table[1][i] = Math.max(0.0, MOscSine.s_table[0][i]);
-                MOscSine.s_table[2][i] = (MOscSine.s_table[0][i] >= 0.0) ? MOscSine.s_table[0][i] : MOscSine.s_table[0][i] * -1.0;
+                this.s_table[0][i] = Math.sin(p0);
+                this.s_table[1][i] = Math.max(0.0, this.s_table[0][i]);
+                this.s_table[2][i] = (this.s_table[0][i] >= 0.0) ? this.s_table[0][i] : this.s_table[0][i] * -1.0;
                 p0 += d0;
             }
-            MOscSine.s_init = 1;
+            this.s_init = 1;
         }
 
         getNextSample(): number {

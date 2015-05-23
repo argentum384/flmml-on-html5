@@ -1,4 +1,6 @@
-﻿module FlMMLWorker.flmml {
+﻿/// <reference path="MOscMod.ts" />
+
+module flmml {
     export class MOscTriangle extends MOscMod {
         static MAX_WAVE: number = 2;
         protected static s_init: number = 0;
@@ -12,20 +14,20 @@
         }
 
         static boot(): void {
-            if (MOscTriangle.s_init) return;
-            var d0: number = 1.0 / MOscTriangle.TABLE_LEN;
+            if (this.s_init) return;
+            var d0: number = 1.0 / this.TABLE_LEN;
             var p0: number;
             var i: number;
-            MOscTriangle.s_table = new Array<Array<number>>(MOscTriangle.MAX_WAVE);
-            for (i = 0; i < MOscTriangle.MAX_WAVE; i++) {
-                MOscTriangle.s_table[i] = new Array<number>(MOscTriangle.TABLE_LEN); // 固定長
+            this.s_table = new Array<Array<number>>(this.MAX_WAVE);
+            for (i = 0; i < this.MAX_WAVE; i++) {
+                this.s_table[i] = new Array<number>(this.TABLE_LEN); // 固定長
             }
-            for (i = 0, p0 = 0.0; i < MOscTriangle.TABLE_LEN; i++) {
-                MOscTriangle.s_table[0][i] = (p0 < 0.50) ? (1.0 - 4.0 * p0) : (1.0 - 4.0 * (1.0 - p0));
-                MOscTriangle.s_table[1][i] = (p0 < 0.25) ? (0.0 - 4.0 * p0) : ((p0 < 0.75) ? (-2.0 + 4.0 * p0) : (4.0 - 4.0 * p0));
+            for (i = 0, p0 = 0.0; i < this.TABLE_LEN; i++) {
+                this.s_table[0][i] = (p0 < 0.50) ? (1.0 - 4.0 * p0) : (1.0 - 4.0 * (1.0 - p0));
+                this.s_table[1][i] = (p0 < 0.25) ? (0.0 - 4.0 * p0) : ((p0 < 0.75) ? (-2.0 + 4.0 * p0) : (4.0 - 4.0 * p0));
                 p0 += d0;
             }
-            MOscTriangle.s_init = 1;
+            this.s_init = 1;
         }
 
         getNextSample(): number {

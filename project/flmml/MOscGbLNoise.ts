@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     /**
        Special thanks to OffGao.
     */
@@ -33,16 +33,16 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscGbLNoise.s_init) return;
+            if (this.s_init) return;
             var gbr: number = 0xffff;
             var output: number = 1;
-            for (var i: number = 0; i < MOscGbLNoise.GB_NOISE_TABLE_LEN; i++) {
+            for (var i: number = 0; i < this.GB_NOISE_TABLE_LEN; i++) {
                 if (gbr === 0) gbr = 1;
                 gbr += gbr + (((gbr >> 14) ^ (gbr >> 13)) & 1) | 0;
                 output ^= gbr & 1;
-                MOscGbLNoise.s_table[i] = output * 2 - 1;
+                this.s_table[i] = output * 2 - 1;
             }
-            MOscGbLNoise.s_init = 1;
+            this.s_init = 1;
         }
 
         getNextSample(): number {
@@ -106,4 +106,4 @@ module FlMMLWorker.flmml {
             this.setNoiseFreq(noteNo);
         }
     }
-}  
+}

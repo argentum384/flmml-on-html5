@@ -1,8 +1,7 @@
-﻿/// <reference path="MSequencer.ts" />
-/// <reference path="MEnvelopePoint.ts" />
-
-module FlMMLWorker.flmml {
+﻿module flmml {
     export class MEnvelope {
+        static SAMPLE_RATE: number;
+
         private m_envelopePoint: MEnvelopePoint;
         private m_envelopeLastPoint: MEnvelopePoint;
         private m_currentPoint: MEnvelopePoint;
@@ -14,9 +13,10 @@ module FlMMLWorker.flmml {
         private m_playing: boolean;
         private m_counter: number;
         private m_timeInSamples: number;
-        protected static s_init: number = 0;
-        protected static s_volumeMap: Array<Array<number>>;
-        protected static s_volumeLen: number;
+        
+        private static s_init: number = 0;
+        private static s_volumeMap: Array<Array<number>> = new Array<Array<number>>(3);
+        private static s_volumeLen: number;
 		
         // 以前のバージョンとの互換性のためにADSRで初期化
         constructor(attack: number, decay: number, sustain: number, release: number) {
@@ -30,20 +30,20 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (!MEnvelope.s_init) {
+            if (!this.s_init) {
                 var i: number;
-                MEnvelope.s_volumeLen = 256; // MEnvelopeのエンベロープは256段階であることに注意する。
-                MEnvelope.s_volumeMap = new Array<Array<number>>(3);
+                this.SAMPLE_RATE = SAMPLE_RATE;
+                this.s_volumeLen = 256; // MEnvelopeのエンベロープは256段階であることに注意する。
                 for (i = 0; i < 3; i++) {
-                    MEnvelope.s_volumeMap[i] = new Array<number>(MEnvelope.s_volumeLen);
-                    MEnvelope.s_volumeMap[i][0] = 0.0;
+                    this.s_volumeMap[i] = new Array<number>(this.s_volumeLen);
+                    this.s_volumeMap[i][0] = 0.0;
                 }
-                for (i = 1; i < MEnvelope.s_volumeLen; i++) {
-                    MEnvelope.s_volumeMap[0][i] = i / 255.0;
-                    MEnvelope.s_volumeMap[1][i] = Math.pow(10.0, (i - 255.0) * (48.0 / (255.0 * 20.0))); // min:-48db
-                    MEnvelope.s_volumeMap[2][i] = Math.pow(10.0, (i - 255.0) * (96.0 / (255.0 * 20.0))); // min:-96db
+                for (i = 1; i < this.s_volumeLen; i++) {
+                    this.s_volumeMap[0][i] = i / 255.0;
+                    this.s_volumeMap[1][i] = Math.pow(10.0, (i - 255.0) * (48.0 / (255.0 * 20.0))); // min:-48db
+                    this.s_volumeMap[2][i] = Math.pow(10.0, (i - 255.0) * (96.0 / (255.0 * 20.0))); // min:-96db
                 }
-                MEnvelope.s_init = 1;
+                this.s_init = 1;
             }
         }
 
@@ -55,7 +55,7 @@ module FlMMLWorker.flmml {
         }
 
         setRelease(release: number): void {
-            this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * MSequencer.SAMPLE_RATE;
+            this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * MEnvelope.SAMPLE_RATE;
             // 現在のボリュームなどを設定
             if (this.m_playing && !this.m_releasing) {
                 this.m_counter = this.m_timeInSamples;
@@ -75,7 +75,7 @@ module FlMMLWorker.flmml {
 
         addPoint(time: number, level: number): void {
             var point: MEnvelopePoint = new MEnvelopePoint();
-            point.time = time * MSequencer.SAMPLE_RATE;
+            point.time = time * MEnvelope.SAMPLE_RATE;
             point.level = level;
             this.m_envelopeLastPoint.next = point;
             this.m_envelopeLastPoint = point;

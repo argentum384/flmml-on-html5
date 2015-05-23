@@ -1,10 +1,7 @@
-﻿/// <reference path="MEvent.ts" />
-/// <reference path="MStatus.ts" />
-/// <reference path="MChannel.ts" />
-/// <reference path="MSequencer.ts" />
-
-module FlMMLWorker.flmml {
+﻿module flmml {
     export class MTrack {
+        static SAMPLE_RATE: number = null;
+
         static TEMPO_TRACK: number = 0;
         static FIRST_TRACK: number = 1;
         static DEFAULT_BPM: number = 120;
@@ -45,6 +42,7 @@ module FlMMLWorker.flmml {
             this.m_chordBegin = 0;
             this.m_chordEnd = 0;
             this.m_chordMode = false;
+            if (!MTrack.SAMPLE_RATE) MTrack.SAMPLE_RATE = SAMPLE_RATE;
         }
 
         getNumEvents(): number {
@@ -68,125 +66,125 @@ module FlMMLWorker.flmml {
                             //console.log(this.m_pointer+"/global:"+(this.m_globalTick/this.m_spt|0)+"/status:"+e.getStatus()+"/delta:"+delta+"-"+e.getDelta()+"/noteNo:"+e.getNoteNo());
                             exec = 1;
                             switch (e.getStatus()) {
-                                case MStatus.NOTE_ON:
+                                case /*MStatus.NOTE_ON*/2:
                                     this.m_ch.noteOn(e.getNoteNo(), e.getVelocity());
                                     break;
-                                case MStatus.NOTE_OFF:
+                                case /*MStatus.NOTE_OFF*/3:
                                     this.m_ch.noteOff(e.getNoteNo());
                                     break;
-                                case MStatus.NOTE:
+                                case /*MStatus.NOTE*/6:
                                     this.m_ch.setNoteNo(e.getNoteNo());
                                     break;
-                                case MStatus.VOLUME:
+                                case /*MStatus.VOLUME*/5:
                                     break;
-                                case MStatus.TEMPO:
+                                case /*MStatus.TEMPO*/4:
                                     this.playTempo(e.getTempo());
                                     break;
-                                case MStatus.FORM:
+                                case /*MStatus.FORM*/7:
                                     this.m_ch.setForm(e.getForm(), e.getSubForm());
                                     break;
-                                case MStatus.ENVELOPE1_ATK:
+                                case /*MStatus.ENVELOPE1_ATK*/8:
                                     this.m_ch.setEnvelope1Atk(e.getEnvelopeA());
                                     break;
-                                case MStatus.ENVELOPE1_ADD:
+                                case /*MStatus.ENVELOPE1_ADD*/9:
                                     this.m_ch.setEnvelope1Point(e.getEnvelopeT(), e.getEnvelopeL());
                                     break;
-                                case MStatus.ENVELOPE1_REL:
+                                case /*MStatus.ENVELOPE1_REL*/10:
                                     this.m_ch.setEnvelope1Rel(e.getEnvelopeR());
                                     break;
-                                case MStatus.ENVELOPE2_ATK:
+                                case /*MStatus.ENVELOPE2_ATK*/24:
                                     this.m_ch.setEnvelope2Atk(e.getEnvelopeA());
                                     break;
-                                case MStatus.ENVELOPE2_ADD:
+                                case /*MStatus.ENVELOPE2_ADD*/25:
                                     this.m_ch.setEnvelope2Point(e.getEnvelopeT(), e.getEnvelopeL());
                                     break;
-                                case MStatus.ENVELOPE2_REL:
+                                case /*MStatus.ENVELOPE2_REL*/26:
                                     this.m_ch.setEnvelope2Rel(e.getEnvelopeR());
                                     break;
-                                case MStatus.NOISE_FREQ:
+                                case /*MStatus.NOISE_FREQ*/11:
                                     this.m_ch.setNoiseFreq(e.getNoiseFreq());
                                     break;
-                                case MStatus.PWM:
+                                case /*MStatus.PWM*/12:
                                     this.m_ch.setPWM(e.getPWM());
                                     break;
-                                case MStatus.PAN:
+                                case /*MStatus.PAN*/13:
                                     this.m_ch.setPan(e.getPan());
                                     break;
-                                case MStatus.FORMANT:
+                                case /*MStatus.FORMANT*/14:
                                     this.m_ch.setFormant(e.getVowel());
                                     break;
-                                case MStatus.DETUNE:
+                                case /*MStatus.DETUNE*/15:
                                     this.m_ch.setDetune(e.getDetune());
                                     break;
-                                case MStatus.LFO_FMSF:
+                                case /*MStatus.LFO_FMSF*/16:
                                     this.m_ch.setLFOFMSF(e.getLFOForm(), e.getLFOSubForm());
                                     break;
-                                case MStatus.LFO_DPWD:
+                                case /*MStatus.LFO_DPWD*/17:
                                     this.m_lfoWidth = e.getLFOWidth() * this.m_spt;
-                                    this.m_ch.setLFODPWD(e.getLFODepth(), MSequencer.SAMPLE_RATE / this.m_lfoWidth);
+                                    this.m_ch.setLFODPWD(e.getLFODepth(), MTrack.SAMPLE_RATE / this.m_lfoWidth);
                                     break;
-                                case MStatus.LFO_DLTM:
+                                case /*MStatus.LFO_DLTM*/18:
                                     this.m_ch.setLFODLTM(e.getLFODelay() * this.m_spt, e.getLFOTime() * this.m_lfoWidth);
                                     break;
-                                case MStatus.LFO_TARGET:
+                                case /*MStatus.LFO_TARGET*/19:
                                     this.m_ch.setLFOTarget(e.getLFOTarget());
                                     break;
-                                case MStatus.LPF_SWTAMT:
+                                case /*MStatus.LPF_SWTAMT*/20:
                                     this.m_ch.setLpfSwtAmt(e.getLPFSwt(), e.getLPFAmt());
                                     break;
-                                case MStatus.LPF_FRQRES:
+                                case /*MStatus.LPF_FRQRES*/21:
                                     this.m_ch.setLpfFrqRes(e.getLPFFrq(), e.getLPFRes());
                                     break;
-                                case MStatus.VOL_MODE:
+                                case /*MStatus.VOL_MODE*/23:
                                     this.m_ch.setVolMode(e.getVolMode());
                                     break;
-                                case MStatus.INPUT:
+                                case /*MStatus.INPUT*/27:
                                     this.m_ch.setInput(e.getInputSens(), e.getInputPipe());
                                     break;
-                                case MStatus.OUTPUT:
+                                case /*MStatus.OUTPUT*/28:
                                     this.m_ch.setOutput(e.getOutputMode(), e.getOutputPipe());
                                     break;
-                                case MStatus.EXPRESSION:
+                                case /*MStatus.EXPRESSION*/29:
                                     this.m_ch.setExpression(e.getExpression());
                                     break;
-                                case MStatus.RINGMODULATE:
+                                case /*MStatus.RINGMODULATE*/30:
                                     this.m_ch.setRing(e.getRingSens(), e.getRingInput());
                                     break;
-                                case MStatus.SYNC:
+                                case /*MStatus.SYNC*/31:
                                     this.m_ch.setSync(e.getSyncMode(), e.getSyncPipe());
                                     break;
-                                case MStatus.PORTAMENTO:
+                                case /*MStatus.PORTAMENTO*/32:
                                     this.m_ch.setPortamento(e.getPorDepth() * 100, e.getPorLen() * this.m_spt);
                                     break;
-                                case MStatus.MIDIPORT:
+                                case /*MStatus.MIDIPORT*/33:
                                     this.m_ch.setMidiPort(e.getMidiPort());
                                     break;
-                                case MStatus.MIDIPORTRATE:
+                                case /*MStatus.MIDIPORTRATE*/34:
                                     var rate: number = e.getMidiPortRate();
                                     this.m_ch.setMidiPortRate((8 - (rate * 7.99 / 128)) / rate);
                                     break;
-                                case MStatus.BASENOTE:
+                                case /*MStatus.BASENOTE*/35:
                                     this.m_ch.setPortBase(e.getPortBase() * 100);
                                     break;
-                                case MStatus.POLY:
+                                case /*MStatus.POLY*/36:
                                     this.m_ch.setVoiceLimit(e.getVoiceCount());
                                     break;
-                                case MStatus.HW_LFO:
+                                case /*MStatus.HW_LFO*/39:
                                     this.m_ch.setHwLfo(e.getHwLfoData());
                                     break;
-                                case MStatus.SOUND_OFF:
+                                case /*MStatus.SOUND_OFF*/37:
                                     this.m_ch.setSoundOff();
                                     break;
-                                case MStatus.RESET_ALL:
+                                case /*MStatus.RESET_ALL*/38:
                                     this.m_ch.reset();
                                     break;
-                                case MStatus.CLOSE:
+                                case /*MStatus.CLOSE*/22:
                                     this.m_ch.close();
                                     break;
-                                case MStatus.EOT:
+                                case /*MStatus.EOT*/0:
                                     this.m_isEnd = 1;
                                     break;
-                                case MStatus.NOP:
+                                case /*MStatus.NOP*/1:
                                     break;
                                 default:
                                     break;
@@ -286,7 +284,7 @@ module FlMMLWorker.flmml {
         }
 
         recRestMSec(msec: number): void {
-            var len: number = (msec * MSequencer.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
+            var len: number = (msec * MTrack.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
             this.seek(len);
         }
 
@@ -304,7 +302,7 @@ module FlMMLWorker.flmml {
             for (var i: number = 0; i < n; i++) {
                 var en: MEvent = this.m_events[i];
                 var nextTick: number = preGlobalTick + en.getDelta();
-                if (nextTick > globalTick || (nextTick === globalTick && en.getStatus() !== MStatus.TEMPO)) {
+                if (nextTick > globalTick || (nextTick === globalTick && en.getStatus() !== /*MStatus.TEMPO*/4)) {
                     en.setDelta(nextTick - globalTick);
                     e.setDelta(globalTick - preGlobalTick);
                     this.m_events.splice(i, 0, e);
@@ -555,7 +553,7 @@ module FlMMLWorker.flmml {
                 globalTick += e.getDelta();
                 globalSample += e.getDelta() * spt;
                 switch (e.getStatus()) {
-                    case MStatus.TEMPO:
+                    case /*MStatus.TEMPO*/4:
                         spt = this.calcSpt(e.getTempo());
                         for (j = MTrack.FIRST_TRACK; j < nj; j++) {
                             trackArr[j].recTempo(globalTick, e.getTempo());
@@ -576,14 +574,14 @@ module FlMMLWorker.flmml {
 
             this.recRestMSec(3000);
             this.recEOT();
-            globalSample += 3 * MSequencer.SAMPLE_RATE;
+            globalSample += 3 * MTrack.SAMPLE_RATE;
 
-            this.m_totalMSec = globalSample * 1000 / MSequencer.SAMPLE_RATE;
+            this.m_totalMSec = globalSample * 1000 / MTrack.SAMPLE_RATE;
         }
         // calc number of samples per tick
         private calcSpt(bpm: number): number {
             var tps: number = bpm * 96.0 / 60.0; // ticks per second (quater note = 96ticks)
-            return MSequencer.SAMPLE_RATE / tps;              // samples per tick
+            return MTrack.SAMPLE_RATE / tps;              // samples per tick
         }
         // set tempo
         private playTempo(bpm: number): void {

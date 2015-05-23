@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.flmml {
+﻿module flmml {
     export class MEnvelopePoint {
         time: number;
         level: number;

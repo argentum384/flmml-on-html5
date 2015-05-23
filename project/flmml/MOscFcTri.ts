@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscFcTri extends MOscMod {
         static FC_TRI_TABLE_LEN: number = (1 << 5);
         static MAX_WAVE: number = 2;
@@ -15,18 +15,18 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscFcTri.s_init) return;
-            MOscFcTri.s_table = new Array<Array<number>>(MOscFcTri.MAX_WAVE);
-            MOscFcTri.s_table[0] = new Array<number>(MOscFcTri.FC_TRI_TABLE_LEN);	// @6-0
-            MOscFcTri.s_table[1] = new Array<number>(MOscFcTri.FC_TRI_TABLE_LEN);	// @6-1
+            if (this.s_init) return;
+            this.s_table = new Array<Array<number>>(this.MAX_WAVE);
+            this.s_table[0] = new Array<number>(this.FC_TRI_TABLE_LEN);	// @6-0
+            this.s_table[1] = new Array<number>(this.FC_TRI_TABLE_LEN);	// @6-1
             var i: number;
             for (i = 0; i < 16; i++) {
-                MOscFcTri.s_table[0][i] = MOscFcTri.s_table[0][31 - i] = i * 2.0 / 15.0 - 1.0;
+                this.s_table[0][i] = this.s_table[0][31 - i] = i * 2.0 / 15.0 - 1.0;
             }
             for (i = 0; i < 32; i++) {
-                MOscFcTri.s_table[1][i] = (i < 8) ? i * 2.0 / 14.0 : ((i < 24) ? (8 - i) * 2.0 / 15.0 + 1.0 : (i - 24) * 2.0 / 15.0 - 1.0);
+                this.s_table[1][i] = (i < 8) ? i * 2.0 / 14.0 : ((i < 24) ? (8 - i) * 2.0 / 15.0 + 1.0 : (i - 24) * 2.0 / 15.0 - 1.0);
             }
-            MOscFcTri.s_init = 1;
+            this.s_init = 1;
         }
 
         getNextSample(): number {
@@ -74,4 +74,4 @@ module FlMMLWorker.flmml {
             this.m_waveNo = Math.min(waveNo, MOscFcTri.MAX_WAVE - 1);
         }
     }
-}  
+}

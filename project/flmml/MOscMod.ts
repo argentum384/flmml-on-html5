@@ -1,7 +1,9 @@
 ﻿/// <reference path="MSequencer.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscMod {
+        static SAMPLE_RATE: number = null;
+
         static TABLE_LEN: number = 1 << 16;
         static PHASE_SFT: number = 14;
         static PHASE_LEN: number = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
@@ -15,6 +17,7 @@ module FlMMLWorker.flmml {
         constructor() {
             this.resetPhase();
             this.setFrequency(440.0);
+            if (!MOscMod.SAMPLE_RATE) MOscMod.SAMPLE_RATE = SAMPLE_RATE;
         }
 
         resetPhase(): void {
@@ -50,7 +53,7 @@ module FlMMLWorker.flmml {
 
         setFrequency(frequency: number): void {
             this.m_frequency = frequency;
-            this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MSequencer.SAMPLE_RATE) | 0;
+            this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MOscMod.SAMPLE_RATE) | 0;
         }
 
         setWaveNo(waveNo: number): void {

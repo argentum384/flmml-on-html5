@@ -1,15 +1,15 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscNoise extends MOscMod {
         static TABLE_MSK: number = MOscNoise.TABLE_LEN - 1;
         static NOISE_PHASE_SFT: number = 30;
-        static NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;
+        static NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;0
         protected m_noiseFreq: number;
         protected m_counter: number;
         protected m_resetPhase: boolean;
-        protected static s_init: number = 0;
-        protected static s_table: Array<number> = new Array<number>(MOscNoise.TABLE_LEN); // 固定長
+        static s_init: number = 0;
+        static s_table: Array<number> = new Array<number>(MOscNoise.TABLE_LEN);
 
         constructor() {
             MOscNoise.boot();
@@ -25,11 +25,11 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscNoise.s_init) return;
-            for (var i: number = 0; i < MOscNoise.TABLE_LEN; i++) {
-                MOscNoise.s_table[i] = Math.random() * 2.0 - 1.0;
+            if (this.s_init) return;
+            for (var i: number = 0; i < this.TABLE_LEN; i++) {
+                this.s_table[i] = Math.random() * 2.0 - 1.0;
             }
-            MOscNoise.s_init = 1;
+            this.s_init = 1;
         }
 
         resetPhase(): void {

@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.flmml {
+﻿module flmml {
     export interface IChannel {
         setExpression(ex: number): void;
         setVelocity(velocity: number): void;

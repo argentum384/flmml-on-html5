@@ -1,6 +1,6 @@
 ﻿"use strict";
 
-var FlMMLonHTML5 = function (window) {
+var FlMMLonHTML5 = function () {
     var BUFFER_SIZE = 8192; // MSequencer.tsと合わせる
 
     var COM_BOOT      =  1, // Main->Worker
@@ -48,15 +48,16 @@ var FlMMLonHTML5 = function (window) {
     function FlMMLonHTML5(workerURL) {
         // 難読化されればFlMMLonHTML5の名前が変わる
         // (IEにFunction.nameはないけどどうせWeb Audioもない)
-        this.worker = new Worker(
-            workerURL ? workerURL : (FlMMLonHTML5.name === "FlMMLonHTML5") ? "flmmlworker-raw.js" : "flmmlworker.js"
-        );
+        if (!workerURL) {
+            workerURL = (FlMMLonHTML5.name === "FlMMLonHTML5") ? "flmmlworker-raw.js" : "flmmlworker.js"
+        }
+        this.worker = new Worker(workerURL);
 	    this.worker.addEventListener("message", this.onMessage.bind(this));
 
-	    var AudioContext = window.AudioContext || window.webkitAudioContext;
-	    var audioCtx = this.audioCtx = new AudioContext();
+	    var AudioCtx = AudioContext || webkitAudioContext;
+	    var audioCtx = this.audioCtx = new AudioCtx();
 
-        window.addEventListener("touchstart", this.onTouchStartBinded = this.onTouchStart.bind(this));
+        addEventListener("touchstart", this.onTouchStartBinded = this.onTouchStart.bind(this));
 
 	    this.warnings = "";
 	    this.totalTimeStr = "00:00";
@@ -82,7 +83,7 @@ var FlMMLonHTML5 = function (window) {
                 this.bufferReady = true;
                 break;
             case COM_COMPCOMP:
-                extend(this, e.data.info);
+                extend(this, data.info);
                 if (this.oncompilecomplete) this.oncompilecomplete();
                 this.trigger("compilecomplete");
                 break;
@@ -147,7 +148,7 @@ var FlMMLonHTML5 = function (window) {
         var bufSrc = audioCtx.createBufferSource();
         bufSrc.connect(audioCtx.destination);
         bufSrc.start(0);
-        window.removeEventListener("touchstart", this.onTouchStartBinded);
+        removeEventListener("touchstart", this.onTouchStartBinded);
     };
     
     FlMMLonHTML5.prototype.onAudioProcess = function (e) {
@@ -161,7 +162,7 @@ var FlMMLonHTML5 = function (window) {
         } else {
             outBuf.getChannelData(0).set(ZEROBUFFER);
             outBuf.getChannelData(1).set(ZEROBUFFER);
-            this.worker.postMessage({ type: COM_BUFFER });
+            this.worker.postMessage({ type: COM_BUFFER, retBuf: null });
         }
     };
 
@@ -246,7 +247,7 @@ var FlMMLonHTML5 = function (window) {
     };
 
     FlMMLonHTML5.prototype.syncInfo = function () {
-        this.worker.postMessage({ type: COM_SYNCINFO });
+        this.worker.postMessage({ type: COM_SYNCINFO, interval: null });
     };
 
     FlMMLonHTML5.prototype.addEventListener = function (type, listener) {
@@ -274,9 +275,8 @@ var FlMMLonHTML5 = function (window) {
     };
 
     FlMMLonHTML5.prototype.release = function () {
-        if (this.tIDSendTime) clearInterval(this.tIDSendTime);
         this.worker.terminate();
     };
 
     return FlMMLonHTML5;
-}(window);
+}();

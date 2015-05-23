@@ -1,7 +1,6 @@
 ﻿/// <reference path="IChannel.ts" />
-/// <reference path="MChannel.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
 	/**
 	 * ...
 	 * @author ALOE

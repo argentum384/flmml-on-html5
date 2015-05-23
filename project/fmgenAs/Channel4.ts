@@ -4,11 +4,10 @@
 //	Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
-/// <reference path="FM.ts" />
-/// <reference path="Chip.ts" />
 /// <reference path="Operator.ts" />
+/// <reference path="JaggArray.ts" />
 
-module FlMMLWorker.fmgenAs {
+module fmgenAs {
 	/**
 	 * ...
 	 * @author ALOE
@@ -26,7 +25,7 @@ module FlMMLWorker.fmgenAs {
             new Operator(),
             new Operator(),
             new Operator(),
-            new Operator(),
+            new Operator()
         ];
 
         private static fbtable: Array<number> = [
@@ -41,24 +40,44 @@ module FlMMLWorker.fmgenAs {
             67456, 67517, 67578, 67639, 67700, 67761, 67822, 67883,
             67945, 68006, 68067, 68129, 68190, 68252, 68314, 68375,
             68437, 68499, 68561, 68623, 68685, 68747, 68809, 68871,
-            68933, 68995, 69057, 69120, 69182, 69245, 69307, 69370,
+            68933, 68995, 69057, 69120, 69182, 69245, 69307, 69370
         ];
 
         private static kctable: Array<number> = [
             5197, 5506, 5833, 6180, 6180, 6547, 6937, 7349,
-            7349, 7786, 8249, 8740, 8740, 9259, 9810, 10394,
+            7349, 7786, 8249, 8740, 8740, 9259, 9810, 10394
         ];
 
         private static iotable: Array<Array<number>> = [
             [0, 1, 1, 2, 2, 3], [1, 0, 0, 1, 1, 2],
             [1, 1, 1, 0, 0, 2], [0, 1, 2, 1, 1, 2],
             [0, 1, 2, 2, 2, 1], [0, 1, 0, 1, 0, 1],
-            [0, 1, 2, 1, 2, 1], [1, 0, 1, 0, 1, 0],
+            [0, 1, 2, 1, 2, 1], [1, 0, 1, 0, 1, 0]
         ];
+
+        static pmtable: Array<Array<Array<number>>> = (() => {
+            var pmtable: Array<Array<Array<number>>> = JaggArray.I3(2, 8, /*FM.FM_LFOENTS*/256);
+            var i: number, j: number;
+            var pms: Array<Array<number>> = [
+                [0, 1 / 360.0, 2 / 360.0, 3 / 360.0, 4 / 360.0, 6 / 360.0, 12 / 360.0, 24 / 360.0],   // OPNA
+                [0, 1 / 480.0, 2 / 480.0, 4 / 480.0, 10 / 480.0, 20 / 480.0, 80 / 480.0, 140 / 480.0] // OPM
+            ];
+            for (var type: number = 0; type < 2; type++) {
+                for (i = 0; i < 8; i++) {
+                    var pmb: number = pms[type][i];
+                    for (j = 0; j < /*FM.FM_LFOENTS*/256; j++) {
+                        var v: number = Math.pow(2.0, pmb * (2 * j - /*FM.FM_LFOENTS*/256 + 1) / (/*FM.FM_LFOENTS*/256 - 1));
+                        var w: number = 0.6 * pmb * Math.sin(2 * j * Math.PI / /*FM.FM_LFOENTS*/256) + 1;
+                        pmtable[type][i][j] = (0x10000 * (w - 1)) | 0;
+                    }
+                }
+            }
+            return pmtable;
+        })();
 
         constructor() {
             this.SetAlgorithm(0);
-            this.pms = FM.pmtable[0][0];
+            this.pms = Channel4.pmtable[0][0];
         }
 
         //	オペレータの種類 (LFO) を設定
@@ -109,7 +128,7 @@ module FlMMLWorker.fmgenAs {
             this.op[2].Prepare();
             this.op[3].Prepare();
 
-            this.pms = FM.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
+            this.pms = Channel4.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
             var key: number = (this.op[0].IsOn() || this.op[1].IsOn() || this.op[2].IsOn() || this.op[3].IsOn()) ? 1 : 0;
             var lfo: number = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) !== 0 ? 2 : 0;
             return key | lfo;
@@ -304,4 +323,4 @@ module FlMMLWorker.fmgenAs {
          * End Class Definition
          */
     }
-}  
+}

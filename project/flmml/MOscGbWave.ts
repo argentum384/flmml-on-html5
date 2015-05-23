@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscGbWave extends MOscMod {
         static MAX_WAVE: number = 32;
         static GB_WAVE_TABLE_LEN: number = (1 << 5);
@@ -15,15 +15,15 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscGbWave.s_init) return;
-            MOscGbWave.s_table = new Array<Array<number>>(MOscGbWave.MAX_WAVE);
+            if (this.s_init) return;
+            this.s_table = new Array<Array<number>>(this.MAX_WAVE);
             this.setWave(0, "0123456789abcdeffedcba9876543210");
-            MOscGbWave.s_init = 1;
+            this.s_init = 1;
         }
 
         static setWave(waveNo: number, wave: string): void {
             //console.log("["+waveNo+"]"+wave);
-            MOscGbWave.s_table[waveNo] = new Array<number>(MOscGbWave.GB_WAVE_TABLE_LEN);
+            this.s_table[waveNo] = new Array<number>(this.GB_WAVE_TABLE_LEN);
             for (var i: number = 0; i < 32; i++) {
                 var code: number = wave.charCodeAt(i);
                 if (48 <= code && code < 58) {
@@ -35,7 +35,7 @@ module FlMMLWorker.flmml {
                 else {
                     code = 0;
                 }
-                MOscGbWave.s_table[waveNo][i] = (code - 7.5) / 7.5;
+                this.s_table[waveNo][i] = (code - 7.5) / 7.5;
             }
         }
 
@@ -86,4 +86,4 @@ module FlMMLWorker.flmml {
             }
         }
     }
-}  
+}

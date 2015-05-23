@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.flmml {
+﻿module flmml {
     export class MWarning {
         static UNKNOWN_COMMAND: number = 0;
         static UNCLOSED_REPEAT: number = 1;
@@ -22,7 +22,7 @@
         ];
 
         static getString(warnId: number, str: string): string {
-            return MWarning.s_string[warnId].replace("%s", str);
+            return this.s_string[warnId].replace("%s", str);
         }
     }
 } 

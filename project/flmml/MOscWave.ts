@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscWave extends MOscMod {
         static MAX_WAVE: number = 32;
         static MAX_LENGTH: number = 2048;
@@ -16,19 +16,19 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscWave.s_init) return;
-            MOscWave.s_table = new Array<Array<number>>(MOscWave.MAX_WAVE);
-            MOscWave.s_length = new Array<number>(MOscWave.MAX_WAVE);
-            MOscWave.setWave(0, "00112233445566778899AABBCCDDEEFFFFEEDDCCBBAA99887766554433221100");
-            MOscWave.s_init = 1;
+            if (this.s_init) return;
+            this.s_table = new Array<Array<number>>(this.MAX_WAVE);
+            this.s_length = new Array<number>(this.MAX_WAVE);
+            this.setWave(0, "00112233445566778899AABBCCDDEEFFFFEEDDCCBBAA99887766554433221100");
+            this.s_init = 1;
         }
 
         static setWave(waveNo: number, wave: String): void {
             //console.log("["+waveNo+"]"+wave);
-            MOscWave.s_length[waveNo] = 0;
-            MOscWave.s_table[waveNo] = new Array<number>(wave.length / 2);
-            MOscWave.s_table[waveNo][0] = 0;
-            for (var i: number = 0, j: number = 0, val: number = 0; i < MOscWave.MAX_LENGTH && i < wave.length; i++ , j++) {
+            this.s_length[waveNo] = 0;
+            this.s_table[waveNo] = new Array<number>(wave.length / 2);
+            this.s_table[waveNo][0] = 0;
+            for (var i: number = 0, j: number = 0, val: number = 0; i < this.MAX_LENGTH && i < wave.length; i++ , j++) {
                 var code: number = wave.charCodeAt(i);
                 if (48 <= code && code < 58) {
                     code -= 48;
@@ -41,14 +41,14 @@ module FlMMLWorker.flmml {
                 }
                 if (j & 1) {
                     val += code;
-                    MOscWave.s_table[waveNo][MOscWave.s_length[waveNo]] = (Number(val) - 127.5) / 127.5;
-                    MOscWave.s_length[waveNo]++;
+                    this.s_table[waveNo][this.s_length[waveNo]] = (Number(val) - 127.5) / 127.5;
+                    this.s_length[waveNo]++;
                 } else {
                     val = code << 4;
                 }
             }
-            if (MOscWave.s_length[waveNo] === 0) MOscWave.s_length[waveNo] = 1;
-            MOscWave.s_length[waveNo] = (MOscWave.PHASE_MSK + 1) / MOscWave.s_length[waveNo];
+            if (this.s_length[waveNo] === 0) this.s_length[waveNo] = 1;
+            this.s_length[waveNo] = (this.PHASE_MSK + 1) / this.s_length[waveNo];
         }
 
         setWaveNo(waveNo: number): void {
@@ -98,4 +98,4 @@ module FlMMLWorker.flmml {
             }
         }
     }
-}  
+}

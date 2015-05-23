@@ -1,7 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
-/// <reference path="MSequencer.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     /**
        Special thanks to OffGao.
      */
@@ -51,7 +50,7 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / MSequencer.SAMPLE_RATE | 0;
+            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / SAMPLE_RATE | 0;
         }
 
         getNextSample(): number {
@@ -125,4 +124,4 @@ module FlMMLWorker.flmml {
             this.setNoiseFreq(noteNo);
         }
     }
-} 
+}

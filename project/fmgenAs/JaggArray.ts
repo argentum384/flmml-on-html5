@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.fmgenAs {
+﻿module fmgenAs {
 	/**
 	 * ...
 	 * @author ALOE

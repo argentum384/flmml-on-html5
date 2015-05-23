@@ -1,7 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
-/// <reference path="MSequencer.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     /**
        DPCM Oscillator by OffGao
        09/05/11：作成
@@ -14,13 +13,13 @@ module FlMMLWorker.flmml {
         static FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
         static FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
         static FC_DPCM_NEXT: number;
-        protected static s_init: number;
         protected m_readCount: number;	//次の波形生成までのカウント値
         protected m_address: number;	//読み込み中のアドレス位置
         protected m_bit: number;		//読み込み中のビット位置
         protected m_wav: number;		//現在のボリューム
         protected m_length: number;		//残り読み込み長
         protected m_ofs: number;		//前回のオフセット
+        protected static s_init: number;
         protected static s_table: Array<Array<number>>;
         protected static s_intVol: Array<number>;	//波形初期位置
         protected static s_loopFg: Array<number>;	//ループフラグ
@@ -43,30 +42,30 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscFcDpcm.s_init) return;
+            if (this.s_init) return;
 
-            MOscFcDpcm.FC_DPCM_NEXT = MSequencer.SAMPLE_RATE << MOscFcDpcm.FC_DPCM_PHASE_SFT;
+            this.FC_DPCM_NEXT = SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
 
-            MOscFcDpcm.s_table = new Array<Array<number>>(MOscFcDpcm.MAX_WAVE);
-            MOscFcDpcm.s_intVol = new Array<number>(MOscFcDpcm.MAX_WAVE);
-            MOscFcDpcm.s_loopFg = new Array<number>(MOscFcDpcm.MAX_WAVE);
-            MOscFcDpcm.s_length = new Array<number>(MOscFcDpcm.MAX_WAVE);
-            MOscFcDpcm.setWave(0, 127, 0, "");
-            MOscFcDpcm.s_init = 1;
+            this.s_table = new Array<Array<number>>(this.MAX_WAVE);
+            this.s_intVol = new Array<number>(this.MAX_WAVE);
+            this.s_loopFg = new Array<number>(this.MAX_WAVE);
+            this.s_length = new Array<number>(this.MAX_WAVE);
+            this.setWave(0, 127, 0, "");
+            this.s_init = 1;
         }
 
         static setWave(waveNo: number, intVol: number, loopFg: number, wave: string): void {
-            MOscFcDpcm.s_intVol[waveNo] = intVol;
-            MOscFcDpcm.s_loopFg[waveNo] = loopFg;
-            MOscFcDpcm.s_length[waveNo] = 0;
+            this.s_intVol[waveNo] = intVol;
+            this.s_loopFg[waveNo] = loopFg;
+            this.s_length[waveNo] = 0;
 
-            MOscFcDpcm.s_table[waveNo] = new Array<number>(MOscFcDpcm.FC_DPCM_TABLE_MAX_LEN);
+            this.s_table[waveNo] = new Array<number>(this.FC_DPCM_TABLE_MAX_LEN);
             var strCnt: number = 0;
             var intCnt: number = 0;
             var intCn2: number = 0;
             var intPos: number = 0;
-            for (var i: number = 0; i < MOscFcDpcm.FC_DPCM_TABLE_MAX_LEN; i++) {
-                MOscFcDpcm.s_table[waveNo][i] = 0;
+            for (var i: number = 0; i < this.FC_DPCM_TABLE_MAX_LEN; i++) {
+                this.s_table[waveNo][i] = 0;
             }
 
             for (strCnt = 0; strCnt < wave.length; strCnt++) {
@@ -93,34 +92,33 @@ module FlMMLWorker.flmml {
                     code = 0;
                 }
                 for (i = 5; i >= 0; i--) {
-                    MOscFcDpcm.s_table[waveNo][intPos] += ((code >> i) & 1) << (intCnt * 8 + 7 - intCn2);
+                    this.s_table[waveNo][intPos] += ((code >> i) & 1) << (intCnt * 8 + 7 - intCn2);
                     intCn2++;
                     if (intCn2 >= 8) {
                         intCn2 = 0;
                         intCnt++;
                     }
-                    MOscFcDpcm.s_length[waveNo]++;
+                    this.s_length[waveNo]++;
                     if (intCnt >= 4) {
                         intCnt = 0;
                         intPos++;
-                        if (intPos >= MOscFcDpcm.FC_DPCM_TABLE_MAX_LEN) {
-                            intPos = MOscFcDpcm.FC_DPCM_TABLE_MAX_LEN - 1;
+                        if (intPos >= this.FC_DPCM_TABLE_MAX_LEN) {
+                            intPos = this.FC_DPCM_TABLE_MAX_LEN - 1;
                         }
                     }
                 }
             }
             //レングス中途半端な場合、削る
-            MOscFcDpcm.s_length[waveNo] -= ((MOscFcDpcm.s_length[waveNo] - 8) % 0x80);
+            this.s_length[waveNo] -= ((this.s_length[waveNo] - 8) % 0x80);
             //最大・最小サイズ調整
-            if (MOscFcDpcm.s_length[waveNo] > MOscFcDpcm.FC_DPCM_MAX_LEN * 8) {
-                MOscFcDpcm.s_length[waveNo] = MOscFcDpcm.FC_DPCM_MAX_LEN * 8;
+            if (this.s_length[waveNo] > this.FC_DPCM_MAX_LEN * 8) {
+                this.s_length[waveNo] = this.FC_DPCM_MAX_LEN * 8;
             }
-            if (MOscFcDpcm.s_length[waveNo] === 0) {
-                MOscFcDpcm.s_length[waveNo] = 8;
+            if (this.s_length[waveNo] === 0) {
+                this.s_length[waveNo] = 8;
             }
             //長さが指定されていれば、それを格納
-            //if (length >= 0) MOscFcDpcm.s_length[waveNo] = (length * 0x10 + 1) * 8;
-
+            //if (length >= 0) this.s_length[waveNo] = (length * 0x10 + 1) * 8;
         }
 
         setWaveNo(waveNo: number): void {

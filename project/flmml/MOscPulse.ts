@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MOscPulse extends MOscMod {
         protected m_pwm: number;
         protected m_mix: number;

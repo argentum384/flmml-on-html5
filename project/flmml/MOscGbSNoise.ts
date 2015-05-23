@@ -1,6 +1,6 @@
 ﻿/// <reference path="MOscMod.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     /**
        Special thanks to OffGao.
      */
@@ -31,18 +31,20 @@ module FlMMLWorker.flmml {
             this.m_sum = 0;
             this.m_skip = 0;
         }
+
         static boot(): void {
-            if (MOscGbSNoise.s_init) return;
+            if (this.s_init) return;
             var gbr: number = 0xffff;
             var output: number = 1;
-            for (var i: number = 0; i < MOscGbSNoise.GB_NOISE_TABLE_LEN; i++) {
+            for (var i: number = 0; i < this.GB_NOISE_TABLE_LEN; i++) {
                 if (gbr === 0) gbr = 1;
                 gbr += gbr + (((gbr >> 6) ^ (gbr >> 5)) & 1) | 0;
                 output ^= gbr & 1;
-                MOscGbSNoise.s_table[i] = output * 2 - 1;
+                this.s_table[i] = output * 2 - 1;
             }
-            MOscGbSNoise.s_init = 1;
+            this.s_init = 1;
         }
+
         getNextSample(): number {
             var val: number = MOscGbSNoise.s_table[this.m_phase >> MOscGbSNoise.GB_NOISE_PHASE_SFT];
             if (this.m_skip > 0) {
@@ -60,12 +62,14 @@ module FlMMLWorker.flmml {
             this.m_phase = (this.m_phase + freqShift) % MOscGbSNoise.GB_NOISE_TABLE_MOD;
             return val;
         }
+
         getNextSampleOfs(ofs: number): number {
             var phase: number = (this.m_phase + ofs) % MOscGbSNoise.GB_NOISE_TABLE_MOD;
             var val: number = MOscGbSNoise.s_table[(phase + ((phase >> 31) & MOscGbSNoise.GB_NOISE_TABLE_MOD)) >> MOscGbSNoise.GB_NOISE_PHASE_SFT];
             this.m_phase = (this.m_phase + this.m_freqShift) % MOscGbSNoise.GB_NOISE_TABLE_MOD;
             return val;
         }
+
         getSamples(samples: Float32Array, start: number, end: number): void {
             var i: number;
             var val: number;
@@ -87,14 +91,17 @@ module FlMMLWorker.flmml {
                 this.m_phase = (this.m_phase + freqShift) % MOscGbSNoise.GB_NOISE_TABLE_MOD;
             }
         }
+
         setFrequency(frequency: number): void {
             this.m_frequency = frequency;
         }
+
         setNoiseFreq(no: number): void {
             if (no < 0) no = 0;
             if (no > 63) no = 63;
             this.m_freqShift = (1048576 << (MOscGbSNoise.GB_NOISE_PHASE_SFT - 2)) / (MOscGbSNoise.s_interval[no] * 11025);
         }
+
         setNoteNo(noteNo: number): void {
             this.setNoiseFreq(noteNo);
         }

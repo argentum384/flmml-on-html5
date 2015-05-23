@@ -1,9 +1,9 @@
-﻿/// <reference path="MTrack.ts" />
-/// <reference path="MSequencer.ts" />
-
-module FlMMLWorker.flmml {
-
+﻿module flmml {
     export class MML {
+        protected static MAX_PIPE: number = 3;
+        protected static MAX_SYNCSOURCE: number = 3;
+        protected static MAX_POLYVOICE: number = 64;
+
         protected m_sequencer: MSequencer;
         protected m_tracks: Array<MTrack>;
         protected m_string: string;
@@ -33,12 +33,25 @@ module FlMMLWorker.flmml {
         protected m_metaArtist: string;
         protected m_metaCoding: string;
         protected m_metaComment: string;
-        protected static MAX_PIPE: number = 3;
-        protected static MAX_SYNCSOURCE: number = 3;
-        protected static MAX_POLYVOICE: number = 64;
 
         constructor() {
             this.m_sequencer = new MSequencer();
+        }
+
+        static isWhitespace(c: string): boolean {
+            if (c === " " || c === "\t" || c === "\n" || c === "\r" || c === "　") {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        static removeWhitespace(str: string): string {
+            return str.replace(new RegExp("[ 　\n\r\t\f]+", "g"), "");
+        }
+
+        static remove(str: string, start: number, end: number): string {
+            return str.substring(0, start) + str.substring(end + 1);
         }
 
         getWarnings(): string {
@@ -504,7 +517,7 @@ module FlMMLWorker.flmml {
                     break;
                 case "q": // gate time (rate)
                     this.m_gate = this.getUInt(this.m_gate);
-                    this.m_tracks[this.m_trackNo].recGate(Number(this.m_gate) / Number(this.m_maxGate));
+                    this.m_tracks[this.m_trackNo].recGate(this.m_gate / this.m_maxGate);
                     break;
                 case "<": // octave shift
                     if (this.m_relativeDir) this.m_octave++; else this.m_octave--;
@@ -1200,7 +1213,7 @@ module FlMMLWorker.flmml {
                         this.m_letter = GroupNotesStart + 1;
                         newstr = this.m_string.substring(0, GroupNotesStart);
                         tick2 = 0;
-                        tickdiv = Number(tick) / Number(noteCount);
+                        tickdiv = tick / noteCount;
                         noteCount = 1;
                         noteOn = 0;
                         while (this.m_letter < repend) {
@@ -1219,7 +1232,7 @@ module FlMMLWorker.flmml {
                                         }
                                     }
                                     if (noteOn === 1) {
-                                        noteTick = Math.round(Number(noteCount) * tickdiv - Number(tick2));
+                                        noteTick = Math.round(noteCount * tickdiv - tick2);
                                         noteCount++;
                                         tick2 += noteTick;
                                         if (tick2 > tick) {
@@ -1254,29 +1267,13 @@ module FlMMLWorker.flmml {
             if (GroupNotesStart >= 0) this.warning(MWarning.UNCLOSED_GROUPNOTES, "");
         }
 
-        static isWhitespace(c: string): boolean {
-            if (c === " " || c === "\t" || c === "\n" || c === "\r" || c === "　") {
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        static removeWhitespace(str: string): string {
-            return str.replace(new RegExp("[ 　\n\r\t\f]+", "g"), "");
-        }
-
-        static remove(str: string, start: number, end: number): string {
-            return str.substring(0, start) + str.substring(end + 1);
-        }
-
         play(str: string): void {
             if (this.m_sequencer.isPaused()) {
                 this.m_sequencer.play();
                 return;
             }
             // 音声が停止するのを待つ
-            global.worker.stopSound(this.play2.bind(this, str), true);
+            msgr.stopSound(this.play2.bind(this, str), true);
         }
 
         private play2(str: string): void {
@@ -1346,7 +1343,7 @@ module FlMMLWorker.flmml {
             this.m_sequencer.createSyncSources(this.m_maxSyncSource + 1);
 
             // dispatch event
-            global.worker.compileComplete();
+            msgr.compileComplete();
 
             // play start
             this.m_sequencer.play();

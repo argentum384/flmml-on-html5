@@ -1,87 +1,91 @@
-﻿/// <reference path="MTrack.ts" />
-
-module FlMMLWorker.flmml {
-    var BUFFER_SIZE: number = 8192, // 2^n, 256～16384 flmmlonhtml5-raw.jsと合わせる
-        BACKBUF_MULTIPLE: number = 32;
-
-    var STATUS_STOP:      number = 0,
-        STATUS_PAUSE:     number = 1,
-        STATUS_BUFFERING: number = 2,
-        STATUS_PLAY:      number = 3,
-        STATUS_LAST:      number = 4,
-        STEP_NONE:        number = 0,
-        STEP_PRE:         number = 1,
-        STEP_TRACK:       number = 2,
-        STEP_POST:        number = 3,
-        STEP_COMPLETE:    number = 4;
-
+﻿module flmml {
     // Web Audio + Web Worker利用につき大幅改定
     export class MSequencer {
-        static SAMPLE_RATE: number;
+        protected static BUFFER_SIZE: number = 8192; // 2^n, 256～16384 flmmlonhtml5-raw.jsと合わせる
+        protected static MULTIPLE: number = 32;
 
-        static ZEROBUFFER: Float32Array = new Float32Array(BUFFER_SIZE * BACKBUF_MULTIPLE);
+        protected static SAMPLE_RATE: number;
+        protected static ZEROBUFFER: Float32Array;
+        
+        // 戻すときは正規表現使用の置換で
+        // /\*MSequencer\.(STATUS_|STEP_)(.*)\*/[0-9]*
+        //  ↓
+        // MSequencer.$1$2
+        //
+        //protected static STATUS_STOP:      number = 0;
+        //protected static STATUS_PAUSE:     number = 1;
+        //protected static STATUS_BUFFERING: number = 2;
+        //protected static STATUS_PLAY:      number = 3;
+        //protected static STATUS_LAST:      number = 4;
+        //protected static STEP_NONE:     number = 0;
+        //protected static STEP_PRE:      number = 1;
+        //protected static STEP_TRACK:    number = 2;
+        //protected static STEP_POST:     number = 3;
+        //protected static STEP_COMPLETE: number = 4;
 
-        private m_buffer: Array<Array<Float32Array>>;
-        private m_playSide: number;
-        private m_playSize: number;
-        private m_step: number;
-        private m_processTrack: number;
-        private m_processOffset: number;
-        private m_trackArr: Array<MTrack>;
-        private m_globalTick: number;
-        private m_status: number;
-        private m_startTime: number;
-        private m_pausedPos: number;
-        private m_buffTimer: number;
-        private m_procTimer: number;
-        private m_restTimer: number;
-        private m_lastTime: number;
-        private m_maxProcTime: number;
+        protected m_buffer: Array<Array<Float32Array>>;
+        protected m_playSide: number;
+        protected m_playSize: number;
+        protected m_step: number;
+        protected m_processTrack: number;
+        protected m_processOffset: number;
+        protected m_trackArr: Array<MTrack>;
+        protected m_globalTick: number;
+        protected m_status: number;
+        protected m_startTime: number;
+        protected m_pausedPos: number;
+        protected m_buffTimer: number;
+        protected m_procTimer: number;
+        protected m_restTimer: number;
+        protected m_lastTime: number;
+        protected m_maxProcTime: number;
 
-        private processAllBinded: Function;
+        protected processAllBinded: Function;
 
         constructor() {
-            var i: number;
-            var sLen: number = BUFFER_SIZE * BACKBUF_MULTIPLE;
+            var sLen: number = MSequencer.BUFFER_SIZE * MSequencer.MULTIPLE;
 
-            MSequencer.SAMPLE_RATE = global.worker.sampleRate;
+            MSequencer.SAMPLE_RATE = SAMPLE_RATE;
+            ZEROBUFFER = MSequencer.ZEROBUFFER = new Float32Array(MSequencer.BUFFER_SIZE * MSequencer.MULTIPLE);
             MChannel.boot(sLen);
             MOscillator.boot();
             MEnvelope.boot();
             this.m_trackArr = new Array();
             this.m_playSide = 1;
             this.m_playSize = 0;
-            this.m_step = STEP_NONE;
+            this.m_step = /*MSequencer.STEP_NONE*/0;
             this.m_buffer = [
                 [new Float32Array(sLen), new Float32Array(sLen)],
                 [new Float32Array(sLen), new Float32Array(sLen)]
             ];
-            this.m_maxProcTime = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000 * 0.9;
+            this.m_maxProcTime = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000 * 0.9;
             this.m_lastTime = 0;
-
             this.processAllBinded = this.processAll.bind(this);
-
-            global.worker.onRequestBuffer = this.onSampleData.bind(this);
+            msgr.onRequestBuffer = this.onSampleData.bind(this);
             this.stop();
         }
         
+        static getTimer() {
+            return performance ? performance.now() : new Date().getTime();
+        }
+        
         play(): void {
-            if (this.m_status === STATUS_PAUSE) {
-                var bufMSec: number = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
+            if (this.m_status === /*MSequencer.STATUS_PAUSE*/1) {
+                var bufMSec: number = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
                 this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
                 var totl: number = this.getTotalMSec();
                 var rest: number = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
-                this.m_status = STATUS_PLAY;
-                this.m_startTime = global.worker.getTime();
+                this.m_status = /*MSequencer.STATUS_PLAY*/3;
+                this.m_startTime = MSequencer.getTimer();
                 this.startRestTimer(rest);
-                global.worker.playSound();
-                this.m_lastTime = global.worker.getTime();
+                msgr.playSound();
+                this.m_lastTime = MSequencer.getTimer();
             } else {
                 this.m_globalTick = 0;
                 for (var i: number = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
                 }
-                this.m_status = STATUS_BUFFERING;
+                this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
                 this.processStart();
             }
         }
@@ -89,22 +93,22 @@ module FlMMLWorker.flmml {
         stop(onStopSound: Function = null): void {
             clearTimeout(this.m_restTimer);
             clearTimeout(this.m_procTimer);
-            global.worker.stopSound(onStopSound, true);
-            this.m_status = STATUS_STOP;
+            msgr.stopSound(onStopSound, true);
+            this.m_status = /*MSequencer.STATUS_STOP*/0;
             this.m_pausedPos = 0;
         }
 
         pause(): void {
-            if (this.m_status !== STATUS_PLAY) return;
+            if (this.m_status !== /*MSequencer.STATUS_PLAY*/3) return;
             clearTimeout(this.m_restTimer);
-            global.worker.stopSound();
+            msgr.stopSound();
             this.m_pausedPos = this.getNowMSec();
-            this.m_status = STATUS_PAUSE;
+            this.m_status = /*MSequencer.STATUS_PAUSE*/1;
         }
 
         disconnectAll(): void {
             while (this.m_trackArr.pop()) { }
-            this.m_status = STATUS_STOP;
+            this.m_status = /*MSequencer.STATUS_STOP*/0;
         }
 
         connect(track: MTrack): void {
@@ -117,19 +121,22 @@ module FlMMLWorker.flmml {
 
         private onStopReq(): void {
             this.stop();
-            global.worker.complete();
+            msgr.complete();
+            this.m_restTimer = 0;
         }
         
         private reqBuffering(): void {
-            clearTimeout(this.m_buffTimer);
-            this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this), 0);
+            if (!this.m_buffTimer) {
+                this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this), 0);
+            }
         }
 
         private onBufferingReq(): void {
             clearTimeout(this.m_restTimer);
             this.m_pausedPos = this.getNowMSec();
-            this.m_status = STATUS_BUFFERING;
+            this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
             this.startProcTimer();
+            this.m_buffTimer = 0;
         }
 
         private startProcTimer(interval: number = 0): void {
@@ -138,82 +145,88 @@ module FlMMLWorker.flmml {
         }
 
         private startRestTimer(interval: number = 0): void {
-            clearTimeout(this.m_restTimer);
-            this.m_restTimer = setTimeout(this.onStopReq.bind(this), interval);
+            if (!this.m_restTimer) {
+                this.m_restTimer = setTimeout(this.onStopReq.bind(this), interval);
+            }
         }
         
         // バッファ書き込みリクエスト
         private processStart(): void {
-            this.m_step = STEP_PRE;
+            this.m_step = /*MSequencer.STEP_PRE*/1;
             this.startProcTimer();
         }
 
         // 実際のバッファ書き込み
         private processAll(): void {
-            var worker: any = global.worker,
-                buffer: Array<Float32Array> = this.m_buffer[1 - this.m_playSide],
-                sLen: number = BUFFER_SIZE * BACKBUF_MULTIPLE,
-                bLen: number = BUFFER_SIZE * 2,
+            var buffer: Array<Float32Array> = this.m_buffer[1 - this.m_playSide],
+                bufSize: number = MSequencer.BUFFER_SIZE,
+                sLen: number = bufSize * MSequencer.MULTIPLE,
+                bLen: number = bufSize * 2,
                 nLen: number = this.m_trackArr.length;
 
             switch (this.m_step) {
-                case STEP_PRE:                     
+                case /*MSequencer.STEP_PRE*/1:
                     buffer = this.m_buffer[1 - this.m_playSide];
                     buffer[0].set(MSequencer.ZEROBUFFER);
                     buffer[1].set(MSequencer.ZEROBUFFER);
                     if (nLen > 0) {
                         var track: MTrack = this.m_trackArr[MTrack.TEMPO_TRACK];
-                        track.onSampleData(null, 0, BUFFER_SIZE * BACKBUF_MULTIPLE, true);
+                        track.onSampleData(null, 0, bufSize * MSequencer.MULTIPLE, true);
                     }
                     this.m_processTrack = MTrack.FIRST_TRACK;
                     this.m_processOffset = 0;
                     this.m_step++;
-                    if (this.m_status !== STATUS_PLAY) this.startProcTimer();
+                    if (this.m_status !== /*MSequencer.STATUS_PLAY*/3) this.startProcTimer();
                     break;
-                case STEP_TRACK:
-                    var status: number = this.m_status,
+                case /*MSequencer.STEP_TRACK*/2:
+                    var cnt: number = 0,
+                        status: number = this.m_status,
                         endTime: number = this.m_maxProcTime + this.m_lastTime,
-                        infoInterval: number = worker.infoInterval,
-                        infoTime: number = worker.lastInfoTime + infoInterval;
+                        infoInterval: number = msgr.infoInterval,
+                        infoTime: number = msgr.lastInfoTime + infoInterval;
 
                     do {
+                        cnt++;
                         this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
                         this.m_processOffset += bLen;
                         if (this.m_processOffset >= sLen) {
                             this.m_processTrack++;
                             this.m_processOffset = 0;
                         }
-                        if (status === STATUS_BUFFERING) {
-                            worker.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100 | 0);
+                        if (status === /*MSequencer.STATUS_BUFFERING*/2) {
+                            msgr.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100 | 0);
                         }
                         if (this.m_processTrack >= nLen) {
                             this.m_step++;
                             break;
                         }
-                        if (worker.getTime() > infoTime) {
-                            worker.syncInfo();
-                            infoTime = worker.lastInfoTime + infoInterval;
+                        if (infoInterval > 0 && MSequencer.getTimer() > infoTime) {
+                            msgr.syncInfo();
+                            infoTime = msgr.lastInfoTime + infoInterval;
                         }
-                    } while (status !== STATUS_PLAY || worker.getTime() < endTime);
-                    worker.syncInfo();
-                    setInterval(worker.onInfoTimerBinded, worker.infoInterval);
-                    if (status !== STATUS_PLAY || this.m_step === STEP_POST) this.startProcTimer();
+                    } while (status !== /*MSequencer.STATUS_PLAY*/3 || MSequencer.getTimer() < endTime);
+                    if (infoInterval > 0) {
+                        msgr.syncInfo();
+                        setInterval(msgr.onInfoTimerBinded, msgr.infoInterval);
+                    }
+                    if (status !== /*MSequencer.STATUS_PLAY*/3 || this.m_step === /*MSequencer.STEP_POST*/3) {
+                        this.startProcTimer();
+                    }
                     break;
-                case STEP_POST:
-                    this.m_step = STEP_COMPLETE;
-                    if (this.m_status === STATUS_BUFFERING) {
-                        var bufMSec: number = BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
+                case /*MSequencer.STEP_POST*/3:
+                    this.m_step = /*MSequencer.STEP_COMPLETE*/4;
+                    if (this.m_status === /*MSequencer.STATUS_BUFFERING*/2) {
+                        var bufMSec: number = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
                         this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
                         var totl: number = this.getTotalMSec();
                         var rest: number = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
-                        this.m_status = STATUS_PLAY;
+                        this.m_status = /*MSequencer.STATUS_PLAY*/3;
                         this.m_playSide = 1 - this.m_playSide;
                         this.m_playSize = 0;
-                        this.m_startTime = worker.getTime();
+                        this.m_startTime = this.m_lastTime = MSequencer.getTimer();
                         this.processStart();
                         this.startRestTimer(rest);
-                        worker.playSound();
-                        this.m_lastTime = worker.getTime();
+                        msgr.playSound();
                     }
                     break;
                 default:
@@ -222,16 +235,15 @@ module FlMMLWorker.flmml {
         }
 
         private onSampleData(e: any): void {
-            var i: number;
             var base: number;
             var sendBuf: Array<Float32Array>;
 
-            this.m_lastTime = global.worker.getTime();
-            if (this.m_status === STATUS_PLAY && this.m_step === STEP_TRACK) this.startProcTimer();
-
-            if (this.m_playSize >= BACKBUF_MULTIPLE) {
+            this.m_lastTime = MSequencer.getTimer();
+            if (this.m_status !== /*MSequencer.STATUS_PLAY*/3) return;
+            if (this.m_step === /*MSequencer.STEP_TRACK*/2) this.startProcTimer();
+            if (this.m_playSize >= MSequencer.MULTIPLE) {
                 // バッファ完成済みの場合
-                if (this.m_step === STEP_COMPLETE) {
+                if (this.m_step === /*MSequencer.STEP_COMPLETE*/4) {
                     this.m_playSide = 1 - this.m_playSide;
                     this.m_playSize = 0;
                     this.processStart();
@@ -241,25 +253,21 @@ module FlMMLWorker.flmml {
                     this.reqBuffering();
                     return;
                 }
-                if (this.m_status === STATUS_LAST) {
+                if (this.m_status === /*MSequencer.STATUS_LAST*/4) {
                     return;
-                } else if (this.m_status === STATUS_PLAY) {
+                } else if (this.m_status === /*MSequencer.STATUS_PLAY*/3) {
                     if (this.m_trackArr[MTrack.TEMPO_TRACK].isEnd()) {
-                        this.m_status = STATUS_LAST;
+                        this.m_status = /*MSequencer.STATUS_LAST*/4;
                     }
                 }
             }
             
-            if (e.retBuf) {
-                sendBuf = e.retBuf;
-            } else {
-                sendBuf = [new Float32Array(BUFFER_SIZE), new Float32Array(BUFFER_SIZE)];
-            }
-            base = BUFFER_SIZE * this.m_playSize;
-            for (i = 0; i < 2; i++) {
-                sendBuf[i].set(this.m_buffer[this.m_playSide][i].subarray(base, base + BUFFER_SIZE));
-            }
-            global.worker.sendBuffer(sendBuf);
+            var bufSize = MSequencer.BUFFER_SIZE;
+            sendBuf = (e.retBuf) ? e.retBuf : [new Float32Array(bufSize), new Float32Array(bufSize)];
+            base = bufSize * this.m_playSize;
+            sendBuf[0].set(this.m_buffer[this.m_playSide][0].subarray(base, base + bufSize));
+            sendBuf[1].set(this.m_buffer[this.m_playSide][1].subarray(base, base + bufSize));
+            msgr.sendBuffer(sendBuf);
             this.m_playSize++;
         }
 
@@ -272,11 +280,11 @@ module FlMMLWorker.flmml {
         }
 
         isPlaying(): boolean {
-            return (this.m_status > STATUS_PAUSE);
+            return (this.m_status > /*MSequencer.STATUS_PAUSE*/1);
         }
 
         isPaused(): boolean {
-            return (this.m_status === STATUS_PAUSE);
+            return (this.m_status === /*MSequencer.STATUS_PAUSE*/1);
         }
 
         getTotalMSec(): number {
@@ -291,12 +299,12 @@ module FlMMLWorker.flmml {
             var now: number;
             var tot: number = this.getTotalMSec();
             switch (this.m_status) {
-                case STATUS_PLAY:
-                case STATUS_LAST:
-                    now = global.worker.getTime() - this.m_startTime + this.m_pausedPos;
+                case /*MSequencer.STATUS_PLAY*/3:
+                case /*MSequencer.STATUS_LAST*/4:
+                    now = MSequencer.getTimer() - this.m_startTime + this.m_pausedPos;
                     break;
-                case STATUS_PAUSE:
-                case STATUS_BUFFERING:
+                case /*MSequencer.STATUS_PAUSE*/1:
+                case /*MSequencer.STATUS_BUFFERING*/2:
                     now = this.m_pausedPos;
                     break;
                 default:

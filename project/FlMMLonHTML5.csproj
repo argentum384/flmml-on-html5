@@ -57,6 +57,8 @@
     <Content Include="index.html" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="fmgenAs\FM.ts" />
+    <TypeScriptCompile Include="global.ts" />
     <TypeScriptCompile Include="flmml\IChannel.ts" />
     <TypeScriptCompile Include="flmml\MChannel.ts" />
     <TypeScriptCompile Include="flmml\MEnvelope.ts" />
@@ -68,7 +70,7 @@
     <TypeScriptCompile Include="flmml\MOscFcDpcm.ts" />
     <TypeScriptCompile Include="flmml\MOscFcNoise.ts" />
     <TypeScriptCompile Include="flmml\MOscFcTri.ts" />
-    <TypeScriptCompile Include="flmml\MOscGbHNoise.ts" />
+    <TypeScriptCompile Include="flmml\MOscGbSNoise.ts" />
     <TypeScriptCompile Include="flmml\MOscGbLNoise.ts" />
     <TypeScriptCompile Include="flmml\MOscGbWave.ts" />
     <TypeScriptCompile Include="flmml\MOscillator.ts" />
@@ -88,16 +90,20 @@
     <TypeScriptCompile Include="fmgenAs\Channel4.ts" />
     <TypeScriptCompile Include="fmgenAs\Chip.ts" />
     <TypeScriptCompile Include="fmgenAs\EGPhase.ts" />
-    <TypeScriptCompile Include="fmgenAs\FM.ts" />
     <TypeScriptCompile Include="fmgenAs\JaggArray.ts" />
     <TypeScriptCompile Include="fmgenAs\Operator.ts" />
     <TypeScriptCompile Include="fmgenAs\OPM.ts" />
     <TypeScriptCompile Include="fmgenAs\OpType.ts" />
     <TypeScriptCompile Include="fmgenAs\Timer.ts" />
-    <TypeScriptCompile Include="Worker.ts" />
+    <TypeScriptCompile Include="lib\core.d.ts" />
+    <TypeScriptCompile Include="lib\dom-partial.d.ts" />
+    <TypeScriptCompile Include="lib\extensions.d.ts" />
+    <TypeScriptCompile Include="lib\webworker.generated.d.ts" />
+    <TypeScriptCompile Include="messenger\Messenger.ts" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
+    <TypeScriptNoLib>true</TypeScriptNoLib>
     <TypeScriptOutFile>flmmlworker-raw.js</TypeScriptOutFile>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />

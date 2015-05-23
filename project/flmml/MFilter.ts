@@ -1,9 +1,7 @@
-﻿/// <reference path="MChannel.ts" />
-/// <reference path="MEnvelope.ts" />
-/// <reference path="MSequencer.ts" />
-
-module FlMMLWorker.flmml {
+﻿module flmml {
     export class MFilter {
+        static SAMPLE_RATE: number = null;
+
         private m_t1: number;
         private m_t2: number;
         private m_b0: number;
@@ -14,6 +12,7 @@ module FlMMLWorker.flmml {
         private sw: number;
 
         constructor() {
+            if (!MFilter.SAMPLE_RATE) MFilter.SAMPLE_RATE = SAMPLE_RATE;
             this.setSwitch(0);
         }
 
@@ -26,7 +25,6 @@ module FlMMLWorker.flmml {
             this.sw = s;
         }
 
-        // 辟｡髻ｳ蜈･蜉帶凾縺ｫ菴輔°縺ｮ菫｡蜿ｷ繧貞�蜉帙☆繧九°縺ｮ繝√ぉ繝�け
         checkToSilence(): boolean {
             switch (this.sw) {
                 case 0:
@@ -64,7 +62,7 @@ module FlMMLWorker.flmml {
             var i: number;
             var fb: number;
             var cut: number;
-            var k: number = key * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+            var k: number = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
             if (amt > 0.0001 || amt < -0.0001) {
                 for (i = start; i < end; i++) {
                     cut = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
@@ -93,7 +91,7 @@ module FlMMLWorker.flmml {
 
         lpf2(samples: Float32Array, start: number, end: number, envelope: MEnvelope, frq: number, amt: number, res: number, key: number): void {
             var t1: number = this.m_t1, t2: number = this.m_t2, b0: number = this.m_b0, b1: number = this.m_b1, b2: number = this.m_b2, b3: number = this.m_b3, b4: number = this.m_b4;
-            var k: number = key * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+            var k: number = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
             for (var i: number = start; i < end; i++) {
                 var cut: number = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
                 if (cut < (1.0 / 127.0)) cut = 0.0;
@@ -128,7 +126,7 @@ module FlMMLWorker.flmml {
             var i: number;
             var fb: number;
             var cut: number;
-            var k: number = key * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+            var k: number = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
             var input: number;
             if (amt > 0.0001 || amt < -0.0001) {
                 for (i = start; i < end; i++) {
@@ -161,7 +159,7 @@ module FlMMLWorker.flmml {
 
         hpf2(samples: Float32Array, start: number, end: number, envelope: MEnvelope, frq: number, amt: number, res: number, key: number): void {
             var t1: number = this.m_t1, t2: number = this.m_t2, b0: number = this.m_b0, b1: number = this.m_b1, b2: number = this.m_b2, b3: number = this.m_b3, b4: number = this.m_b4;
-            var k: number = key * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+            var k: number = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
             for (var i: number = start; i < end; i++) {
                 var cut: number = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
                 if (cut < (1.0 / 127.0)) cut = 0.0;

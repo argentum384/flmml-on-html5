@@ -1,11 +1,8 @@
 ﻿/// <reference path="MOscMod.ts" />
-/// <reference path="MSequencer.ts" />
-/// <reference path="../fmgenAs/FM.ts" />
 /// <reference path="../fmgenAs/OPM.ts" />
 
-module FlMMLWorker.flmml {
-    import FM = FlMMLWorker.fmgenAs.FM;
-    import OPM = FlMMLWorker.fmgenAs.OPM;
+module flmml {
+    import OPM = fmgenAs.OPM;
 
     /**
       * FM音源ドライバ MOscOPM for AS3
@@ -31,9 +28,9 @@ module FlMMLWorker.flmml {
         private m_velocity: number;
         private m_al: number;
         private m_tl: Array<number>; // 固定長
-        
+
         private static s_init: number = 0;
-        private static s_table: Array<Array<number>>;
+        private static s_table: Array<Array<number>> = new Array<Array<number>>(MOscOPM.MAX_WAVE);
         private static s_comGain: number = 14.25;
         
         // YM2151 アプリケーションマニュアル Fig.2.4より
@@ -41,33 +38,33 @@ module FlMMLWorker.flmml {
         // C   C#  D   D#  E   F   F#  G   G#  A   A#  B  
             0xE, 0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9, 0xA, 0xC, 0xD, // 3.58MHz         
         ];
-        
+            
         // スロットのアドレス
         private static slottable: Array<number> = [
             0, 2, 1, 3
         ];
-        
+            
         // キャリアとなるOP
         private static carrierop: Array<number> = [
-        //   c2   m2   c1   m1
-            0x40,                // AL 0
-            0x40,                // AL 1
-            0x40,                // AL 2
-            0x40,                // AL 3
-            0x40 | 0x10,      // AL 4
-            0x40 | 0x20 | 0x10,      // AL 5
-            0x40 | 0x20 | 0x10,      // AL 6
-            0x40 | 0x20 | 0x10 | 0x08, // AL 7
+        //   c2     m2     c1     m1
+            0x40,                     // AL 0
+            0x40,                     // AL 1
+            0x40,                     // AL 2
+            0x40,                     // AL 3
+            0x40 | 0x10,              // AL 4
+            0x40 | 0x20 | 0x10,       // AL 5
+            0x40 | 0x20 | 0x10,       // AL 6
+            0x40 | 0x20 | 0x10 | 0x08 // AL 7
         ];
-
+     
         private static defTimbre: Array<number> = [
         /*  AL FB */
             4, 5,
         /*  AR DR SR RR SL TL KS ML D1 D2 AM　*/
-            31, 5, 0, 0, 0, 23, 1, 1, 3, 0, 0,
-            20, 10, 3, 7, 8, 0, 1, 1, 3, 0, 0,
-            31, 3, 0, 0, 0, 25, 1, 1, 7, 0, 0,
-            31, 12, 3, 7, 10, 2, 1, 1, 7, 0, 0, 
+            31,  5, 0, 0,  0, 23, 1, 1, 3, 0, 0,
+            20, 10, 3, 7,  8,  0, 1, 1, 3, 0, 0,
+            31,  3, 0, 0,  0, 25, 1, 1, 7, 0, 0,
+            31, 12, 3, 7, 10,  2, 1, 1, 7, 0, 0, 
         //  OM,
             15,
         //  WF LFRQ PMD AMD
@@ -75,9 +72,9 @@ module FlMMLWorker.flmml {
         //  PMS AMS
             0, 0,
         //  NE NFRQ
-            0, 0,
+            0, 0
         ];
-
+     
         private static zeroTimbre: Array<number> = [
         /*  AL FB */
             0, 0,
@@ -93,7 +90,7 @@ module FlMMLWorker.flmml {
         //  PMS AMS
             0, 0,
         //  NE NFRQ
-            0, 0,
+            0, 0
         ];
 
         constructor() {
@@ -104,7 +101,7 @@ module FlMMLWorker.flmml {
             this.m_tl = new Array<number>(4);
             super();
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, MSequencer.SAMPLE_RATE);
+            this.m_fm.Init(MOscOPM.OPM_CLOCK, SAMPLE_RATE);
             this.m_fm.Reset();
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.setOpMask(15);
@@ -112,17 +109,16 @@ module FlMMLWorker.flmml {
         }
 
         static boot(): void {
-            if (MOscOPM.s_init !== 0) return;
-            MOscOPM.s_table = new Array<Array<number>>(MOscOPM.MAX_WAVE);
-            MOscOPM.s_table[0] = MOscOPM.defTimbre;
-            FM.MakeLFOTable();
-            MOscOPM.s_init = 1;
+            if (this.s_init !== 0) return;
+            this.s_table[0] = this.defTimbre;
+            //FM.MakeLFOTable();
+            this.s_init = 1;
         }
 
         static clearTimber(): void {
-            for (var i: number = 0; i < MOscOPM.s_table.length; i++) {
-                if (i === 0) MOscOPM.s_table[i] = MOscOPM.defTimbre;
-                else MOscOPM.s_table[i] = null;
+            for (var i: number = 0; i < this.s_table.length; i++) {
+                if (i === 0) this.s_table[i] = this.defTimbre;
+                else this.s_table[i] = null;
             }
         }
 		
@@ -134,18 +130,18 @@ module FlMMLWorker.flmml {
         }
 
         static setTimber(no: number, type: number, s: String): void {
-            if (no < 0 || MOscOPM.MAX_WAVE <= no) return;
+            if (no < 0 || this.MAX_WAVE <= no) return;
 
             s = s.replace(/[,;\s\t\r\n]+/gm, ",");
             s = this.trim(s);
             var a: Array<any> = s.split(",");
-            var b: Array<number> = new Array<number>(MOscOPM.TIMB_SZ_M);
+            var b: Array<number> = new Array<number>(this.TIMB_SZ_M);
             
             // パラメータの数の正当性をチェック
             switch (type) {
-                case MOscOPM.TYPE_OPM: if (a.length < 2 + 11 * 4) return; // 足りない
+                case this.TYPE_OPM: if (a.length < 2 + 11 * 4) return; // 足りない
                     break;
-                case MOscOPM.TYPE_OPN: if (a.length < 2 + 10 * 4) return; // 足りない
+                case this.TYPE_OPN: if (a.length < 2 + 10 * 4) return; // 足りない
                     break;
                 default: return; // んなものねぇよ
             }
@@ -153,45 +149,46 @@ module FlMMLWorker.flmml {
             var i: number, j: number, l: number;
 
             switch (type) {
-                case MOscOPM.TYPE_OPM:
-                    l = Math.min(MOscOPM.TIMB_SZ_M, a.length);
+                case this.TYPE_OPM:
+                    l = Math.min(this.TIMB_SZ_M, a.length);
                     for (i = 0; i < l; i++) {
-                        b[i] = parseInt(a[i]);
+                        b[i] = a[i] | 0;
                     }
-                    for (; i < MOscOPM.TIMB_SZ_M; i++) {
-                        b[i] = MOscOPM.zeroTimbre[i];
+                    for (; i < this.TIMB_SZ_M; i++) {
+                        b[i] = this.zeroTimbre[i];
                     }
                     break;
 
-                case MOscOPM.TYPE_OPN:
+                case this.TYPE_OPN:
                     // AL FB
                     for (i = 0, j = 0; i < 2; i++ , j++) {
-                        b[i] = parseInt(a[j]);
+                        b[i] = a[j] | 0;
                     }
                     // AR DR SR RR SL TL KS ML DT AM 4セット
                     for (; i < 46; i++) {
                         if ((i - 2) % 11 === 9) b[i] = 0; // DT2
-                        else b[i] = parseInt(a[j++]);
+                        else b[i] = a[j++] | 0;
                     }
-                    l = Math.min(MOscOPM.TIMB_SZ_N, a.length);
+                    l = Math.min(this.TIMB_SZ_N, a.length);
                     for (; j < l; i++ , j++) {
-                        b[i] = parseInt(a[j]);
+                        b[i] = a[j] | 0;
                     }
-                    for (; i < MOscOPM.TIMB_SZ_M; i++) {
-                        b[i] = MOscOPM.zeroTimbre[i];
+                    for (; i < this.TIMB_SZ_M; i++) {
+                        b[i] = this.zeroTimbre[i];
                     }
                     break;
             }           
         
             // 格納
-            MOscOPM.s_table[no] = b;
+            this.s_table[no] = b;
         }
 
         protected loadTimbre(p: Array<number>): void {
             this.SetFBAL(p[1], p[0]);
 
             var i: number, s: number;
-            var slottable = MOscOPM.slottable;
+            var slottable: Array<number> = MOscOPM.slottable;
+
             for (i = 2, s = 0; s < 4; s++ , i += 11) {
                 this.SetDT1ML(slottable[s], p[i + 8], p[i + 7]);
                 this.m_tl[s] = p[i + 5];
@@ -213,7 +210,7 @@ module FlMMLWorker.flmml {
         }
 
         static setCommonGain(gain: number): void {
-            MOscOPM.s_comGain = gain;
+            this.s_comGain = gain;
         }
         
         // レジスタ操作系 (非公開)
@@ -291,9 +288,9 @@ module FlMMLWorker.flmml {
         
         // 0～127のベロシティを設定 (キャリアのトータルレベルが操作される)
         setVelocity(vel: number): void {
-            var carrierop = MOscOPM.carrierop;
-            var slottable = MOscOPM.slottable;
             this.m_velocity = vel;
+            var carrierop: Array<number> = MOscOPM.carrierop;
+            var slottable: Array<number> = MOscOPM.slottable;
             if ((carrierop[this.m_al] & 0x08) !== 0) this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity)); else this.SetTL(slottable[0], this.m_tl[0]);
             if ((carrierop[this.m_al] & 0x10) !== 0) this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity)); else this.SetTL(slottable[1], this.m_tl[1]);
             if ((carrierop[this.m_al] & 0x20) !== 0) this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity)); else this.SetTL(slottable[2], this.m_tl[2]);
@@ -342,7 +339,7 @@ module FlMMLWorker.flmml {
 
         IsPlaying(): boolean {
             return this.m_fm.IsOn(0);
-        }   
+        }
         
         /*
          * End Class Definition

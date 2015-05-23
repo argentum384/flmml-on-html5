@@ -4,12 +4,9 @@
 //	Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
-/// <reference path="FM.ts" />
-/// <reference path="OPM.ts" />
-/// <reference path="Chip.ts" />
-/// <reference path="EGPhase.ts" />
+/// <reference path="JaggArray.ts" />
 
-module FlMMLWorker.fmgenAs {
+module fmgenAs {
 	/**
 	 * ...
 	 * @author ALOE
@@ -65,68 +62,68 @@ module FlMMLWorker.fmgenAs {
         private mute_: boolean;
 
         private static notetable: Array<number>/*[128]*/ = [
-            0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3,
-            4, 4, 4, 4, 4, 4, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7,
-            8, 8, 8, 8, 8, 8, 8, 9, 10, 11, 11, 11, 11, 11, 11, 11,
+             0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  3,  3,  3,  3,  3,  3, 
+             4,  4,  4,  4,  4,  4,  4,  5,  6,  7,  7,  7,  7,  7,  7,  7, 
+             8,  8,  8,  8,  8,  8,  8,  9, 10, 11, 11, 11, 11, 11, 11, 11,
             12, 12, 12, 12, 12, 12, 12, 13, 14, 15, 15, 15, 15, 15, 15, 15,
             16, 16, 16, 16, 16, 16, 16, 17, 18, 19, 19, 19, 19, 19, 19, 19,
             20, 20, 20, 20, 20, 20, 20, 21, 22, 23, 23, 23, 23, 23, 23, 23,
             24, 24, 24, 24, 24, 24, 24, 25, 26, 27, 27, 27, 27, 27, 27, 27,
-            28, 28, 28, 28, 28, 28, 28, 29, 30, 31, 31, 31, 31, 31, 31, 31,
+            28, 28, 28, 28, 28, 28, 28, 29, 30, 31, 31, 31, 31, 31, 31, 31
         ];
 
         private static dttable: Array<number>/*[256]*/ = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4,
-            4, 6, 6, 6, 8, 8, 8, 10, 10, 12, 12, 14, 16, 16, 16, 16,
-            2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 8, 8, 8, 10,
-            10, 12, 12, 14, 16, 16, 18, 20, 22, 24, 26, 28, 32, 32, 32, 32,
-            4, 4, 4, 4, 4, 6, 6, 6, 8, 8, 8, 10, 10, 12, 12, 14,
-            16, 16, 18, 20, 22, 24, 26, 28, 32, 34, 38, 40, 44, 44, 44, 44,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, -2, -2, -2, -2, -2, -2, -2, -2, -4, -4, -4, -4,
-            -4, -6, -6, -6, -8, -8, -8, -10, -10, -12, -12, -14, -16, -16, -16, -16,
-            -2, -2, -2, -2, -4, -4, -4, -4, -4, -6, -6, -6, -8, -8, -8, -10,
+              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
+              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
+              0,   0,   0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   4,   4,   4,   4,  
+              4,   6,   6,   6,   8,   8,   8,  10,  10,  12,  12,  14,  16,  16,  16,  16, 
+              2,   2,   2,   2,   4,   4,   4,   4,   4,   6,   6,   6,   8,   8,   8,  10, 
+             10,  12,  12,  14,  16,  16,  18,  20,  22,  24,  26,  28,  32,  32,  32,  32, 
+              4,   4,   4,   4,   4,   6,   6,   6,   8,   8,   8,  10,  10,  12,  12,  14, 
+             16,  16,  18,  20,  22,  24,  26,  28,  32,  34,  38,  40,  44,  44,  44,  44, 
+              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
+              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
+              0,   0,   0,   0,  -2,  -2,  -2,  -2,  -2,  -2,  -2,  -2,  -4,  -4,  -4,  -4, 
+             -4,  -6,  -6,  -6,  -8,  -8,  -8, -10, -10, -12, -12, -14, -16, -16, -16, -16,
+             -2,  -2,  -2,  -2,  -4,  -4,  -4,  -4,  -4,  -6,  -6,  -6,  -8,  -8,  -8, -10,
             -10, -12, -12, -14, -16, -16, -18, -20, -22, -24, -26, -28, -32, -32, -32, -32,
-            -4, -4, -4, -4, -4, -6, -6, -6, -8, -8, -8, -10, -10, -12, -12, -14,
-            -16, -16, -18, -20, -22, -24, -26, -28, -32, -34, -38, -40, -44, -44, -44, -44,
+             -4,  -4,  -4,  -4,  -4,  -6,  -6,  -6,  -8,  -8,  -8, -10, -10, -12, -12, -14,
+            -16, -16, -18, -20, -22, -24, -26, -28, -32, -34, -38, -40, -44, -44, -44, -44
         ];
 
         static decaytable1: Array<Array<number>>/*[64][8]*/ = [
-            [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 0, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1, 0], [1, 1, 1, 0, 1, 0, 1, 0],
-            [1, 1, 1, 0, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1], [2, 1, 1, 1, 2, 1, 1, 1],
-            [2, 1, 2, 1, 2, 1, 2, 1], [2, 2, 2, 1, 2, 2, 2, 1],
-            [2, 2, 2, 2, 2, 2, 2, 2], [4, 2, 2, 2, 4, 2, 2, 2],
-            [4, 2, 4, 2, 4, 2, 4, 2], [4, 4, 4, 2, 4, 4, 4, 2],
-            [4, 4, 4, 4, 4, 4, 4, 4], [8, 4, 4, 4, 8, 4, 4, 4],
-            [8, 4, 8, 4, 8, 4, 8, 4], [8, 8, 8, 4, 8, 8, 8, 4],
+            [ 0,  0,  0,  0,  0,  0,  0,  0], [ 0,  0,  0,  0,  0,  0,  0,  0], 
+            [ 1,  1,  1,  1,  1,  1,  1,  1], [ 1,  1,  1,  1,  1,  1,  1,  1], 
+            [ 1,  1,  1,  1,  1,  1,  1,  1], [ 1,  1,  1,  1,  1,  1,  1,  1], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  0,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  0,  1,  0,  1,  0,  1,  0], [ 1,  1,  1,  0,  1,  0,  1,  0], 
+            [ 1,  1,  1,  0,  1,  1,  1,  0], [ 1,  1,  1,  1,  1,  1,  1,  0], 
+            [ 1,  1,  1,  1,  1,  1,  1,  1], [ 2,  1,  1,  1,  2,  1,  1,  1], 
+            [ 2,  1,  2,  1,  2,  1,  2,  1], [ 2,  2,  2,  1,  2,  2,  2,  1], 
+            [ 2,  2,  2,  2,  2,  2,  2,  2], [ 4,  2,  2,  2,  4,  2,  2,  2], 
+            [ 4,  2,  4,  2,  4,  2,  4,  2], [ 4,  4,  4,  2,  4,  4,  4,  2], 
+            [ 4,  4,  4,  4,  4,  4,  4,  4], [ 8,  4,  4,  4,  8,  4,  4,  4], 
+            [ 8,  4,  8,  4,  8,  4,  8,  4], [ 8,  8,  8,  4,  8,  8,  8,  4], 
             [16, 16, 16, 16, 16, 16, 16, 16], [16, 16, 16, 16, 16, 16, 16, 16],
-            [16, 16, 16, 16, 16, 16, 16, 16], [16, 16, 16, 16, 16, 16, 16, 16],
+            [16, 16, 16, 16, 16, 16, 16, 16], [16, 16, 16, 16, 16, 16, 16, 16]
         ];
 
         private static decaytable2: Array<number>/*[16]*/ = [
@@ -134,71 +131,111 @@ module FlMMLWorker.fmgenAs {
         ];
 
         static attacktable: Array<Array<number>>/*[64][8]*/ = [
-            [-1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1],
-            [4, 4, 4, 4, 4, 4, 4, 4], [4, 4, 4, 4, 4, 4, 4, 4],
-            [4, 4, 4, 4, 4, 4, 4, 4], [4, 4, 4, 4, 4, 4, 4, 4],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, -1, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, -1, 4, -1, 4, -1, 4, -1], [4, 4, 4, -1, 4, -1, 4, -1],
-            [4, 4, 4, -1, 4, 4, 4, -1], [4, 4, 4, 4, 4, 4, 4, -1],
-            [4, 4, 4, 4, 4, 4, 4, 4], [3, 4, 4, 4, 3, 4, 4, 4],
-            [3, 4, 3, 4, 3, 4, 3, 4], [3, 3, 3, 4, 3, 3, 3, 4],
-            [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 3, 3, 2, 3, 3, 3],
-            [2, 3, 2, 3, 2, 3, 2, 3], [2, 2, 2, 3, 2, 2, 2, 3],
-            [2, 2, 2, 2, 2, 2, 2, 2], [1, 2, 2, 2, 1, 2, 2, 2],
-            [1, 2, 1, 2, 1, 2, 1, 2], [1, 1, 1, 2, 1, 1, 1, 2],
-            [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
+            [-1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1], 
+            [ 4,  4,  4,  4,  4,  4,  4,  4], [ 4,  4,  4,  4,  4,  4,  4,  4], 
+            [ 4,  4,  4,  4,  4,  4,  4,  4], [ 4,  4,  4,  4,  4,  4,  4,  4], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4, -1,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4, -1,  4, -1,  4, -1,  4, -1], [ 4,  4,  4, -1,  4, -1,  4, -1], 
+            [ 4,  4,  4, -1,  4,  4,  4, -1], [ 4,  4,  4,  4,  4,  4,  4, -1], 
+            [ 4,  4,  4,  4,  4,  4,  4,  4], [ 3,  4,  4,  4,  3,  4,  4,  4], 
+            [ 3,  4,  3,  4,  3,  4,  3,  4], [ 3,  3,  3,  4,  3,  3,  3,  4], 
+            [ 3,  3,  3,  3,  3,  3,  3,  3], [ 2,  3,  3,  3,  2,  3,  3,  3], 
+            [ 2,  3,  2,  3,  2,  3,  2,  3], [ 2,  2,  2,  3,  2,  2,  2,  3], 
+            [ 2,  2,  2,  2,  2,  2,  2,  2], [ 1,  2,  2,  2,  1,  2,  2,  2], 
+            [ 1,  2,  1,  2,  1,  2,  1,  2], [ 1,  1,  1,  2,  1,  1,  1,  2], 
+            [ 0,  0,  0,  0,  0,  0,  0,  0], [ 0,  0,  0,  0,  0,  0,  0,  0], 
+            [ 0,  0,  0,  0,  0,  0,  0,  0], [ 0,  0,  0,  0,  0,  0,  0,  0]
         ];
 
         private static ssgenvtable: Array<Array<Array<Array<number>>>>/*[8][2][3][2]*/ = [
-            [[[1, 1], [1, 1], [1, 1]],       // 08 
-                [[0, 1], [1, 1], [1, 1]]],       // 08 56~
-            [[[0, 1], [2, 0], [2, 0]],       // 09
-                [[0, 1], [2, 0], [2, 0]]],       // 09
-            [[[1, -1], [0, 1], [1, -1]],       // 10
-                [[0, 1], [1, -1], [0, 1]]],       // 10 60~
-            [[[1, -1], [0, 0], [0, 0]],       // 11
-                [[0, 1], [0, 0], [0, 0]]],       // 11 60~
-            [[[2, -1], [2, -1], [2, -1]],       // 12
-                [[1, -1], [2, -1], [2, -1]]],       // 12 56~
-            [[[1, -1], [0, 0], [0, 0]],       // 13
-                [[1, -1], [0, 0], [0, 0]]],       // 13
-            [[[0, 1], [1, -1], [0, 1]],       // 14
-                [[1, -1], [0, 1], [1, -1]]],       // 14 60~
-            [[[0, 1], [2, 0], [2, 0]],       // 15
-                [[1, -1], [2, 0], [2, 0]]],       // 15 60~
+            [[[1,  1], [1,  1], [1,  1]],  // 08 
+             [[0,  1], [1,  1], [1,  1]]], // 08 56~
+            [[[0,  1], [2,  0], [2,  0]],  // 09
+             [[0,  1], [2,  0], [2,  0]]], // 09
+            [[[1, -1], [0,  1], [1, -1]],  // 10
+             [[0,  1], [1, -1], [0,  1]]], // 10 60~
+            [[[1, -1], [0,  0], [0,  0]],  // 11
+             [[0,  1], [0,  0], [0,  0]]], // 11 60~
+            [[[2, -1], [2, -1], [2, -1]],  // 12
+             [[1, -1], [2, -1], [2, -1]]], // 12 56~
+            [[[1, -1], [0,  0], [0,  0]],  // 13
+             [[1, -1], [0,  0], [0,  0]]], // 13
+            [[[0,  1], [1, -1], [0,  1]],  // 14
+             [[1, -1], [0,  1], [1, -1]]], // 14 60~
+            [[[0,  1], [2,  0], [2,  0]],  // 15
+             [[1, -1], [2,  0], [2,  0]]]  // 15 60~
         ];
+        
+        // サインテーブルの作成
+        static sinetable: Array<number> = (() => {
+            var sinetable: Array<number> = [];
+            var log2: number = Math.log(2.0);
+            for (var i = 0; i < /*FM.FM_OPSINENTS*/1024 / 2; i++) {
+                var r: number = (i * 2 + 1) * Math.PI / /*FM.FM_OPSINENTS*/1024;
+                var q: number = -256 * Math.log(Math.sin(r)) / log2;
+                var s: number = Math.floor(q + 0.5) + 1;
+                sinetable[i] = s * 2;
+                sinetable[/*FM.FM_OPSINENTS*/1024 / 2 + i | 0] = s * 2 + 1;
+            }
+            return sinetable;
+        })();
+        
+        // 対数テーブルの作成
+        static cltable: Array<number> = (() => {
+            var cltable: Array<number> = [];
+            var i: number, j: number;
+            for (i = 0, j = 0; i < 256; i++) {
+                var v: number = Math.floor(Math.pow(2.0, 13.0 - i / 256.0));
+                v = (v + 2) & ~3;
+                cltable[j++] = v;
+                cltable[j++] = -v;
+            }
+            i = j;
+            while (j < /*FM.FM_CLENTS*/8192) {
+                cltable[j++] = cltable[i++ - 512] / 2 | 0;
+            }
+            return cltable;
+        })();
 
-        static sinetable: Array<number> = new Array<number>(FM.FM_OPSINENTS);
-        static cltable: Array<number> = new Array<number>(FM.FM_CLENTS);
-
-        private static tablehasmade: boolean = false;
+        static amtable: Array<Array<Array<number>>> = (() => {
+            var amtable: Array<Array<Array<number>>> = JaggArray.I3(2, 8, /*FM.FM_LFOENTS*/256);
+            var i: number, j: number;
+            var amt: Array<Array<number>> = [
+                [31, 6, 4, 3], // OPNA
+                [31, 2, 1, 0], // OPM
+            ];
+            for (var type: number = 0; type < 2; type++) {
+                for (i = 0; i < 4; i++) {
+                    for (j = 0; j < /*FM.FM_LFOENTS*/256; j++) {
+                        amtable[type][i][j] = (((j * 4) >> amt[type][i]) * 2) << 2;
+                    }
+                }
+            }
+            return amtable;
+        })();
 
         constructor() {
-            if (!Operator.tablehasmade)
-                Operator.MakeTable();
-
             // EG Part
             this.ar_ = this.dr_ = this.sr_ = this.rr_ = this.key_scale_rate_ = 0;
-            this.ams_ = FM.amtable[0][0];
+            this.ams_ = Operator.amtable[0][0];
             this.mute_ = false;
             this.keyon_ = false;
             this.tl_out_ = 0;
@@ -227,35 +264,6 @@ module FlMMLWorker.fmgenAs {
             // OP part
             this.out_ = this.out2_ = 0;
             this.param_changed_ = true;
-        }
-
-        private static MakeTable(): void {
-            var i: number;
-            var j: number;
-            // 対数テーブルの作成
-            for (i = 0, j = 0; i < 256; i++) {
-                var v: number = Math.floor(Math.pow(2.0, 13.0 - i / 256.0));
-                v = (v + 2) & ~3;
-                Operator.cltable[j++] = v;
-                Operator.cltable[j++] = -v;
-            }
-            i = j;
-            while (j < FM.FM_CLENTS) {
-                Operator.cltable[j++] = Operator.cltable[i++ - 512] / 2 | 0;
-            }
-
-            // サインテーブルの作成
-            var log2: number = Math.log(2.0);
-            for (i = 0; i < FM.FM_OPSINENTS / 2; i++) {
-                var r: number = (i * 2 + 1) * Math.PI / FM.FM_OPSINENTS;
-                var q: number = -256 * Math.log(Math.sin(r)) / log2;
-                var s: number = Math.floor(q + 0.5) + 1;
-                Operator.sinetable[i] = s * 2;
-                Operator.sinetable[FM.FM_OPSINENTS / 2 + i | 0] = s * 2 + 1;
-            }
-
-            FM.MakeLFOTable();
-            this.tablehasmade = true;
         }
 
         SetDPBN(dp: number, bn: number): void {
@@ -301,7 +309,7 @@ module FlMMLWorker.fmgenAs {
                 this.ssg_vector_ = Operator.ssgenvtable[this.ssg_type_ & 7][m][this.ssg_phase_][1];
             }
             // LFO
-            this.ams_ = FM.amtable[this.type_ | 0][this.amon_ ? (this.ms_ >> 4) & 3 : 0];
+            this.ams_ = Operator.amtable[this.type_ | 0][this.amon_ ? (this.ms_ >> 4) & 3 : 0];
 
             this.EGUpdate();
         }       
@@ -350,7 +358,7 @@ module FlMMLWorker.fmgenAs {
                         this.ssg_vector_ = 1;
                         this.ssg_offset_ = 0;
                     }
-                    if (this.eg_phase_ === EGPhase.attack || (this.eg_level_ < FM.FM_EG_BOTTOM)) {
+                    if (this.eg_phase_ === EGPhase.attack || (this.eg_level_ < /*FM.FM_EG_BOTTOM*/955)) {
                         this.eg_level_on_next_phase_ = 0x400;
                         this.SetEGRate(Math.min(63, this.rr_ + this.key_scale_rate_));
                         this.eg_phase_ = EGPhase.release;
@@ -359,8 +367,8 @@ module FlMMLWorker.fmgenAs {
                 // C#               goto case EGPhase.off;
                 case EGPhase.off:           // off
                 default:
-                    this.eg_level_ = FM.FM_EG_BOTTOM;
-                    this.eg_level_on_next_phase_ = FM.FM_EG_BOTTOM;
+                    this.eg_level_ = /*FM.FM_EG_BOTTOM*/955;
+                    this.eg_level_on_next_phase_ = /*FM.FM_EG_BOTTOM*/955;
                     this.EGUpdate();
                     this.SetEGRate(0);
                     this.eg_phase_ = EGPhase.off;
@@ -378,27 +386,23 @@ module FlMMLWorker.fmgenAs {
         //  １サンプル合成
 
         //  ISample を envelop count (2π) に変換するシフト量   
-        static IS2EC_SHIFT: number = ((20 + FM.FM_PGBITS) - 13);
+        static IS2EC_SHIFT: number = ((20 + /*FM.FM_PGBITS*/9) - 13);
 
         private SINE(s: number): number {
-            return Operator.sinetable[(s) & (FM.FM_OPSINENTS - 1)];
+            return Operator.sinetable[(s) & (/*FM.FM_OPSINENTS*/1024 - 1)];
         }
         private LogToLin(a: number): number {
-            return (a < FM.FM_CLENTS) ? Operator.cltable[a] : 0;
+            return (a < /*FM.FM_CLENTS*/8192) ? Operator.cltable[a] : 0;
         }
 
         private EGUpdate(): void {
-            //          if (this.ssg_type_ === 0) {
-            //              this.eg_out_ = Math.min(tl_out_ + this.eg_level_, 0x3ff) << (1 + 2);
-            //          }
-            //          else {
-            //              this.eg_out_ = Math.min(tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_, 0x3ff) << (1 + 2);
-            //          }
-            var a: number;
-            if (this.ssg_type_ === 0) a = this.tl_out_ + this.eg_level_;
-            else a = this.tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
-            if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
-            else this.eg_out_ = 0x3ff << (1 + 2);
+            //var a: number;
+            //if (this.ssg_type_ === 0) a = this.tl_out_ + this.eg_level_;
+            //else a = this.tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
+            var a: number = (this.ssg_type_ === 0) ? this.tl_out_ + this.eg_level_ : this.tl_out_ + this.eg_level_ * this.ssg_vector_ + this.ssg_offset_;
+            //if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
+            //else this.eg_out_ = 0x3ff << (1 + 2);
+            this.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
         }
 
         private SetEGRate(rate: number): void {
@@ -408,7 +412,7 @@ module FlMMLWorker.fmgenAs {
 
         //  EG 計算
         private EGCalc(): void {
-            this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;              // ##この手抜きは再現性を低下させる
+            this.eg_count_ = (2047 * 3) << /*FM.FM_RATIOBITS*/7;              // ##この手抜きは再現性を低下させる
 
             if (this.eg_phase_ === EGPhase.attack) {
                 var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
@@ -472,11 +476,9 @@ module FlMMLWorker.fmgenAs {
         //  OP 計算
         //  in: ISample (最大 8π)
         Calc(ii: number): number {
-            // *******************************
-            // EGStep(); // ssg関連は削除した。
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
-                this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
+                this.eg_count_ = (2047 * 3) << /*FM.FM_RATIOBITS*/7;
                 if (this.eg_phase_ === EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
@@ -489,36 +491,31 @@ module FlMMLWorker.fmgenAs {
                     if (this.eg_level_ >= this.eg_level_on_next_phase_) this.ShiftPhase(this.eg_phase_ + 1);
                 }
                 var a: number = this.tl_out_ + this.eg_level_;
-                if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
-                else this.eg_out_ = 0x3ff << (1 + 2);
+                //if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
+                //else this.eg_out_ = 0x3ff << (1 + 2);
+                this.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
                 this.eg_curve_count_++;
             }
 
             this.out2_ = this.out_;
 			
-            //          var pgin: number = PGCalc() >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS);
-            //          pgin += ii >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS-(2+IS2EC_SHIFT));
-            //          this.out_ = LogToLin(this.eg_out_ + SINE(pgin));
-
-            //  PGCalc();;
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_;
-            var pgin: number = pgo >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
-            pgin += ii >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS - (2 + Operator.IS2EC_SHIFT));
+            var pgin: number = pgo >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
+            pgin += ii >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10 - (2 + Operator.IS2EC_SHIFT));
 
-            //  LogToLin(); SINE();
-            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (FM.FM_OPSINENTS - 1)];
-            if (sino < FM.FM_CLENTS) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
-            else this.out_ = 0;
+            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)];
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
+            //else this.out_ = 0;
+            this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0; // JavaScriptでは三項演算子の方が速いようです
 
             return this.out_;
         }
 
         CalcL(ii: number): number {
-            // EGStep(); // ssg関連は削除した。
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
-                this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
+                this.eg_count_ = (2047 * 3) << /*FM.FM_RATIOBITS*/7;
                 if (this.eg_phase_ === EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
@@ -531,25 +528,21 @@ module FlMMLWorker.fmgenAs {
                     if (this.eg_level_ >= this.eg_level_on_next_phase_) this.ShiftPhase(this.eg_phase_ + 1);
                 }
                 var a: number = this.tl_out_ + this.eg_level_;
-                if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
-                else this.eg_out_ = 0x3ff << (1 + 2);
+                //if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
+                //else this.eg_out_ = 0x3ff << (1 + 2);
+                this.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
                 this.eg_curve_count_++;
-            }			
-			
-            //          var pgin: number = PGCalcL() >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS);
-            //          pgin += ii >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS-(2+IS2EC_SHIFT));
-            //          this.out_ = LogToLin(this.eg_out_ + SINE(pgin) + ams_[this.chip_.GetAML()]);
-
-            //  PGCalcL(); 
+            }
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_ + ((this.pg_diff_lfo_ * this.chip_.pmv_) >> 5);
-            var pgin: number = pgo >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
-            pgin += ii >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS - (2 + Operator.IS2EC_SHIFT));
+            var pgin: number = pgo >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
+            pgin += ii >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10 - (2 + Operator.IS2EC_SHIFT));
 
             //  LogToLin(); SINE();
-            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (FM.FM_OPSINENTS - 1)] + this.ams_[this.chip_.aml_];
-            if (sino < FM.FM_CLENTS) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
-            else this.out_ = 0;
+            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)] + this.ams_[this.chip_.aml_];
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino];
+            //else this.out_ = 0;
+            this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0;
 
             return this.out_;
         }
@@ -569,10 +562,9 @@ module FlMMLWorker.fmgenAs {
         //  OP (FB) 計算
         //  Self Feedback の変調最大 = 4π
         CalcFB(fb: number): number {
-            // EGStep(); // ssg関連は削除した。
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
-                this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
+                this.eg_count_ = (2047 * 3) << /*FM.FM_RATIOBITS*/7;
                 if (this.eg_phase_ === EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
@@ -585,41 +577,35 @@ module FlMMLWorker.fmgenAs {
                     if (this.eg_level_ >= this.eg_level_on_next_phase_) this.ShiftPhase(this.eg_phase_ + 1);
                 }
                 var a: number = this.tl_out_ + this.eg_level_;
-                if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
-                else this.eg_out_ = 0x3ff << (1 + 2);
+                //if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
+                //else this.eg_out_ = 0x3ff << (1 + 2);
+                this.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
                 this.eg_curve_count_++;
             }
 
             var ii: number = this.out_ + this.out2_;
             this.out2_ = this.out_;
 			
-            //          var pgin: number = PGCalc() >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS);
-            //          if (fb < 31) {
-            //              pgin += ((ii << (1 + IS2EC_SHIFT)) >> fb) >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS);
-            //          }
-            //          this.out_ = LogToLin(this.eg_out_ + SINE(pgin));			
-
-            //  PGCalc() LogToLin() SINE() インライン展開
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_;
 
-            var pgin: number = pgo >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
+            var pgin: number = pgo >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
             if (fb < 31) {
-                pgin += ((ii << (1 + Operator.IS2EC_SHIFT)) >> fb) >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
+                pgin += ((ii << (1 + Operator.IS2EC_SHIFT)) >> fb) >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
             }
 
-            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (FM.FM_OPSINENTS - 1)];
-            if (sino < FM.FM_CLENTS) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
-            else this.out_ = 0;
+            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)];
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino];
+            //else this.out_ = 0;
+            this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0;
 
             return this.out2_;
         }
 
         CalcFBL(fb: number): number {
-            // EGStep(); // ssg関連は削除した。
             this.eg_count_ -= this.eg_count_diff_;
             if (this.eg_count_ <= 0) {
-                this.eg_count_ = (2047 * 3) << FM.FM_RATIOBITS;
+                this.eg_count_ = (2047 * 3) << /*FM.FM_RATIOBITS*/7;
                 if (this.eg_phase_ === EGPhase.attack) {
                     var c: number = Operator.attacktable[this.eg_rate_][this.eg_curve_count_ & 7];
                     if (c >= 0) {
@@ -632,33 +618,27 @@ module FlMMLWorker.fmgenAs {
                     if (this.eg_level_ >= this.eg_level_on_next_phase_) this.ShiftPhase(this.eg_phase_ + 1);
                 }
                 var a: number = this.tl_out_ + this.eg_level_;
-                if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
-                else this.eg_out_ = 0x3ff << (1 + 2);
+                //if (a < 0x3ff) this.eg_out_ = a << (1 + 2);
+                //else this.eg_out_ = 0x3ff << (1 + 2);
+                this.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
                 this.eg_curve_count_++;
             }
 
             var ii: number = this.out_ + this.out2_;
             this.out2_ = this.out_;
 
-            //          var pgin: number = PGCalcL() >> (20+FM.FM_PGBITS-FM.FM_OPSINBITS);
-            //          if (fb < 31) {
-            //              pgin += ((ii << (1 + IS2EC_SHIFT)) >> fb) >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
-            //          }
-            //
-            //          this.out_ = LogToLin(this.eg_out_ + SINE(pgin) + ams_[this.chip_.GetAML()]);
-			
-            //  PGCalcL() LogToLin() SINE() インライン展開
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_ + ((this.pg_diff_lfo_ * this.chip_.pmv_) >> 5);
 
-            var pgin: number = pgo >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
+            var pgin: number = pgo >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
             if (fb < 31) {
-                pgin += ((ii << (1 + Operator.IS2EC_SHIFT)) >> fb) >> (20 + FM.FM_PGBITS - FM.FM_OPSINBITS);
+                pgin += ((ii << (1 + Operator.IS2EC_SHIFT)) >> fb) >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
             }
 
-            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (FM.FM_OPSINENTS - 1)] + this.ams_[this.chip_.aml_];
-            if (sino < FM.FM_CLENTS) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
-            else this.out_ = 0;
+            var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)] + this.ams_[this.chip_.aml_];
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
+            //else this.out_ = 0;
+            this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0;
 
             return this.out_;
         }
@@ -756,14 +736,6 @@ module FlMMLWorker.fmgenAs {
             this.ks_ = ks;
             this.param_changed_ = true;
         }
-
-        //      //  SSG-type Envelop (0-15)
-        //      SetSSGEC(ssgec: number): void {
-        //          if ((ssgec & 8) !== 0)
-        //              this.ssg_type_ = ssgec;
-        //          else
-        //              this.ssg_type_ = 0;
-        //      }
 
         SetAMON(amon: boolean): void {
             this.amon_ = amon;

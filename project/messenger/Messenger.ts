@@ -1,9 +1,7 @@
-﻿/// <reference path="flmml/MML.ts" />
+﻿/// <reference path="../flmml/MML.ts" />
 
-var global: any = this;
-
-module FlMMLWorker {
-    import MML = FlMMLWorker.flmml.MML;
+module messenger {
+    import MML = flmml.MML;
 
     var COM_BOOT      =  1, // Main->Worker
 		COM_PLAY      =  2, // Main->Worker
@@ -18,34 +16,33 @@ module FlMMLWorker {
 		COM_STOPSOUND = 11, // Worker->Main->Worker
 		COM_DEBUG     = 12; // Worker->Main
 
-    export class Worker {
-        private m_mml: MML;
-        private sampleRate: number;
-        private onStopSound: Function = null;
-        onRequestBuffer: Function = null;
+    export class Messenger {
+        mml: MML;
         tIDInfo: number;
         infoInterval: number;
         lastInfoTime: number;
 
+        onStopSound: Function = null;
+        onRequestBuffer: Function = null;
         onInfoTimerBinded: Function;
 
         constructor() {
             this.onInfoTimerBinded = this.onInfoTimer.bind(this);
 
-            global.addEventListener("message", this.onMessage.bind(this));
+            addEventListener("message", this.onMessage.bind(this));
         }
 
         onMessage(e: any) {
             var data: any = e.data,
                 type: number = data.type,
-                mml: MML = this.m_mml;
+                mml: MML = this.mml;
 
             if (!type) return;
             //console.log("Worker received " + type);
             switch (type) {
                 case COM_BOOT:
-                    this.sampleRate = data.sampleRate;
-                    this.m_mml = new MML();
+                    SAMPLE_RATE = data.sampleRate;
+                    this.mml = new MML();
                     break;
                 case COM_PLAY:
                     mml.play(data.mml);
@@ -79,13 +76,13 @@ module FlMMLWorker {
         }
 
         buffering(progress: number): void {
-            global.postMessage({ type: COM_BUFRING, progress: progress });
+            postMessage({ type: COM_BUFRING, progress: progress });
         }
 
         compileComplete(): void {
-            var mml: MML = this.m_mml;
+            var mml: MML = this.mml;
 
-            global.postMessage({
+            postMessage({
                 type: COM_COMPCOMP,
                 info: {
                     totalMSec: mml.getTotalMSec(),
@@ -100,37 +97,33 @@ module FlMMLWorker {
         }
 
         playSound(): void {
-            global.postMessage({ type: COM_PLAYSOUND });
+            postMessage({ type: COM_PLAYSOUND });
             this.syncInfo();
         }
 
         stopSound(onStopSound: Function = null, isFlushBuf: boolean = false): void {
-            global.postMessage({ type: COM_STOPSOUND, isFlushBuf: isFlushBuf });
-            if (onStopSound) {
-                this.onStopSound = onStopSound;
-            } else {
-                this.onStopSound = null;
-            }
+            postMessage({ type: COM_STOPSOUND, isFlushBuf: isFlushBuf });
+            this.onStopSound = (onStopSound) ? onStopSound : null;
         }
 
         sendBuffer(buffer: Array<Float32Array>): void {
             try {
-                global.postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+                postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
             } catch (e) {
                 console.log("Buffer is null");
             }
         }
 
         complete(): void {
-            global.postMessage({ type: COM_COMPLETE });
+            postMessage({ type: COM_COMPLETE });
             this.syncInfo();
         }
 
         syncInfo(): void {
-            var mml: MML = this.m_mml;
+            var mml: MML = this.mml;
 
-            this.lastInfoTime = this.getTime();
-            global.postMessage({
+            this.lastInfoTime = performance ? performance.now() : new Date().getTime();
+            postMessage({
                 type: COM_SYNCINFO,
                 info: {
                     _isPlaying: mml.isPlaying(),
@@ -143,18 +136,13 @@ module FlMMLWorker {
         }
 
         onInfoTimer(): void {
-            if (this.m_mml.isPlaying()) this.syncInfo();
-        }
-
-        getTime(): number {
-            return global.performance ? global.performance.now() : new Date().getTime();
+            if (this.mml.isPlaying()) this.syncInfo();
         }
 
         debug(str: string): void {
-            if (!str) str = "";
-            global.postMessage({ type: COM_DEBUG, str: str });
+            postMessage({ type: COM_DEBUG, str: str ? str : "" });
         }
     }
-
-    global.worker = new Worker();
 }
+
+var msgr: messenger.Messenger = new messenger.Messenger();

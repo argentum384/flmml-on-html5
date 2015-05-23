@@ -3,7 +3,7 @@
 //	Copyright (C) cisc 1998, 2003.
 //	Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
-module FlMMLWorker.fmgenAs {
+module fmgenAs {
 	/**
 	 * ...
 	 * @author ALOE

@@ -73,6 +73,24 @@ var FlMMLPlayer = function (document) {
         s.fontSize = "12px";
         s.fontFamily = "'Arial', sans-serif";
         s.zIndex = "0";
+        s.boxSizing = "border-box";
+        if (this.mmlStatus === MMLST_LOADING) {
+            s.backgroundColor = dispBkgColor;
+            s.border = dispBorder;
+
+            var divSysMsg = this.divSysMsg = document.createElement("div");
+            s = divSysMsg.style;
+            s.marginLeft = s.marginRight = "-1px";
+            s.marginTop = "-0.5em";
+            s.position = "absolute";
+            s.top = "9px";
+            s.width = "128px";
+
+            divSysMsg.appendChild(document.createTextNode("Loading..."));
+            divContainer.appendChild(divSysMsg);
+        } else {
+            s.backgroundColor = "transparent";
+        }
 
         var btnPlayPause = this.btnPlayPause = document.createElement("button");
         s = btnPlayPause.style;
@@ -215,24 +233,17 @@ var FlMMLPlayer = function (document) {
 
     FlMMLPlayer.prototype.onReadyStateChange = function (e) {
         if (this.xhr.readyState === XMLHttpRequest.DONE) {
+            removeChildren(this.divSysMsg);
             if (this.xhr.status === 200) {
-                this.mml = this.xhr.responseText;
+                removeChildren(this.divContainer);
+                var s = this.divContainer.style;
+                s.backgroundColor = "transparent";
+                s.border = "";
                 this.divContainer.appendChild(this.btnPlayMML);
+                this.mml = this.xhr.responseText;
                 this.mmlStatus = MMLST_SUCCEED;
             } else {
-                var s = this.divContainer.style;
-                s.backgroundColor = dispBkgColor;
-                s.boxSizing = "border-box";
-                s.border = dispBorder;
-                var divError = document.createElement("div");
-                s = divError.style;
-                s.marginLeft = s.marginRight = "-1px";
-                s.marginTop = "-0.5em";
-                s.position = "absolute";
-                s.top = "9px";
-                s.width = "128px";
-                divError.appendChild(document.createTextNode("Can't load the file."));
-                this.divContainer.appendChild(divError);
+                this.divSysMsg.appendChild(document.createTextNode("Can't load the file."));
                 this.flmml = null;
                 this.mmlStatus = MMLST_FAILED;
             }

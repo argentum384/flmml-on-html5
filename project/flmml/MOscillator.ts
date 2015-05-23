@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.flmml {
+﻿module flmml {
     export class MOscillator {
         static SINE: number = 0;
         static SAW: number = 1;
@@ -16,9 +16,9 @@
         static WAVE: number = 13;
         static OPM: number = 14;
         static MAX: number = 15;
-        protected static s_init: number = 0;
         protected m_osc: Array<MOscMod>;
         protected m_form: number;
+        protected static s_init: number = 0;
 
         constructor() {
             MOscillator.boot();
@@ -50,7 +50,7 @@
         }
 
         static boot(): void {
-            if (MOscillator.s_init) return;
+            if (this.s_init) return;
             MOscSine.boot();
             MOscSaw.boot();
             MOscTriangle.boot();
@@ -65,7 +65,7 @@
             MOscGbSNoise.boot();
             MOscWave.boot();
             MOscOPM.boot();
-            MOscillator.s_init = 1;
+            this.s_init = 1;
         }
 
         setForm(form: number): MOscMod {

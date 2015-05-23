@@ -1,18 +1,21 @@
 ﻿/// <reference path="IChannel.ts" />
-/// <reference path="MOscMod.ts" />
-/// <reference path="MFilter.ts" />
-/// <reference path="MEnvelope.ts" />
-/// <reference path="MSequencer.ts" />
-/// <reference path="MOscillator.ts" />
 
-module FlMMLWorker.flmml {
+module flmml {
     export class MChannel implements IChannel {
-        private static LFO_TARGET_PITCH: number = 0;
-        private static LFO_TARGET_AMPLITUDE: number = 1;
-        private static LFO_TARGET_CUTOFF: number = 2;
-        private static LFO_TARGET_PWM: number = 3;
-        private static LFO_TARGET_FM: number = 4;
-        private static LFO_TARGET_PANPOT: number = 5;
+        // 戻すときは正規表現使用の置換で
+        // /\*MChannel\.LFO_TARGET_(.*)\*/[0-9]*
+        //  ↓
+        // MChannel.LFO_TARGET_$1
+        //
+        //private static LFO_TARGET_PITCH: number = 0;
+        //private static LFO_TARGET_AMPLITUDE: number = 1;
+        //private static LFO_TARGET_CUTOFF: number = 2;
+        //private static LFO_TARGET_PWM: number = 3;
+        //private static LFO_TARGET_FM: number = 4;
+        //private static LFO_TARGET_PANPOT: number = 5;
+
+        static SAMPLE_RATE: number;
+        static ZEROBUFFER: Float32Array;
 
         private m_noteNo: number;
         private m_detune: number;
@@ -113,42 +116,44 @@ module FlMMLWorker.flmml {
         }
 
         static boot(numSamples: number): void {
-            if (!MChannel.s_init) {
+            if (!this.s_init) {
                 var i: number;
-                MChannel.s_frequencyLen = MChannel.s_frequencyMap.length;
-                for (i = 0; i < MChannel.s_frequencyLen; i++) {
-                    MChannel.s_frequencyMap[i] = 440.0 * Math.pow(2.0, (i - 69 * MChannel.PITCH_RESOLUTION) / (12.0 * MChannel.PITCH_RESOLUTION));
+                this.SAMPLE_RATE = SAMPLE_RATE;
+                this.ZEROBUFFER = ZEROBUFFER;
+                this.s_frequencyLen = this.s_frequencyMap.length;
+                for (i = 0; i < this.s_frequencyLen; i++) {
+                    this.s_frequencyMap[i] = 440.0 * Math.pow(2.0, (i - 69 * this.PITCH_RESOLUTION) / (12.0 * this.PITCH_RESOLUTION));
                 }
-                MChannel.s_volumeLen = 128;
-                MChannel.s_volumeMap = new Array<Array<number>>(3)
+                this.s_volumeLen = 128;
+                this.s_volumeMap = new Array<Array<number>>(3)
                 for (i = 0; i < 3; i++) {
-                    MChannel.s_volumeMap[i] = new Array<number>(MChannel.s_volumeLen);
-                    MChannel.s_volumeMap[i][0] = 0.0;
+                    this.s_volumeMap[i] = new Array<number>(this.s_volumeLen);
+                    this.s_volumeMap[i][0] = 0.0;
                 }
-                for (i = 1; i < MChannel.s_volumeLen; i++) {
-                    MChannel.s_volumeMap[0][i] = i / 127.0;
-                    MChannel.s_volumeMap[1][i] = Math.pow(10.0, (i - 127.0) * (48.0 / (127.0 * 20.0))); // min:-48db
-                    MChannel.s_volumeMap[2][i] = Math.pow(10.0, (i - 127.0) * (96.0 / (127.0 * 20.0))); // min:-96db
-                    //console.log(i+","+MChannel.s_volumeMap[i]);
+                for (i = 1; i < this.s_volumeLen; i++) {
+                    this.s_volumeMap[0][i] = i / 127.0;
+                    this.s_volumeMap[1][i] = Math.pow(10.0, (i - 127.0) * (48.0 / (127.0 * 20.0))); // min:-48db
+                    this.s_volumeMap[2][i] = Math.pow(10.0, (i - 127.0) * (96.0 / (127.0 * 20.0))); // min:-96db
+                    //console.log(i+","+this.s_volumeMap[i]);
                 }
-                MChannel.s_init = 1;
+                this.s_init = 1;
             }
-            MChannel.s_samples = new Float32Array(numSamples);
+            this.s_samples = new Float32Array(numSamples);
         }
         
         static createPipes(num: number): void {
-            MChannel.s_pipeArr = new Array<Float32Array>(num);
+            this.s_pipeArr = new Array<Float32Array>(num);
             for (var i: number = 0; i < num; i++) {
-                MChannel.s_pipeArr[i] = new Float32Array(MChannel.s_samples.length);
+                this.s_pipeArr[i] = new Float32Array(this.s_samples.length);
             }
         }
 
         static createSyncSources(num: number): void {
-            MChannel.s_syncSources = new Array<Array<boolean>>(num);
+            this.s_syncSources = new Array<Array<boolean>>(num);
             for (var i: number = 0; i < num; i++) {
-                MChannel.s_syncSources[i] = new Array<boolean>(MChannel.s_samples.length);
-                for (var j: number = 0; j < MChannel.s_samples.length; j++) {
-                    MChannel.s_syncSources[i][j] = false;
+                this.s_syncSources[i] = new Array<boolean>(this.s_samples.length);
+                for (var j: number = 0; j < this.s_samples.length; j++) {
+                    this.s_syncSources[i][j] = false;
                 }
             }
         }
@@ -349,7 +354,7 @@ module FlMMLWorker.flmml {
             this.m_osc2Connect = (depth === 0) ? 0 : 1;
             this.m_oscMod2.setFrequency(freq);
             this.m_oscMod2.resetPhase();
-            (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / MSequencer.SAMPLE_RATE);
+            (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / MChannel.SAMPLE_RATE);
         }
 
         setLFODLTM(delay: number, time: number): void {
@@ -485,13 +490,13 @@ module FlMMLWorker.flmml {
 
         clearOutPipe(max: number, start: number, delta: number): void {
             if (this.m_outMode === 1) {
-                MChannel.s_pipeArr[this.m_outPipe].set(MSequencer.ZEROBUFFER.subarray(0, delta), start);
+                MChannel.s_pipeArr[this.m_outPipe].set(MChannel.ZEROBUFFER.subarray(0, delta), start);
             }
         }
 
         protected getNextCutoff(): number {
             var cut: number = this.m_lpfFrq + this.m_lpfAmt * this.m_envelope2.getNextAmplitudeLinear();
-            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MChannel.SAMPLE_RATE * 440.0));
             if (cut < (1.0 / 127.0)) cut = 0.0;
             return cut;
         }
@@ -514,11 +519,11 @@ module FlMMLWorker.flmml {
                     if (this.m_inSens >= 0.000001) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesF__(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesFP_(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesFW_(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_FM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_FM*/4) {
                             this.getSamplesFF_(trackBuffer, start, end);
                         } else {
                             this.getSamplesF__(trackBuffer, start, end);
@@ -526,9 +531,9 @@ module FlMMLWorker.flmml {
                     } else if (this.m_syncMode === 2) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesI__(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesIP_(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesIW_(trackBuffer, start, end);
                         } else {
                             this.getSamplesI__(trackBuffer, start, end);
@@ -536,9 +541,9 @@ module FlMMLWorker.flmml {
                     } else if (this.m_syncMode === 1) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesO__(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesOP_(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesOW_(trackBuffer, start, end);
                         } else {
                             this.getSamplesO__(trackBuffer, start, end);
@@ -546,9 +551,9 @@ module FlMMLWorker.flmml {
                     } else {
                         if (this.m_osc2Connect === 0) {
                             this.getSamples___(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamples_P_(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamples_W_(trackBuffer, start, end);
                         } else {
                             this.getSamples___(trackBuffer, start, end);
@@ -558,11 +563,11 @@ module FlMMLWorker.flmml {
                     if (this.m_inSens >= 0.000001) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesF_P(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesFPP(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesFWP(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_FM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_FM*/4) {
                             this.getSamplesFFP(trackBuffer, start, end);
                         } else {
                             this.getSamplesF_P(trackBuffer, start, end);
@@ -570,9 +575,9 @@ module FlMMLWorker.flmml {
                     } else if (this.m_syncMode === 2) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesI_P(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesIPP(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesIWP(trackBuffer, start, end);
                         } else {
                             this.getSamplesI_P(trackBuffer, start, end);
@@ -580,9 +585,9 @@ module FlMMLWorker.flmml {
                     } else if (this.m_syncMode === 1) {
                         if (this.m_osc2Connect === 0) {
                             this.getSamplesO_P(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamplesOPP(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamplesOWP(trackBuffer, start, end);
                         } else {
                             this.getSamplesO_P(trackBuffer, start, end);
@@ -590,9 +595,9 @@ module FlMMLWorker.flmml {
                     } else {
                         if (this.m_osc2Connect === 0) {
                             this.getSamples__P(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PITCH) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PITCH*/0) {
                             this.getSamples_PP(trackBuffer, start, end);
-                        } else if (this.m_lfoTarget === MChannel.LFO_TARGET_PWM) {
+                        } else if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PWM*/3) {
                             this.getSamples_WP(trackBuffer, start, end);
                         } else {
                             this.getSamples__P(trackBuffer, start, end);
@@ -607,7 +612,7 @@ module FlMMLWorker.flmml {
                     this.m_envelope1.ampSamplesNonLinear(trackBuffer, start, end, this.m_ampLevel, this.m_volMode);
                 }
             }
-            if (this.m_lfoTarget === MChannel.LFO_TARGET_AMPLITUDE && this.m_osc2Connect !== 0) {	// with Amplitude LFO
+            if (this.m_lfoTarget === /*MChannel.LFO_TARGET_AMPLITUDE*/1 && this.m_osc2Connect !== 0) {	// with Amplitude LFO
                 depth = this.m_osc2Sign * this.m_lfoDepth / 127.0;
                 s = start;
                 for (i = start; i < end; i++) {
@@ -634,7 +639,7 @@ module FlMMLWorker.flmml {
             tmpFlag = playing;
             playing = playing || this.m_formant.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MSequencer.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
             }
             if (playing) {
                 this.m_formant.run(trackBuffer, start, end);
@@ -644,10 +649,10 @@ module FlMMLWorker.flmml {
             tmpFlag = playing;
             playing = playing || this.m_filter.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MSequencer.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
             }
             if (playing) {
-                if (this.m_lfoTarget === MChannel.LFO_TARGET_CUTOFF && this.m_osc2Connect !== 0) {	// with Filter LFO
+                if (this.m_lfoTarget === /*MChannel.LFO_TARGET_CUTOFF*/2 && this.m_osc2Connect !== 0) {	// with Filter LFO
                     depth = this.m_osc2Sign * this.m_lfoDepth;
                     s = start;
                     do {
@@ -676,7 +681,9 @@ module FlMMLWorker.flmml {
                 switch (this.m_outMode) {
                     case 0:
                         //console.log("output audio");
-                        if (this.m_lfoTarget === MChannel.LFO_TARGET_PANPOT && this.m_osc2Connect !== 0) { // with Panpot LFO
+                        var samples0 = samplesSt[0];
+                        var samples1 = samplesSt[1];
+                        if (this.m_lfoTarget === /*MChannel.LFO_TARGET_PANPOT*/5 && this.m_osc2Connect !== 0) { // with Panpot LFO
                             depth = this.m_osc2Sign * this.m_lfoDepth * (1.0 / 127.0);
                             for (i = start; i < end; i++) {
                                 pan = this.m_pan + this.m_oscMod2.getNextSample() * depth;
@@ -687,15 +694,15 @@ module FlMMLWorker.flmml {
                                 }
                                 amplitude = trackBuffer[i] * 0.5;
                                 rightAmplitude = amplitude * pan;
-                                samplesSt[0][i] += amplitude - rightAmplitude;
-                                samplesSt[1][i] += rightAmplitude;
+                                samples0[i] += amplitude - rightAmplitude;
+                                samples1[i] += rightAmplitude;
                             }
                         } else {
                             for (i = start; i < end; i++) {
                                 amplitude = trackBuffer[i] * 0.5;
                                 rightAmplitude = amplitude * this.m_pan;
-                                samplesSt[0][i] += amplitude - rightAmplitude;
-                                samplesSt[1][i] += rightAmplitude;
+                                samples0[i] += amplitude - rightAmplitude;
+                                samples1[i] += rightAmplitude;
                             }
                         }
                         break;
@@ -725,7 +732,7 @@ module FlMMLWorker.flmml {
             } else if (this.m_outMode === 1) {
                 pipe = MChannel.s_pipeArr[this.m_outPipe];
                 if (this.m_slaveVoice === false) {
-                    pipe.set(MSequencer.ZEROBUFFER.subarray(0, delta), start);
+                    pipe.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
                 }
             }
         }
@@ -744,16 +751,18 @@ module FlMMLWorker.flmml {
         // パイプ処理なし, 音程LFO, ポルタメントなし
         private getSamples_P_(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth;
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 freqNo = this.m_freqNo;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += (oscMod2.getNextSample() * depth) | 0;
+                    oscMod2.addPhase(e - s - 1);
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamples(samples, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamples(samples, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -763,13 +772,15 @@ module FlMMLWorker.flmml {
         private getSamples_W_(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE);
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -777,7 +788,7 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamples(samples, s, e);
+                oscMod1.getSamples(samples, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -786,10 +797,11 @@ module FlMMLWorker.flmml {
         // FM入力, LFOなし, ポルタメントなし
         private getSamplesF__(samples: Float32Array, start: number, end: number): void {
             var i: number, sens: number = this.m_inSens, pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
             // rev.35879 以前の挙動にあわせるため
-            this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+            oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             for (i = start; i < end; i++) {
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 //samples[i] = pipe[i];
             }
         }
@@ -798,13 +810,15 @@ module FlMMLWorker.flmml {
         private getSamplesFP_(samples: Float32Array, start: number, end: number): void {
             var i: number, freqNo: number, sens: number = this.m_inSens, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             for (i = start; i < end; i++) {
                 freqNo = this.m_freqNo;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
+                    freqNo += (oscMod2.getNextSample() * depth) | 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -814,12 +828,14 @@ module FlMMLWorker.flmml {
             var i: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 sens: number = this.m_inSens, pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             // rev.35879 以前の挙動にあわせるため
-            this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+            oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             for (i = start; i < end; i++) {
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
+                    pwm += oscMod2.getNextSample() * depth;
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -827,7 +843,7 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -836,14 +852,16 @@ module FlMMLWorker.flmml {
         private getSamplesFF_(samples: Float32Array, start: number, end: number): void {
             var i: number, freqNo: number, sens: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * (1.0 / 127.0),
                 pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             // rev.35879 以前の挙動にあわせるため
-            this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+            oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             for (i = start; i < end; i++) {
                 sens = this.m_inSens;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    sens *= this.m_oscMod2.getNextSample() * depth;
+                    sens *= oscMod2.getNextSample() * depth;
                 }
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -857,16 +875,18 @@ module FlMMLWorker.flmml {
         private getSamplesIP_(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 freqNo = this.m_freqNo;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += (oscMod2.getNextSample() * depth) | 0;
+                    oscMod2.addPhase(e - s - 1);
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -877,13 +897,15 @@ module FlMMLWorker.flmml {
             var s: number = start, e: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -891,7 +913,7 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
+                oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -906,16 +928,18 @@ module FlMMLWorker.flmml {
         private getSamplesOP_(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 freqNo = this.m_freqNo;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += (this.m_oscMod2.getNextSample() * depth) | 0;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += (oscMod2.getNextSample() * depth) | 0;
+                    oscMod2.addPhase(e - s - 1);
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -926,13 +950,15 @@ module FlMMLWorker.flmml {
             var s: number = start, e: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -940,7 +966,7 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
+                oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -951,6 +977,7 @@ module FlMMLWorker.flmml {
         // パイプ処理なし, LFOなし, ポルタメントあり
         private getSamples__P(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number;
+            var oscMod1 = this.m_oscMod1;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -960,18 +987,20 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamples(samples, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamples(samples, s, e);
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
 
         // パイプ処理なし, 音程LFO, ポルタメントあり
         private getSamples_PP(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth;
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -982,12 +1011,12 @@ module FlMMLWorker.flmml {
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamples(samples, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamples(samples, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -997,6 +1026,8 @@ module FlMMLWorker.flmml {
         private getSamples_WP(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01, freqNo: number,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE);
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1007,12 +1038,12 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
 
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -1020,18 +1051,19 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamples(samples, s, e);
+                oscMod1.getSamples(samples, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
 
         // FM入力, LFOなし, ポルタメントあり
         private getSamplesF_P(samples: Float32Array, start: number, end: number): void {
             var freqNo: number, i: number, sens: number = this.m_inSens, pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
             for (i = start; i < end; i++) {
                 freqNo = this.m_freqNo;
                 if (this.m_portDepth !== 0) {
@@ -1039,8 +1071,8 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += this.m_portDepthAdd;
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
             }
         }
 
@@ -1048,6 +1080,8 @@ module FlMMLWorker.flmml {
         private getSamplesFPP(samples: Float32Array, start: number, end: number): void {
             var i: number, freqNo: number, sens: number = this.m_inSens, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             for (i = start; i < end; i++) {
                 freqNo = this.m_freqNo;
                 if (this.m_portDepth !== 0) {
@@ -1056,10 +1090,10 @@ module FlMMLWorker.flmml {
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += this.m_oscMod2.getNextSample() * depth | 0;
+                    freqNo += oscMod2.getNextSample() * depth | 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -1069,6 +1103,8 @@ module FlMMLWorker.flmml {
             var i: number, freqNo: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 sens: number = this.m_inSens, pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             for (i = start; i < end; i++) {
                 freqNo = this.m_freqNo;
                 if (this.m_portDepth !== 0) {
@@ -1076,10 +1112,10 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += this.m_portDepthAdd;
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
+                    pwm += oscMod2.getNextSample() * depth;
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -1087,7 +1123,7 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -1096,6 +1132,8 @@ module FlMMLWorker.flmml {
         private getSamplesFFP(samples: Float32Array, start: number, end: number): void {
             var i: number, freqNo: number, sens: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * (1.0 / 127.0),
                 pipe: Float32Array = MChannel.s_pipeArr[this.m_inPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             for (i = start; i < end; i++) {
                 freqNo = this.m_freqNo;
                 if (this.m_portDepth !== 0) {
@@ -1103,12 +1141,12 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += this.m_portDepthAdd;
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                 sens = this.m_inSens;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    sens *= this.m_oscMod2.getNextSample() * depth;
+                    sens *= oscMod2.getNextSample() * depth;
                 }
-                samples[i] = this.m_oscMod1.getNextSampleOfs(pipe[i] * sens);
+                samples[i] = oscMod1.getNextSampleOfs(pipe[i] * sens);
                 this.m_onCounter++;
             }
         }
@@ -1117,6 +1155,7 @@ module FlMMLWorker.flmml {
         private getSamplesI_P(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1126,13 +1165,13 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
 
@@ -1140,6 +1179,8 @@ module FlMMLWorker.flmml {
         private getSamplesIPP(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1150,11 +1191,11 @@ module FlMMLWorker.flmml {
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += this.m_oscMod2.getNextSample() * depth | 0;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += oscMod2.getNextSample() * depth | 0;
+                    oscMod2.addPhase(e - s - 1);
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -1165,6 +1206,8 @@ module FlMMLWorker.flmml {
             var s: number = start, e: number, freqNo: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1174,11 +1217,11 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -1186,12 +1229,12 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
+                oscMod1.getSamplesWithSyncIn(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
 
@@ -1199,6 +1242,7 @@ module FlMMLWorker.flmml {
         private getSamplesO_P(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1208,13 +1252,13 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
 
@@ -1222,6 +1266,8 @@ module FlMMLWorker.flmml {
         private getSamplesOPP(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number, depth: number = this.m_osc2Sign * this.m_lfoDepth,
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1232,11 +1278,11 @@ module FlMMLWorker.flmml {
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    freqNo += this.m_oscMod2.getNextSample() * depth | 0;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    freqNo += oscMod2.getNextSample() * depth | 0;
+                    oscMod2.addPhase(e - s - 1);
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
-                this.m_oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
@@ -1247,6 +1293,8 @@ module FlMMLWorker.flmml {
             var s: number = start, e: number, freqNo: number, pwm: number, depth: number = this.m_osc2Sign * this.m_lfoDepth * 0.01,
                 modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE),
                 syncLine: Array<boolean> = MChannel.s_syncSources[this.m_syncPipe];
+            var oscMod1 = this.m_oscMod1;
+            var oscMod2 = this.m_oscMod2;
             do {
                 e = s + MChannel.s_lfoDelta;
                 if (e > end) e = end;
@@ -1256,11 +1304,11 @@ module FlMMLWorker.flmml {
                     this.m_portDepth += (this.m_portDepthAdd * (e - s - 1));
                     if (this.m_portDepth * this.m_portDepthAdd > 0) this.m_portDepth = 0;
                 }
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(freqNo));
                 pwm = this.m_pulseWidth;
                 if (this.m_onCounter >= this.m_lfoDelay && (this.m_lfoEnd === 0 || this.m_onCounter < this.m_lfoEnd)) {
-                    pwm += this.m_oscMod2.getNextSample() * depth;
-                    this.m_oscMod2.addPhase(e - s - 1);
+                    pwm += oscMod2.getNextSample() * depth;
+                    oscMod2.addPhase(e - s - 1);
                 }
                 if (pwm < 0) {
                     pwm = 0;
@@ -1268,12 +1316,12 @@ module FlMMLWorker.flmml {
                     pwm = 100.0;
                 }
                 modPulse.setPWM(pwm);
-                this.m_oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
+                oscMod1.getSamplesWithSyncOut(samples, syncLine, s, e);
                 this.m_onCounter += e - s;
                 s = e;
             } while (s < end)
             if (this.m_portDepth === 0) {
-                this.m_oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
+                oscMod1.setFrequency(MChannel.getFrequency(this.m_freqNo));
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿module FlMMLWorker.flmml {
+﻿module flmml {
 	/**
 	 * This class was created based on "Formant filter" that programmed by alex.
 	 See following URL; http://www.musicdsp.org/showArchiveComment.php?ArchiveID=110
