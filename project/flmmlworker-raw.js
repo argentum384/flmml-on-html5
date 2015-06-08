@@ -3402,7 +3402,7 @@ var flmml;
             this.stop();
         }
         MSequencer.getTimer = function () {
-            return performance ? performance.now() : new Date().getTime();
+            return self.performance ? self.performance.now() : new Date().getTime();
         };
         MSequencer.prototype.play = function () {
             if (this.m_status === 1) {
@@ -7879,7 +7879,7 @@ var messenger;
         };
         Messenger.prototype.syncInfo = function () {
             var mml = this.mml;
-            this.lastInfoTime = performance ? performance.now() : new Date().getTime();
+            this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
             postMessage({
                 type: COM_SYNCINFO,
                 info: {

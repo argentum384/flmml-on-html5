@@ -122,7 +122,7 @@ module messenger {
         syncInfo(): void {
             var mml: MML = this.mml;
 
-            this.lastInfoTime = performance ? performance.now() : new Date().getTime();
+            this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
             postMessage({
                 type: COM_SYNCINFO,
                 info: {
