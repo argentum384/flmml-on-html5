@@ -56,9 +56,9 @@ HTMLファイルの`<head>`タグ内に
     * Chrome for Android
     * FireFox
     * Opera
-* 動作未確認
     * Safari
     * iOS Safari
+    * Microsoft Edge
 * 非対応確認済み
     * Internet Explorer
     * Android Browser
