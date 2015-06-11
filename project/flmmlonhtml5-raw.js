@@ -54,7 +54,7 @@ var FlMMLonHTML5 = function () {
         this.worker = new Worker(workerURL);
 	    this.worker.addEventListener("message", this.onMessage.bind(this));
 
-	    var AudioCtx = AudioContext || webkitAudioContext;
+	    var AudioCtx = window.AudioContext || window.webkitAudioContext;
 	    var audioCtx = this.audioCtx = new AudioCtx();
 
         addEventListener("touchstart", this.onTouchStartBinded = this.onTouchStart.bind(this));

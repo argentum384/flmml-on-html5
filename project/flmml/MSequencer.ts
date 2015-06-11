@@ -66,7 +66,7 @@
         }
         
         static getTimer() {
-            return performance ? performance.now() : new Date().getTime();
+            return self.performance ? self.performance.now() : new Date().getTime();
         }
         
         play(): void {
