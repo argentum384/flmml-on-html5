@@ -54,8 +54,10 @@ var FlMMLonHTML5 = function () {
         this.worker = new Worker(workerURL);
 	    this.worker.addEventListener("message", this.onMessage.bind(this));
 
-	    var AudioCtx = window.AudioContext || window.webkitAudioContext;
-	    var audioCtx = this.audioCtx = new AudioCtx();
+	    if (!FlMMLonHTML5.audioCtx) {
+	        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+	        FlMMLonHTML5.audioCtx = new AudioCtx();
+	    }
 
         addEventListener("touchstart", this.onTouchStartBinded = this.onTouchStart.bind(this));
 
@@ -66,7 +68,7 @@ var FlMMLonHTML5 = function () {
 
 	    this.events = {};
         
-	    this.worker.postMessage({ type: COM_BOOT, sampleRate: audioCtx.sampleRate });
+	    this.worker.postMessage({ type: COM_BOOT, sampleRate: FlMMLonHTML5.audioCtx.sampleRate });
         this.setInfoInterval(125);
     }
 
@@ -115,7 +117,7 @@ var FlMMLonHTML5 = function () {
     FlMMLonHTML5.prototype.playSound = function () {
         if (this.gain || this.scrProc || this.oscDmy) return;
 
-        var audioCtx = this.audioCtx;
+        var audioCtx = FlMMLonHTML5.audioCtx;
 
         this.gain = audioCtx.createGain();
         this.gain.gain.value = this.volume / 127.0;
@@ -144,7 +146,7 @@ var FlMMLonHTML5 = function () {
 
     // iOS Safari 対策
     FlMMLonHTML5.prototype.onTouchStart = function (e) {
-        var audioCtx = this.audioCtx;
+        var audioCtx = FlMMLonHTML5.audioCtx;
         var bufSrc = audioCtx.createBufferSource();
         bufSrc.connect(audioCtx.destination);
         bufSrc.start(0);
@@ -275,6 +277,7 @@ var FlMMLonHTML5 = function () {
     };
 
     FlMMLonHTML5.prototype.release = function () {
+        this.stopSound();
         this.worker.terminate();
     };
 
