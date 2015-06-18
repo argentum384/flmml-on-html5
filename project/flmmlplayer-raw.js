@@ -335,7 +335,7 @@ var FlMMLPlayer = function (document) {
 
     FlMMLPlayer.prototype.onComplete = function () {
         removeChildren(this.btnPlayPause);
-        btnPlayPause.appendChild(this.imgPlay);
+        this.btnPlayPause.appendChild(this.imgPlay);
         this.btnStop.disabled = "disabled";
         this.imgStop.style.opacity = "0.4";
         clearTimeout(this.tIDDispVol);
