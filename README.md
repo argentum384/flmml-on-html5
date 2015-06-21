@@ -6,7 +6,7 @@ Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境�
 
 Web Audio, Web Workerを利用しているため現状動作ブラウザは限られますが、Flash版と比べ概ね軽快に動作します。  
 [ニコニコ大百科](http://dic.nicovideo.jp/)で使われているものに近い、SVGを使用したプレイヤーUIも付属しています。  
-![screenshot.gif](http://carborane3.github.io/FlMMLonHTML5/screenshot1.gif "Screen Shot")  
+![screenshot.gif](http://carborane3.github.io/FlMMLonHTML5/screenshot.gif "Screen Shot")  
 
 デモはこちら  
 [Demo page](http://carborane3.github.io/FlMMLonHTML5/)
