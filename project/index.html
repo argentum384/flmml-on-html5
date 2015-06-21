@@ -2,72 +2,101 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>Test</title>
-    <style type="text/css">
+    <title>FlMML on HTML5 Demo</title>
+    <style>
         body {
+            margin: 0.5em;
             color: black;
             background-color: white;
-            font-size: small;
+            font-size: 16px;
+        }
+
+        /*div { border: 1px solid gray; box-sizing: border-box; }*/
+
+        div.group {
+            margin: 0 0 0 1em;
+        }
+
+        textarea {
+            width: 500px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        button {
+            font-size: 16px;
+        }
+
+        button#play,
+        button#pause,
+        button#stop {
+            width: 60px;
+        }
+
+        input#volume {
+            width: 120px;
         }
     </style>
     <script src="flmmlonhtml5-raw.js"></script>
     <script src="flmmlplayer-raw.js"></script>
-    <script type="text/javascript">
+    <script>
         "use strict";
 
         var flmml;
 
         (function () {
-            var spanTime, spanBuffering, txtWarnings, rangeVolume, spanVolumeDisp;
+            function E(id) {
+                return document.getElementById(id);
+            }
 
-            function clear(elem) {
-                var child;
+            function L(id, type, func) {
+                E(id).addEventListener(type, func);
+            }
 
+            function T(id, txt) {
+                C(id);
+                E(id).appendChild(document.createTextNode(txt));
+            }
+
+            function C(id) {
+                var elem = E(id), child;
                 while ((child = elem.lastChild)) {
                     elem.removeChild(child);
                 }
             }
             
             function onInput() {
-                var vol = rangeVolume.value;
+                var vol = E("volume").value;
                 flmml.setMasterVolume(parseInt(vol));
-                clear(spanVolumeDisp);
-                spanVolumeDisp.appendChild(document.createTextNode("Volume: " + vol));
+                T("volDisp", "Volume: " + vol);
             }
 
             function onBuffering(e) {
-                clear(spanBuffering);
-                if (e.progress < 100) {
-                    spanBuffering.appendChild(document.createTextNode("Buffering (" + e.progress + "%)"));
+                if (e.progress === 100) {
+                    C("buffering");
+                } else {
+                    T("buffering", "Buffering (" + e.progress + "%)");
                 }
             }
 
             function onCompileComplete() {
-                clear(spanBuffering);
-                clear(txtWarnings);
-                txtWarnings.value = flmml.getWarnings();
+                C("buffering");
+                E("warnings").value = flmml.getWarnings();
             }
 
             function onSyncInfo() {
-                clear(spanTime);
-                spanTime.appendChild(document.createTextNode(flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr()))
+                T("time", flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr());
             }
 
             document.addEventListener("DOMContentLoaded", function () {
                 flmml = new FlMMLonHTML5();
 
-                document.getElementById("play").addEventListener("click", function () {
-                    flmml.play(document.getElementById("mml").value);
+                L("play", "click", function () {
+                    flmml.play(E("mml").value);
                 });
-                document.getElementById("pause").addEventListener("click", flmml.pause.bind(flmml));
-                document.getElementById("stop").addEventListener("click", flmml.stop.bind(flmml));
-                document.getElementById("volume").addEventListener("input", onInput);
-
-                spanBuffering = document.getElementById("buffering");
-                spanTime = document.getElementById("time");
-                txtWarnings = document.getElementById("warnings");
-                rangeVolume = document.getElementById("volume");
-                spanVolumeDisp = document.getElementById("volumedisp");
+                L("pause", "click", flmml.pause.bind(flmml));
+                L("stop", "click", flmml.stop.bind(flmml));
+                L("volume", "input", onInput);
 
                 flmml.addEventListener("compilecomplete", onCompileComplete);
                 flmml.addEventListener("buffering", onBuffering);
@@ -77,16 +106,42 @@
     </script>
 </head>
 <body>
-    <textarea id="mml" rows="18" cols="80">L8 O5CDEFGAB&lt;C</textarea><br />
-    <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
-    <span id="time">00:00/00:00</span>
-    <input type="range" id="volume" min="0" max="127" step="1" value="100" /><span id="volumedisp">Volume: 100</span>
-    <span id="buffering"></span><br />
-    <textarea id="warnings" rows="6" cols="50" readonly>(Warnings)</textarea><br />
-    <script type="text/javascript">
-        var flmmlPlayer = new FlMMLPlayer({
-            mml: "$L=16;$k=v10@e1,0,4,0,0o1c;$t=v7@e1,0,4,0,0o0f;$s=v7@e1,0,0,127,0o0f12r24;t196@5@w4@e1,0,32,0,0@q4v7q16l8o6eerercergr2../:$L/:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6rrgf+fd+re>rg+a<cr>a<cd/rrgf+fd+re<rcrccrrr:/rre-rrdrrcr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..:/;@5@w4@e1,0,32,0,0@q4v7q16l8o5f+f+rf+rf+f+rbrrrgrrr/:$L/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2o6rred+d>br<c>refgrcef<rred+d>br<crfrffrrrrred+d>br<c>refgrcefrra-rrfrrer2..:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/;@6-1@e1,0,0,135,0v15q16l8o4d4rdrd4r<grrr>grrr/:$L/:2/:2grrerrcrrfrgrf+&frer24<cr24er24frd&ercr>a&b&grr:///:2crrgrr<cr>frr<c4r>frcrrerrg&<c<rgrg4r>>grcrrgrr<cr>frr<c4r>frcra-rrb-rr<crr>g4rcr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr://:2/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr:/;@7q16l8$sr$t$sr$t$sr$srr$sr$t$t$t/:$L/:24$kr$tr24$t12$sr$tr24$t12://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$kr$tr24$t12$sr$tr24$t12://:16$trr$t$sr$tr://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$trr$t$sr$tr:/:/"
-        });
-    </script>
+    Sequencer demo:
+    <div class="group">
+        <textarea id="mml" rows="12">L8 O5CDEFGAB&lt;C</textarea><br />
+        <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
+        <span id="time">00:00/00:00</span>
+        <input type="range" id="volume" min="0" max="127" step="1" value="100" /><span id="volDisp">Volume: 100</span>
+        <span id="buffering"></span><br />
+        <textarea id="warnings" rows="5" readonly>(Warnings)</textarea>
+    </div>
+    Player demo:
+    <div class="group">
+        Default<br />
+        <script type="text/javascript">
+            var flmmlPlayer = new FlMMLPlayer({
+                mml: "$L=8;$k=v10@e1,0,4,0,0o1c;$t=v7@e1,0,4,0,0o0f;$s=v7@e1,0,0,127,0o0f12r24;t196@5@w4@e1,0,32,0,0@q4v7q16l8o6eerercergr2../:$L/:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6rrgf+fd+re>rg+a<cr>a<cd/rrgf+fd+re<rcrccrrr:/rre-rrdrrcr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6crr>grrerrarbra+argr24<er24gr24arfgrercd>brr://:2/:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..://:2ccrcrcdrecr>agrrr</ccrcrcder1:/eerercergr2../:2o6ecr>grrg+ra<frf>arrr/br24<ar24ar24ar24gr24fr24ecr>agrrr:/b<frffr24er24dr24cr2..:/;@5@w4@e1,0,32,0,0@q4v7q16l8o5f+f+rf+rf+f+rbrrrgrrr/:$L/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2o6rred+d>br<c>refgrcef<rred+d>br<crfrffrrrrred+d>br<c>refgrcefrra-rrfrrer2..:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2errcrr>gr<rcrdrc+crcr24gr24br24<cr>abrarefdrr://:2/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/a-a-ra-ra-b-rgerecrrra-a-ra-ra-b-gr1a-a-ra-ra-b-rgerecrrrf+f+rf+rf+f+rbrrrgrrr/:2o6c>arerrerf<crc>frrr/gr24<fr24fr24fr24er24dr24c>arferrr:/g<drddr24cr24>br24gerecrrr:/;@6-1@e1,0,0,135,0v15q16l8o4d4rdrd4r<grrr>grrr/:$L/:2/:2grrerrcrrfrgrf+&frer24<cr24er24frd&ercr>a&b&grr:///:2crrgrr<cr>frr<c4r>frcrrerrg&<c<rgrg4r>>grcrrgrr<cr>frr<c4r>frcra-rrb-rr<crr>g4rcr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr://:2/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr://:3o3a-rr<e-rra-rgrrcrr>gr:/o4d4rdrd4r<grrr>grrr/:2crrf+&gr<cr>frfr<c4&>fr/drrf&grbrgrgr<c4&>gr:/grrg4r24ar24br24<cr>grcrrr:/;@7q16l8$sr$t$sr$t$sr$srr$sr$t$t$t/:$L/:24$kr$tr24$t12$sr$tr24$t12://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$kr$tr24$t12$sr$tr24$t12://:16$trr$t$sr$tr://:4$sr$t$sr$t$sr$srr$sr$t$t$t://:8$trr$t$sr$tr:/:/"
+            });
+        </script><br />
+        height: &quot;2em&quot;, hue: 80<br />
+        <script type="text/javascript">
+            new FlMMLPlayer({
+                mml: "$L=16;$ch1=1;$ch2=1;$ch3=1;$ch4=1;$m{vol,tim}=0,%vol,%tim,%vol,;$z=@e1,0,0,80,0o1a%5>@e1,0,$m{70,2}$m{60,2}$m{50,2}$m{40,2}$m{30,2}$m{20,2}$m{10,2}0,0,0e%;$k=$z43;$j=$z19;$s=@e1,0,$m{80,2}$m{70,2}$m{60,2}$m{50,2}$m{40,2}$m{30,2}$m{20,2}$m{10,2}0,0,0o0g+;$c=@e1,0,$m{90,4}$m{80,4}$m{70,4}$m{60,4}$m{50,4}$m{40,4}$m{30,4}$m{20,4}$m{10,4}0,0,0o0f;$h=@e1,0,$m{90,2}$m{80,2}$m{70,2}$m{60,2}$m{50,2}$m{40,1}$m{10,2}0,0,0o0f+;$t=@e1,0,$m{90,2}$m{80,2}$m{70,2}$m{60,2}$m{50,2}$m{40,2}$m{30,2}$m{20,2}$m{10,2}0,0,0o1d;$y1=@e1,0,$m{90,10}$m{80,10}$m{70,10}$m{60,10}$m{50,10}$m{40,10}$m{30,10}$m{20,10}$m{10,10}0,0,0;$y2=@e1,0,$m{90,2}$m{80,2}$m{70,2}$m{60,2}$m{50,2}$m{40,2}$m{30,2}$m{20,2}$m{10,2}0,0,0;$y3=@e1,0,$m{100,8}$m{90,8}$m{80,8}$m{70,8}$m{60,8}$m{50,8}$m{40,8}$m{30,8}$m{20,8}$m{10,8}0,0,0;$y4=@e1,0,$m{70,10}$m{60,10}$m{50,10}$m{40,10}$m{30,10}$m{20,10}$m{10,10}0,0,0;$y5=@e1,0,$m{80,8}$m{70,8}$m{60,8}$m{50,8}$m{40,8}$m{30,8}$m{20,8}$m{10,8}0,0,0;$x1=@e1,0,$m{120,14}$m{110,14}$m{100,14}$m{90,14}$m{80,14}$m{70,14}$m{60,14}$m{50,14}$m{40,14}$m{30,14}$m{20,14}$m{10,14}0,0,0;$x2=@e1,0,$m{110,14}$m{100,14}$m{90,14}$m{80,14}$m{70,14}$m{60,14}$m{50,14}$m{40,14}$m{30,14}$m{20,14}$m{10,14}0,0,0;$x3=@e1,0,$m{100,14}$m{90,14}$m{80,14}$m{70,14}$m{60,14}$m{50,14}$m{40,14}$m{30,14}$m{20,14}$m{10,14}0,0,0;$x4=@e1,0,{80,14}$m{70,14}$m{60,14}$m{50,14}$m{40,14}$m{30,14}$m{20,14}$m{10,14}0,0,0;t120/:$ch1@5q16l16ns-1@x112r1@w4$y1o4@p0v7fa<c@p64v15earb4a8g8d8>@p127v7egb<@p64v15dgre4a8e8>a8dfa<carc4$y2df+df+a<c>$y3c4r8d2r8/:$Lr8@w4$y1cde8efergrar<cr@p0v7d>af<d@p64v15c+>af<c+@p127v7crcr>b4r8@p64v15dfb8b<d>brgrfrdr@p127v7e4@p64v15f4@p0v7f+rf+rgrg+r@p64v15aeq8ceq16<c8>aabrbre8gr<r2f+8.@w2$y4a32<c32e4>>r1@w4$y2@p0v7fc>a<f@p127c>a<cf$y3@p64v15e4r4r8@w2$y5a-b-<c8e-8d8c24d24c24>b-8grg8drg8e-4f4g8<r8cde-8g8f8e-24f24e-24d8cr>b-8grb-8<f4e-4d8afcfarab<c2>af+cf+arab<c2>/:3dc>g/<:/dgb<dgb<d>d4.c+cd2>:/;://:$ch2@5@l12,32,0,32q16l16ns-1@x112r1@w4$x1o5arbr<cre4d8>b8a8grarbr<d4c8>b8<c8>arbr<cr>a4b8<c8d8e8>gr<erd4.r8ef/:$Lg4r8$x2gagrfrergrf2.r8def4r8fgfrerdrfre2.r8cde4r8eferdrcrdre4a4<c8.>r8.def8>a8<c8f8e>g<ced>fb<dc1r8@w2$x3cde-8g8f8e-24f24e-24d8cr>b-8grb-8<f4e-4d8r8a-b-<c8e-8d8c24d24c24>b-8a-rg8drg8<f4$x4g4e-fg2..e-fg2..>b<cd1>@w4$x3b4.b-ag4r8ef$x2:/;://:$ch3@10-0@e1,0,0,50,0v15q16l16ns-1r1r4.o5f4>r4.r4.a4r4.r4.f+4>r4.g4<drb4b-ag8>b8</:$Lcr4r@q1c@q0cr8crg8>g<rdr4r@q1d@q0dr8dra8>argr4r@q1gg@q0grgr<g8drcr4r@q1c@q0cr8cr<c4>ar4r@q1a@q0ag+rg+r@q1g8@q0gr/:2df+a<c:/>d4r4>>fr4r@q1f@q0fgrgr<d8c+8cr4r@q1c@q0cr8cr>b-4/:2a-r4r@q1a-@q0a-b-rb-r<f8>b-8g<r4r@q1cc@q0c>rb4b-r:/<fr4r@q1f@q0fr8fr<c8>agf+r4r@q1f+@q0f+r8f+r<d8>bagr4r@q1g@q0g>grgr<g8>ga<g4.aa+b4r8>b8<:/;://:$ch4@11v15q16l16$k$s8$j$j$s8$s4$c4/:3$s$s$j$j$s8$h8$h$h$c8/:4$h:/:/$s8$j$j$s8$t2$k/:$L/:16$k$h$h$h8$j$kr$k$s8$k:/:/:/\n#WAV10 0,0011223344332211FFEECCAA88AACCEE",
+                height: "2em",
+                hue: 80,
+                volume: 90
+            });
+        </script><br />
+        height: &quot;40px&quot;, hue: 320, logVolume: true<br />
+        <script type="text/javascript">
+            new FlMMLPlayer({
+                mml: "$L=16;t110@v48/:@5@w4@e1,0,0,144,0q16l16/:$Lo5/:4e4&>b8&<a4&c8&f+4&d8&>b4&a+8&<://:2g4&d8&e4&>b8&<f+4&d8&a4&e8&://:4/:3g&>b&<://:3a+&e&://:3a&c&:/a&d+&f+&d+&b&d+&://:2f+&g&a&b&<d&>b&<f+&d&>a&g&f+&b&<a&f+&d&>a&g&f+&e&g&a&<d&er>:/o6/:4argrf+rerf+rgr:/://;@v16@d-1r16:/;@6-1@e1,0,0,144,0q16@v120/:$Lo3/:16e8&<e4&>://:2/:2c8&<c4&>://:2d8&<d4&>:/://:4e8&<e8&<e8&>>f+8&<f+8&<f+8&>>f8&<f8&<f8&>>>b8&<b8&<b8&>://:2e4&b8&<c4&>b8&c4&g8&a4&b8&:/o2e1.&/e1.&:/e1.",
+                height: "40px",
+                hue: 320,
+                volume: 115,
+                logVolume: true
+            });
+        </script>
+    </div>
 </body>
 </html>
