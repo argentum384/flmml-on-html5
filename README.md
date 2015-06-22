@@ -1,4 +1,6 @@
 # FlMML on HTML5
+
+[![Join the chat at https://gitter.im/carborane3/FlMMLonHTML5](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/carborane3/FlMMLonHTML5?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 The transplant of [FlMML](https://flmml.codeplex.com/), MML player which runs on Flash Player, to HTML5\.
 
 ---
