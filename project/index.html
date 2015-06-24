@@ -11,14 +11,12 @@
             font-size: 16px;
         }
 
-        /*div { border: 1px solid gray; box-sizing: border-box; }*/
-
         div.group {
             margin: 0 0 0 1em;
         }
 
         textarea {
-            width: 500px;
+            width: 480px;
             font-family: monospace;
             font-size: 16px;
         }
@@ -27,10 +25,8 @@
             font-size: 16px;
         }
 
-        button#play,
-        button#pause,
-        button#stop {
-            width: 60px;
+        span#display {
+            font-size: 14px;
         }
 
         input#volume {
@@ -68,14 +64,14 @@
             function onInput() {
                 var vol = E("volume").value;
                 flmml.setMasterVolume(parseInt(vol));
-                T("volDisp", "Volume: " + vol);
+                T("display", "Volume: " + vol);
             }
 
             function onBuffering(e) {
                 if (e.progress === 100) {
-                    C("buffering");
+                    onInput();
                 } else {
-                    T("buffering", "Buffering (" + e.progress + "%)");
+                    T("display", "Buffering (" + e.progress + "%)");
                 }
             }
 
@@ -98,9 +94,9 @@
                 L("stop", "click", flmml.stop.bind(flmml));
                 L("volume", "input", onInput);
 
-                flmml.addEventListener("compilecomplete", onCompileComplete);
-                flmml.addEventListener("buffering", onBuffering);
-                flmml.addEventListener("syncinfo", onSyncInfo);
+                flmml.oncompilecomplete = onCompileComplete;
+                flmml.onbuffering = onBuffering;
+                flmml.onsyncinfo = onSyncInfo;
             });
         })();
     </script>
@@ -111,8 +107,7 @@
         <textarea id="mml" rows="12">L8 O5CDEFGAB&lt;C</textarea><br />
         <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
         <span id="time">00:00/00:00</span>
-        <input type="range" id="volume" min="0" max="127" step="1" value="100" /><span id="volDisp">Volume: 100</span>
-        <span id="buffering"></span><br />
+        <input type="range" id="volume" min="0" max="127" step="1" value="100" /><span id="display">Volume: 100</span><br />
         <textarea id="warnings" rows="5" readonly>(Warnings)</textarea>
     </div>
     Player demo:
