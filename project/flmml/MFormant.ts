@@ -1,16 +1,16 @@
 ﻿module flmml {
-	/**
-	 * This class was created based on "Formant filter" that programmed by alex.
-	 See following URL; http://www.musicdsp.org/showArchiveComment.php?ArchiveID=110
-	 Thanks to his great works!
-	*/
+    /**
+     * This class was created based on "Formant filter" that programmed by alex.
+     See following URL; http://www.musicdsp.org/showArchiveComment.php?ArchiveID=110
+     Thanks to his great works!
+    */
     export class MFormant {
         static VOWEL_A: number = 0;
         static VOWEL_E: number = 1;
         static VOWEL_I: number = 2;
         static VOWEL_O: number = 3;
         static VOWEL_U: number = 4;
-		
+
         // ca = filter coefficients of 'a'
         private m_ca0: number = 0.00000811044;
         private m_ca1: number = 8.943665402;
@@ -23,7 +23,7 @@
         private m_ca8: number = -35.10298511;
         private m_ca9: number = 8.388101016;
         private m_caA: number = -0.923313471;
-		
+
         // ce = filter coefficients of 'e'
         private m_ce0: number = 0.00000436215;
         private m_ce1: number = 8.90438318;
@@ -36,7 +36,7 @@
         private m_ce8: number = -34.60687431;
         private m_ce9: number = 8.282228154;
         private m_ceA: number = -0.914150747;
-		
+
         // ci = filter coefficients of 'i'
         private m_ci0: number = 0.00000333819;
         private m_ci1: number = 8.893102966;
@@ -49,7 +49,7 @@
         private m_ci8: number = -34.98612086;
         private m_ci9: number = 8.407803364;
         private m_ciA: number = -0.932568035;
-		
+
         // co = filter coefficients of 'o'
         private m_co0: number = 0.00000113572;
         private m_co1: number = 8.994734087;
@@ -62,7 +62,7 @@
         private m_co8: number = -35.58964535;
         private m_co9: number = 8.478996281;
         private m_coA: number = -0.929252233;
-		
+
         // cu = filter coefficients of 'u'
         private m_cu0: number = 4.09431e-7;
         private m_cu1: number = 8.997322763;
@@ -109,7 +109,7 @@
         reset(): void {
             this.m_m0 = this.m_m1 = this.m_m2 = this.m_m3 = this.m_m4 = this.m_m5 = this.m_m6 = this.m_m7 = this.m_m8 = this.m_m9 = 0;
         }
-		
+
         // 無音入力時に何かの信号を出力するかのチェック
         checkToSilence(): boolean {
             return this.m_power && (
@@ -233,4 +233,4 @@
             }
         }
     }
-} 
+}

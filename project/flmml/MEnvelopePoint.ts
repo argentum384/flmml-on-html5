@@ -4,4 +4,4 @@
         level: number;
         next: MEnvelopePoint = null;
     }
-} 
+}

@@ -106,4 +106,4 @@ module flmml {
             this.setNoiseFreq(noteNo);
         }
     }
-}  
+}

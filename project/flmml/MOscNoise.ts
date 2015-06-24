@@ -82,4 +82,4 @@ module flmml {
             this.m_freqShift = this.m_noiseFreq;
         }
     }
-} 
+}

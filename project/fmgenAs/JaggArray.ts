@@ -1,8 +1,8 @@
 ﻿module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class JaggArray {
         static I2(s1: number, s2: number): Array<Array<number>> {
             var a: Array<Array<number>> = new Array<Array<number>>(s1);
@@ -23,4 +23,4 @@
             return a;
         }
     }
-}  
+}

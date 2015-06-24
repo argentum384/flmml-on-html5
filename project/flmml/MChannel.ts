@@ -14,27 +14,27 @@ module flmml {
         //private static LFO_TARGET_FM: number = 4;
         //private static LFO_TARGET_PANPOT: number = 5;
 
-        static SAMPLE_RATE: number;
-        static ZEROBUFFER: Float32Array;
+        private static SAMPLE_RATE: number;
+        private static emptyBuffer: Float32Array;
 
         private m_noteNo: number;
         private m_detune: number;
         private m_freqNo: number;
-        private m_envelope1: MEnvelope;     // for VCO
-        private m_envelope2: MEnvelope;     // for VCF
-        private m_oscSet1: MOscillator;     // for original wave
+        private m_envelope1: MEnvelope; // for VCO
+        private m_envelope2: MEnvelope; // for VCF
+        private m_oscSet1: MOscillator; // for original wave
         private m_oscMod1: MOscMod;
-        private m_oscSet2: MOscillator;     // for Pitch LFO
+        private m_oscSet2: MOscillator; // for Pitch LFO
         private m_oscMod2: MOscMod;
         private m_osc2Connect: number;
         private m_osc2Sign: number;
         private m_filter: MFilter;
         private m_filterConnect: number;
         private m_formant: MFormant;
-        private m_expression: number;       // expression (max: 1.0)
-        private m_velocity: number;         // velocity (max: 1.0)
-        private m_ampLevel: number;         // amplifier level (max: 1.0)
-        private m_pan: number;				// left 0.0 - 1.0 right
+        private m_expression: number;   // expression (max: 1.0)
+        private m_velocity: number;     // velocity (max: 1.0)
+        private m_ampLevel: number;     // amplifier level (max: 1.0)
+        private m_pan: number;          // left 0.0 - 1.0 right
         private m_onCounter: number;
         private m_lfoDelay: number;
         private m_lfoDepth: number;
@@ -60,8 +60,8 @@ module flmml {
         private m_portRate: number;
         private m_lastFreqNo: number;
 
-        private m_slaveVoice: boolean;	// 従属ボイスか？
-        private m_voiceid: number;		// ボイスID
+        private m_slaveVoice: boolean; // 従属ボイスか？
+        private m_voiceid: number;     // ボイスID
 
         static PITCH_RESOLUTION: number = 100;
         protected static s_init: number = 0;
@@ -69,7 +69,7 @@ module flmml {
         protected static s_frequencyLen: number;
         protected static s_volumeMap: Array<Array<number>>;
         protected static s_volumeLen: number;
-        protected static s_samples: Float32Array;            // mono
+        protected static s_samples: Float32Array; // mono
         protected static s_pipeArr: Array<Float32Array>;
         protected static s_syncSources: Array<Array<boolean>>;
         protected static s_lfoDelta: number = 245;
@@ -118,8 +118,8 @@ module flmml {
         static boot(numSamples: number): void {
             if (!this.s_init) {
                 var i: number;
-                this.SAMPLE_RATE = SAMPLE_RATE;
-                this.ZEROBUFFER = ZEROBUFFER;
+                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
+                this.emptyBuffer = msgr.emptyBuffer;
                 this.s_frequencyLen = this.s_frequencyMap.length;
                 for (i = 0; i < this.s_frequencyLen; i++) {
                     this.s_frequencyMap[i] = 440.0 * Math.pow(2.0, (i - 69 * this.PITCH_RESOLUTION) / (12.0 * this.PITCH_RESOLUTION));
@@ -242,11 +242,12 @@ module flmml {
             var modPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.PULSE);
             modPulse.setPWM(this.m_pulseWidth);
 
-            this.m_oscSet1.getMod(MOscillator.FC_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(MOscillator.GB_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(MOscillator.GB_S_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(MOscillator.FC_DPCM).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(MOscillator.OPM).setNoteNo(this.m_noteNo);
+            var oscSet1 = this.m_oscSet1;
+            oscSet1.getMod(MOscillator.FC_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(MOscillator.GB_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(MOscillator.GB_S_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(MOscillator.FC_DPCM).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(MOscillator.OPM).setNoteNo(this.m_noteNo);
         }
 
         noteOff(noteNo: number): void {
@@ -315,7 +316,7 @@ module flmml {
                 modPulse.setPWM(this.m_pulseWidth);
             } else {
                 var modFcPulse: MOscPulse = <MOscPulse>this.m_oscSet1.getMod(MOscillator.FC_PULSE);
-                if (pwm < 0) pwm *= -1;		// 以前との互換のため
+                if (pwm < 0) pwm *= -1; // 以前との互換のため
                 modFcPulse.setPWM(0.125 * Math.floor(pwm));
             }
         }
@@ -339,14 +340,14 @@ module flmml {
             if (form < 0) form = -form;
             form--;
             if (form >= MOscillator.MAX) this.m_osc2Connect = 0;
-            //          if (form === MOscillator.GB_WAVE)
-            //              (MOscGbWave)(this.m_oscSet2.getMod(MOscillator.GB_WAVE)).setWaveNo(subform);
-            //          if (form === MOscillator.FC_DPCM)
-            //              (MOscFcDpcm)(this.m_oscSet2.getMod(MOscillator.FC_DPCM)).setWaveNo(subform);
-            //          if (form === MOscillator.WAVE)
-            //              (MOscWave)(this.m_oscSet2.getMod(MOscillator.WAVE)).setWaveNo(subform);
-            //          if (form === MOscillator.SINE)
-            //              (MOscSine)(this.m_oscSet2.getMod(MOscillator.SINE)).setWaveNo(subform);
+            //if (form === MOscillator.GB_WAVE)
+            //    (MOscGbWave)(this.m_oscSet2.getMod(MOscillator.GB_WAVE)).setWaveNo(subform);
+            //if (form === MOscillator.FC_DPCM)
+            //    (MOscFcDpcm)(this.m_oscSet2.getMod(MOscillator.FC_DPCM)).setWaveNo(subform);
+            //if (form === MOscillator.WAVE)
+            //    (MOscWave)(this.m_oscSet2.getMod(MOscillator.WAVE)).setWaveNo(subform);
+            //if (form === MOscillator.SINE)
+            //    (MOscSine)(this.m_oscSet2.getMod(MOscillator.SINE)).setWaveNo(subform);
         }
 
         setLFODPWD(depth: number, freq: number): void {
@@ -490,7 +491,7 @@ module flmml {
 
         clearOutPipe(max: number, start: number, delta: number): void {
             if (this.m_outMode === 1) {
-                MChannel.s_pipeArr[this.m_outPipe].set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                MChannel.s_pipeArr[this.m_outPipe].set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
         }
 
@@ -612,7 +613,7 @@ module flmml {
                     this.m_envelope1.ampSamplesNonLinear(trackBuffer, start, end, this.m_ampLevel, this.m_volMode);
                 }
             }
-            if (this.m_lfoTarget === /*MChannel.LFO_TARGET_AMPLITUDE*/1 && this.m_osc2Connect !== 0) {	// with Amplitude LFO
+            if (this.m_lfoTarget === /*MChannel.LFO_TARGET_AMPLITUDE*/1 && this.m_osc2Connect !== 0) { // with Amplitude LFO
                 depth = this.m_osc2Sign * this.m_lfoDepth / 127.0;
                 s = start;
                 for (i = start; i < end; i++) {
@@ -639,7 +640,7 @@ module flmml {
             tmpFlag = playing;
             playing = playing || this.m_formant.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
             if (playing) {
                 this.m_formant.run(trackBuffer, start, end);
@@ -649,10 +650,10 @@ module flmml {
             tmpFlag = playing;
             playing = playing || this.m_filter.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
             if (playing) {
-                if (this.m_lfoTarget === /*MChannel.LFO_TARGET_CUTOFF*/2 && this.m_osc2Connect !== 0) {	// with Filter LFO
+                if (this.m_lfoTarget === /*MChannel.LFO_TARGET_CUTOFF*/2 && this.m_osc2Connect !== 0) { // with Filter LFO
                     depth = this.m_osc2Sign * this.m_lfoDepth;
                     s = start;
                     do {
@@ -732,7 +733,7 @@ module flmml {
             } else if (this.m_outMode === 1) {
                 pipe = MChannel.s_pipeArr[this.m_outPipe];
                 if (this.m_slaveVoice === false) {
-                    pipe.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                    pipe.set(MChannel.emptyBuffer.subarray(0, delta), start);
                 }
             }
         }
@@ -973,7 +974,7 @@ module flmml {
         }
 
         /*** ここから下がポルタメントありの場合 ***/
-		
+
         // パイプ処理なし, LFOなし, ポルタメントあり
         private getSamples__P(samples: Float32Array, start: number, end: number): void {
             var s: number = start, e: number, freqNo: number;

@@ -1,13 +1,13 @@
 ﻿// ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class Timer {
         private regta: Array<number> = new Array<number>(2);
         private timera: number;
@@ -36,7 +36,7 @@ module fmgenAs {
                     while (this.timera_count <= 0)
                         this.timera_count += this.timera;
 
-                    if ((this.regtc & 4) !== 0)
+                    if (this.regtc & 4)
                         this.SetStatus(1);
                 }
             }
@@ -47,7 +47,7 @@ module fmgenAs {
                     while (this.timerb_count <= 0)
                         this.timerb_count += this.timerb;
 
-                    if ((this.regtc & 8) !== 0)
+                    if (this.regtc & 8)
                         this.SetStatus(2);
                 }
             }
@@ -83,21 +83,21 @@ module fmgenAs {
             var tmp: number = this.regtc ^ data;
             this.regtc = data | 0;
 
-            if ((data & 0x10) !== 0)
+            if (data & 0x10)
                 this.ResetStatus(1);
-            if ((data & 0x20) !== 0)
+            if (data & 0x20)
                 this.ResetStatus(2);
 
-            if ((tmp & 0x01) !== 0)
-                this.timera_count = ((data & 1) !== 0) ? this.timera : 0;
-            if ((tmp & 0x02) !== 0)
-                this.timerb_count = ((data & 2) !== 0) ? this.timerb : 0;
+            if (tmp & 0x01)
+                this.timera_count = (data & 1) ? this.timera : 0;
+            if (tmp & 0x02)
+                this.timerb_count = (data & 2) ? this.timerb : 0;
         }
 
-        protected /*abstract*/ TimerA(): void { }		
-		
+        protected /*abstract*/ TimerA(): void { }
+
         /*
          * End Class Definition
          */
     }
-}  
+}

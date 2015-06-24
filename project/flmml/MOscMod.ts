@@ -2,7 +2,7 @@
 
 module flmml {
     export class MOscMod {
-        static SAMPLE_RATE: number = null;
+        protected static SAMPLE_RATE: number;
 
         static TABLE_LEN: number = 1 << 16;
         static PHASE_SFT: number = 14;
@@ -17,7 +17,7 @@ module flmml {
         constructor() {
             this.resetPhase();
             this.setFrequency(440.0);
-            if (!MOscMod.SAMPLE_RATE) MOscMod.SAMPLE_RATE = SAMPLE_RATE;
+            if (!MOscMod.SAMPLE_RATE) MOscMod.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
 
         resetPhase(): void {
@@ -62,4 +62,4 @@ module flmml {
         setNoteNo(noteNo: number): void {
         }
     }
-} 
+}

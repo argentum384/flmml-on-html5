@@ -107,4 +107,4 @@
         getVoiceCount(): number { return this.m_data0; }
         getHwLfoData(): number { return this.m_data0; }
     }
-} 
+}

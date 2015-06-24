@@ -1,16 +1,16 @@
 ﻿// ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
 /// <reference path="JaggArray.ts" />
 
 module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class Operator {
         chip_: Chip = null;
         out_: number;
@@ -498,14 +498,14 @@ module fmgenAs {
             }
 
             this.out2_ = this.out_;
-			
+
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_;
             var pgin: number = pgo >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10);
             pgin += ii >> (20 + /*FM.FM_PGBITS*/9 - /*FM.FM_OPSINBITS*/10 - (2 + Operator.IS2EC_SHIFT));
 
             var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)];
-            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; // 三項演算子は遅いという噂
             //else this.out_ = 0;
             this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0; // JavaScriptでは三項演算子の方が速いようです
 
@@ -585,7 +585,7 @@ module fmgenAs {
 
             var ii: number = this.out_ + this.out2_;
             this.out2_ = this.out_;
-			
+
             var pgo: number = this.pg_count_;
             this.pg_count_ += this.pg_diff_;
 
@@ -636,7 +636,7 @@ module fmgenAs {
             }
 
             var sino: number = this.eg_out_ + Operator.sinetable[pgin & (/*FM.FM_OPSINENTS*/1024 - 1)] + this.ams_[this.chip_.aml_];
-            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; 	// 三項演算子は遅いという噂
+            //if (sino < /*FM.FM_CLENTS*/8192) this.out_ = Operator.cltable[sino]; // 三項演算子は遅いという噂
             //else this.out_ = 0;
             this.out_ = (sino < /*FM.FM_CLENTS*/8192) ? Operator.cltable[sino] : 0;
 
@@ -759,9 +759,9 @@ module fmgenAs {
         Refresh(): void {
             this.param_changed_ = true;
         }
-		
+
         /*
          * End Class Definition
          */
     }
-}  
+}

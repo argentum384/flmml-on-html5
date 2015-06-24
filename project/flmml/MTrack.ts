@@ -1,6 +1,6 @@
 ﻿module flmml {
     export class MTrack {
-        static SAMPLE_RATE: number = null;
+        static SAMPLE_RATE: number;
 
         static TEMPO_TRACK: number = 0;
         static FIRST_TRACK: number = 1;
@@ -42,7 +42,7 @@
             this.m_chordBegin = 0;
             this.m_chordEnd = 0;
             this.m_chordMode = false;
-            if (!MTrack.SAMPLE_RATE) MTrack.SAMPLE_RATE = SAMPLE_RATE;
+            if (!MTrack.SAMPLE_RATE) MTrack.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
 
         getNumEvents(): number {
@@ -315,7 +315,7 @@
             this.m_events.push(e);
             //console.log("e(TEMPO"+e.getTempo()+") delta="+(globalTick-preGlobalTick));
         }
-			
+
         // 挿入先が同時間の場合、後に挿入する。
         protected insertEvent(e: MEvent): void {
             var n: number = this.m_events.length;
@@ -335,8 +335,8 @@
             }
             e.setDelta(globalTick - preGlobalTick);
             this.m_events.push(e);
-        }		
-		
+        }
+
         // 新規イベントインスタンスを得る
         protected makeEvent(): MEvent {
             var e: MEvent = new MEvent(this.m_globalTick);
@@ -344,7 +344,7 @@
             this.m_delta = 0;
             return e;
         }
-		
+
         // イベントを適切に追加する
         protected pushEvent(e: MEvent): void {
             if (this.m_chordMode === false) {
@@ -576,7 +576,7 @@
             this.recEOT();
             globalSample += 3 * MTrack.SAMPLE_RATE;
 
-            this.m_totalMSec = globalSample * 1000 / MTrack.SAMPLE_RATE;
+            this.m_totalMSec = globalSample * 1000.0 / MTrack.SAMPLE_RATE;
         }
         // calc number of samples per tick
         private calcSpt(bpm: number): number {
@@ -600,25 +600,25 @@
             var ssec: string = "0" + (sec % 60);
             return smin.substr(smin.length - 2, 2) + ":" + ssec.substr(ssec.length - 2, 2);
         }
-		
+        
         // 発声数取得
         getVoiceCount(): number {
             return this.m_ch.getVoiceCount();
         }
-		
+        
         // モノモードへ移行 (再生開始前に行うこと)
         usingMono(): void {
             this.m_ch = new MChannel();
         }
-		
+        
         // ポリモードへ移行 (再生開始前に行うこと)
         usingPoly(maxVoice: number): void {
             this.m_ch = new MPolyChannel(maxVoice);
         }
-		
+        
         // ポリ命令を１回でも使ったか？
         findPoly(): boolean {
             return this.m_polyFound;
         }
     }
-} 
+}

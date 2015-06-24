@@ -7,16 +7,16 @@
 
 
 // ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
 //module fmgenAs {
-//	/**
-//	 * ...
-//	 * @author ALOE
-//	 */
+//    /**
+//     * ...
+//     * @author ALOE
+//     */
 //    export class FM {
 //        // #define
 //        static FM_SINEPRESIS: number = 2;            // EGとサイン波の精度の差  0(低)-2(高)
@@ -29,7 +29,7 @@
 //        static FM_EGBITS: number = 16;
 //        static FM_VOLBITS: number = 14;           // fmvolumeのシフト値
 //        static FM_VOLENTS: number = (1 << FM.FM_VOLBITS);
-//		
+//
 //        //  定数その１
 //        //  静的テーブルのサイズ
 //        static FM_LFOBITS: number = 8;                    // 変更不可
@@ -46,4 +46,4 @@
 //         * End Class Definition
 //         */
 //    }
-//}  
+//}

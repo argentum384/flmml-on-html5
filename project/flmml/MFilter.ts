@@ -1,6 +1,6 @@
 ﻿module flmml {
     export class MFilter {
-        static SAMPLE_RATE: number = null;
+        private static SAMPLE_RATE: number = null;
 
         private m_t1: number;
         private m_t2: number;
@@ -12,7 +12,7 @@
         private sw: number;
 
         constructor() {
-            if (!MFilter.SAMPLE_RATE) MFilter.SAMPLE_RATE = SAMPLE_RATE;
+            if (!MFilter.SAMPLE_RATE) MFilter.SAMPLE_RATE = msgr.SAMPLE_RATE;
             this.setSwitch(0);
         }
 
@@ -189,4 +189,4 @@
             this.m_b4 = b4;
         }
     }
-}  
+}

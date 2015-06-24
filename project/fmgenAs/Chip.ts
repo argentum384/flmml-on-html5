@@ -1,16 +1,16 @@
 ﻿// ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
 /// <reference path="JaggArray.ts" />
 
 module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
 
     var dt2lv: Array<number> = [
         1.0, 1.414, 1.581, 1.732
@@ -74,11 +74,10 @@ module fmgenAs {
                     this.multable_[h][l] = (mul * rr) | 0;
                 }
             }
-        }		
+        }
 
         /*
          * End Class Definition
          */
     }
-
-}  
+}

@@ -1,17 +1,17 @@
 ﻿// ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
 /// <reference path="Timer.ts" />
 /// <reference path="Operator.ts" />
 
 module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class OPM extends Timer {
         //private static OPM_LFOENTS: number = 512;
 
@@ -171,7 +171,7 @@ module fmgenAs {
 
         // タイマー A 発生時イベント (CSM)
         protected TimerA(): void {
-            if ((this.regtc & 0x80) !== 0) {
+            if (this.regtc & 0x80) {
                 for (var i: number = 0; i < 8; i++) {
                     this.ch[i].KeyControl(0x0);
                     this.ch[i].KeyControl(0xf);
@@ -207,7 +207,7 @@ module fmgenAs {
 
         //  ステータスフラグ解除
         protected ResetStatus(bits: number): void {
-            if ((this.status & bits) !== 0) {
+            if (this.status & bits) {
                 this.status &= ~bits;
                 if (this.status === 0)
                     this.Intr(false);
@@ -222,7 +222,7 @@ module fmgenAs {
             var c: number = addr & 7;
             switch (addr & 0xff) {
                 case 0x01:                  // TEST (lfo restart)
-                    if ((data & 2) !== 0) {
+                    if (data & 2) {
                         this.lfo_count_ = 0;
                         this.lfo_count_prev_ = ~0;
                     }
@@ -262,7 +262,7 @@ module fmgenAs {
 
                 case 0x19:                  // PMD/AMD
                     //              (data & 0x80 ? pmd : amd) = data & 0x7f;
-                    if ((data & 0x80) !== 0)
+                    if (data & 0x80)
                         this.pmd = data & 0x7f;
                     else
                         this.amd = data & 0x7f;
@@ -401,9 +401,9 @@ module fmgenAs {
             for (i = 0; i < 8; i++)
                 activech = (activech << 2) | this.ch[i].Prepare();
 
-            if ((activech & 0x5555) !== 0) {
+            if (activech & 0x5555) {
                 // LFO 波形初期化ビット = 1 ならば LFO はかからない?
-                if ((this.reg01 & 0x02) !== 0)
+                if (this.reg01 & 0x02)
                     activech &= 0x5555;
 
                 // Mix
@@ -438,7 +438,7 @@ module fmgenAs {
                         this.chip.aml_ = (amtable[this.lfowaveform][c] * this.amd / 128) & (/*FM.FM_LFOENTS*/256 - 1);
                     }
                     else {
-                        if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                        if ((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) {
                             c = ((Math.random() * 32768 | 0) / 17) & 0xff;
                             this.chip.pml_ = ((c - 0x80) * this.pmd / 128 + 0x80) & (/*FM.FM_LFOENTS*/256 - 1);
                             this.chip.aml_ = (c * this.amd / 128) & (/*FM.FM_LFOENTS*/256 - 1);
@@ -452,9 +452,9 @@ module fmgenAs {
 
                     r = 0;
 
-                    if ((activech & 0x4000) !== 0) {
+                    if (activech & 0x4000) {
                         // LFOあり*****************************************************************************************
-                        if ((activech & 0xaaaa) !== 0) {
+                        if (activech & 0xaaaa) {
                             this.ch[0].chip_.pmv_ = this.ch[0].pms[this.ch[0].chip_.pml_];
                             buf[1] = buf[2] = buf[3] = 0;
                             buf[0] = op0.out_;         
@@ -752,7 +752,7 @@ module fmgenAs {
                                 op3.eg_out_ = (a < 0x3ff) ? a << (1 + 2) : 0x3ff << (1 + 2);
                                 op3.eg_curve_count_++;
                             }
-
+                            
                             ii = buf[ix[2]];
                             op3.out2_ = op3.out_;
 
@@ -775,7 +775,7 @@ module fmgenAs {
             // @LinearDrive: add start [2011/12/04]
             else {
                 //全てのオペレータがEGPhase.offの場合、無音をレンダリング
-                buffer.set(ZEROBUFFER.subarray(0, nsamples), start);
+                buffer.set(msgr.emptyBuffer.subarray(0, nsamples), start);
             }
             // @LinearDrive: add end
         }

@@ -1,17 +1,17 @@
 ﻿// ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 
 /// <reference path="Operator.ts" />
 /// <reference path="JaggArray.ts" />
 
 module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class Channel4 {
         fb: number;
         buf: Array<number> = new Array<number>(4);
@@ -80,17 +80,17 @@ module fmgenAs {
             this.pms = Channel4.pmtable[0][0];
         }
 
-        //	オペレータの種類 (LFO) を設定
+        // オペレータの種類 (LFO) を設定
         SetType(type: number/*OpType*/): void {
             for (var i: number = 0; i < 4; i++) this.op[i].type_ = type;
         }
 
-        //	セルフ・フィードバックレートの設定 (0-7)
+        // セルフ・フィードバックレートの設定 (0-7)
         SetFB(feedback: number): void {
             this.fb = Channel4.fbtable[feedback];
         }
 
-        //	OPNA 系 LFO の設定
+        // OPNA 系 LFO の設定
         SetMS(ms: number): void {
             this.op[0].SetMS(ms);
             this.op[1].SetMS(ms);
@@ -98,12 +98,12 @@ module fmgenAs {
             this.op[3].SetMS(ms);
         }
 
-        //	チャンネル・マスク
+        // チャンネル・マスク
         Mute(m: boolean): void {
             for (var i: number = 0; i < 4; i++) this.op[i].Mute(m);
         }
 
-        //	内部パラメータを再計算
+        // 内部パラメータを再計算
         Refresh(): void {
             for (var i: number = 0; i < 4; i++) this.op[i].Refresh();
         }
@@ -121,25 +121,27 @@ module fmgenAs {
             this.op[3].Reset();
         }
 
-        //	Calc の用意
+        // Calc の用意
         Prepare(): number {
-            this.op[0].Prepare();
-            this.op[1].Prepare();
-            this.op[2].Prepare();
-            this.op[3].Prepare();
+            var op: Array<Operator> = this.op;
 
-            this.pms = Channel4.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
-            var key: number = (this.op[0].IsOn() || this.op[1].IsOn() || this.op[2].IsOn() || this.op[3].IsOn()) ? 1 : 0;
-            var lfo: number = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) !== 0 ? 2 : 0;
+            op[0].Prepare();
+            op[1].Prepare();
+            op[2].Prepare();
+            op[3].Prepare();
+
+            this.pms = Channel4.pmtable[op[0].type_][op[0].ms_ & 7];
+            var key: number = (op[0].IsOn() || op[1].IsOn() || op[2].IsOn() || op[3].IsOn()) ? 1 : 0;
+            var lfo: number = (op[0].ms_ & (op[0].amon_ || op[1].amon_ || op[2].amon_ || op[3].amon_ ? 0x37 : 7)) ? 2 : 0;
             return key | lfo;
-        }
+            }
 
-        //	F-Number/BLOCK を設定
+        // F-Number/BLOCK を設定
         SetFNum(f: number): void {
             for (var i: number = 0; i < 4; i++) this.op[i].SetFNum(f);
         }
 
-        //	KC/KF を設定
+        // KC/KF を設定
         SetKCKF(kc: number, kf: number): void {
             var oct: number = 19 - ((kc >> 4) & 7);
             var kcv: number = Channel4.kctable[kc & 0x0f];
@@ -155,15 +157,16 @@ module fmgenAs {
             this.op[3].SetDPBN(dp, bn);
         }
 
-        //	キー制御
+        // キー制御
         KeyControl(key: number): void {
-            if ((key & 0x1) !== 0) this.op[0].KeyOn(); else this.op[0].KeyOff();
-            if ((key & 0x2) !== 0) this.op[1].KeyOn(); else this.op[1].KeyOff();
-            if ((key & 0x4) !== 0) this.op[2].KeyOn(); else this.op[2].KeyOff();
-            if ((key & 0x8) !== 0) this.op[3].KeyOn(); else this.op[3].KeyOff();
+            var op: Array<Operator> = this.op;
+            if (key & 0x1) op[0].KeyOn(); else op[0].KeyOff();
+            if (key & 0x2) op[1].KeyOn(); else op[1].KeyOff();
+            if (key & 0x4) op[2].KeyOn(); else op[2].KeyOff();
+            if (key & 0x8) op[3].KeyOn(); else op[3].KeyOff();
         }
 
-        //	アルゴリズムを設定
+        // アルゴリズムを設定
         SetAlgorithm(algo: number): void {
             var iotable = Channel4.iotable;
 
@@ -176,8 +179,8 @@ module fmgenAs {
             this.op[0].ResetFB();
             this.algo_ = algo;
         }
-		
-        //	アルゴリズムを取得
+  
+        // アルゴリズムを取得
         GetAlgorithm(): number {
             return this.algo_;
         }

@@ -75,4 +75,4 @@ module flmml {
             this.m_waveNo = Math.min(waveNo, MOscTriangle.MAX_WAVE - 1);
         }
     }
-} 
+}

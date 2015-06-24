@@ -70,7 +70,7 @@
         protected note(noteNo: number): void {
             //console.log("note"+noteNo);
             noteNo += this.m_noteShift + this.getKeySig();
-            if (this.getChar() === '*') {	// ポルタメント記号
+            if (this.getChar() === '*') { // ポルタメント記号
                 this.m_beforeNote = noteNo + this.m_octave * 12;
                 this.m_portamento = 1;
                 this.next();
@@ -242,7 +242,7 @@
                     break;
                 case 'p': // Pan
                     this.next();
-                    if (this.getChar() === 'l') {	// poly mode
+                    if (this.getChar() === 'l') { // poly mode
                         this.next();
                         o = this.getUInt(this.m_polyVoice);
                         o = Math.max(0, Math.min(this.m_polyVoice, o));
@@ -401,7 +401,7 @@
                         this.m_tracks[this.m_trackNo].recSync(mode, a);
                     }
                     break;
-                case 'u':	// midi風なポルタメント
+                case 'u': // midi風なポルタメント
                     this.next();
                     var rate: number;
                     mode = this.getUInt(0);
@@ -748,7 +748,7 @@
                     }
                     var args: Array<string> = new Array();
                     var q: number = 0;
-					
+
                     // 引数が0個の場合は引数処理をスキップするように変更
                     if (macro.args.length > 0) {
                         if (c === "{") {
@@ -823,11 +823,11 @@
                 this.m_velDir = false;
             }
             // meta informations
-            this.m_metaTitle = this.findMetaDescN("TITLE");	// #TITLE
-            this.m_metaArtist = this.findMetaDescN("ARTIST");	// #ARTIST
-            this.m_metaComment = this.findMetaDescN("COMMENT");	// #COMMENT
-            this.m_metaCoding = this.findMetaDescN("CODING");	// #CODING
-            this.findMetaDescN("PRAGMA");	// #PRAGMA
+            this.m_metaTitle = this.findMetaDescN("TITLE");     // #TITLE
+            this.m_metaArtist = this.findMetaDescN("ARTIST");   // #ARTIST
+            this.m_metaComment = this.findMetaDescN("COMMENT"); // #COMMENT
+            this.m_metaCoding = this.findMetaDescN("CODING");   // #CODING
+            this.findMetaDescN("PRAGMA");                       // #PRAGMA
             // FM Desc
             exp = /^#OPM@(\d+)[ \t]*{([^}]*)}/gm;
 
@@ -980,7 +980,7 @@
                                     var regexResult: RegExpMatchArray = idPart.match("[a-zA-Z_][a-zA-Z_0-9#\+\(\)]*");
                                     if (regexResult !== null) {
                                         var id: string = regexResult[0];
-                                        idPart = idPart.replace(regTrimHead, '').replace(regTrimFoot, '');	// idString.Trim();								
+                                        idPart = idPart.replace(regTrimHead, '').replace(regTrimFoot, ''); // idString.Trim();
                                         if (idPart !== id) {
                                             this.warning(MWarning.INVALID_MACRO_NAME, idPart);
                                         }
@@ -1057,7 +1057,7 @@
                 }
             }
         }
-		
+
         // 指定されたメタ記述を引き抜いてくる
         protected findMetaDescV(sectionName: string): Array<string> {
             var i: number;
@@ -1069,7 +1069,7 @@
 
             e1 = new RegExp("^#" + sectionName + "(\\s*|\\s+(.*))$", "gm"); // global multi-line
             e2 = new RegExp("^#" + sectionName + "(\\s*|\\s+(.*))$", "m"); //        multi-line
-			
+
             matched = this.m_string.match(e1);
             if (matched) {
                 this.m_string = this.m_string.replace(e1, "");
@@ -1082,8 +1082,8 @@
                 // console.log(sectionName + " = " + tt);
             }
             return tt;
-        }			
-		
+        }
+
         // 指定されたメタ記述を引き抜いてくる
         protected findMetaDescN(sectionName: string): string {
             var i: number;
@@ -1095,7 +1095,7 @@
 
             e1 = new RegExp("^#" + sectionName + "(\\s*|\\s+(.*))$", "gm"); // global multi-line
             e2 = new RegExp("^#" + sectionName + "(\\s*|\\s+(.*))$", "m"); //        multi-line
-			
+
             matched = this.m_string.match(e1);
             if (matched) {
                 this.m_string = this.m_string.replace(e1, "");
@@ -1273,7 +1273,8 @@
                 return;
             }
             // 音声が停止するのを待つ
-            msgr.stopSound(this.play2.bind(this, str), true);
+            msgr.onstopsound = this.play2.bind(this, str);
+            msgr.stopSound(true);
         }
 
         private play2(str: string): void {
@@ -1347,6 +1348,8 @@
 
             // play start
             this.m_sequencer.play();
+
+            msgr.onstopsound = null;
         }
 
         stop(): void {
@@ -1361,9 +1364,11 @@
             this.m_sequencer.play();
         }
 
+        /*
         getGlobalTick(): number {
             return this.m_sequencer.getGlobalTick();
         }
+        */
 
         isPlaying(): boolean {
             return this.m_sequencer.isPlaying();
@@ -1414,4 +1419,4 @@
             return this.m_metaCoding;
         }
     }
-} 
+}

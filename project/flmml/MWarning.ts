@@ -25,4 +25,4 @@
             return this.s_string[warnId].replace("%s", str);
         }
     }
-} 
+}

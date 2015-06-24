@@ -48,4 +48,4 @@
 //        static RESET_ALL: number = 38;
 //        static HW_LFO: number = 39;
 //    }
-//} 
+//}

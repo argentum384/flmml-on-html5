@@ -1,8 +1,8 @@
 ﻿module fmgenAs {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class EGPhase {
         static next: number = 0;
         static attack: number = 1;

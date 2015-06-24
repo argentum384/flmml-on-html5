@@ -1,10 +1,10 @@
 ﻿/// <reference path="IChannel.ts" />
 
 module flmml {
-	/**
-	 * ...
-	 * @author ALOE
-	 */
+    /**
+     * ...
+     * @author ALOE
+     */
     export class MPolyChannel implements IChannel {
         protected m_form: number;
         protected m_subform: number;
@@ -59,7 +59,7 @@ module flmml {
         noteOn(noteNo: number, velocity: number): void {
             var i: number;
             var vo: MChannel = null;
-			
+            
             // ボイススロットに空きがあるようだ
             if (this.getVoiceCount() <= this.m_voiceLimit) {
                 for (i = 0; i < this.m_voiceLen; i++) {
@@ -70,7 +70,7 @@ module flmml {
                 }
             }
             // やっぱ埋まってたので一番古いボイスを探す
-            if (vo === null) {
+            if (vo == null) {
                 var minId: number = Number.MAX_VALUE;
                 for (i = 0; i < this.m_voiceLen; i++) {
                     if (minId > this.m_voices[i].getId()) {
@@ -237,9 +237,9 @@ module flmml {
             if (slave === false) {
                 this.m_voices[0].clearOutPipe(max, start, delta);
             }
-        }	
+        }
         /*
          * End Class Definition
          */
     }
-} 
+}

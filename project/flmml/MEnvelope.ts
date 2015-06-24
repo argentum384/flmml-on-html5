@@ -1,6 +1,6 @@
 ﻿module flmml {
     export class MEnvelope {
-        static SAMPLE_RATE: number;
+        private static SAMPLE_RATE: number;
 
         private m_envelopePoint: MEnvelopePoint;
         private m_envelopeLastPoint: MEnvelopePoint;
@@ -17,7 +17,7 @@
         private static s_init: number = 0;
         private static s_volumeMap: Array<Array<number>> = new Array<Array<number>>(3);
         private static s_volumeLen: number;
-		
+
         // 以前のバージョンとの互換性のためにADSRで初期化
         constructor(attack: number, decay: number, sustain: number, release: number) {
             this.setAttack(attack);
@@ -32,7 +32,7 @@
         static boot(): void {
             if (!this.s_init) {
                 var i: number;
-                this.SAMPLE_RATE = SAMPLE_RATE;
+                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
                 this.s_volumeLen = 256; // MEnvelopeのエンベロープは256段階であることに注意する。
                 for (i = 0; i < 3; i++) {
                     this.s_volumeMap[i] = new Array<number>(this.s_volumeLen);
@@ -64,7 +64,7 @@
                     this.m_currentPoint = this.m_currentPoint.next;
                     this.m_counter -= this.m_currentPoint.time;
                 }
-                if (this.m_currentPoint.next === null) {
+                if (this.m_currentPoint.next == null) {
                     this.m_currentVal = this.m_currentPoint.level;
                 } else {
                     this.m_step = (this.m_currentPoint.next.level - this.m_currentPoint.level) / this.m_currentPoint.next.time;
@@ -104,14 +104,14 @@
             if (!this.m_playing) return 0;
 
             if (!this.m_releasing) {
-                if (this.m_currentPoint.next === null) {	// sustain phase
+                if (this.m_currentPoint.next == null) { // sustain phase
                     this.m_currentVal = this.m_currentPoint.level;
                 } else {
                     var processed: boolean = false;
                     while (this.m_counter >= this.m_currentPoint.next.time) {
                         this.m_counter = 0;
                         this.m_currentPoint = this.m_currentPoint.next;
-                        if (this.m_currentPoint.next === null) {
+                        if (this.m_currentPoint.next == null) {
                             this.m_currentVal = this.m_currentPoint.level;
                             processed = true;
                             break;
@@ -146,14 +146,14 @@
                 }
 
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {	// sustain phase
+                    if (this.m_currentPoint.next == null) { // sustain phase
                         // this.m_currentVal = this.m_currentPoint.level;
                     } else {
                         var processed: boolean = false;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -191,14 +191,14 @@
                 }
 
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {	// sustain phase
+                    if (this.m_currentPoint.next == null) { // sustain phase
                         this.m_currentVal = this.m_currentPoint.level;
                     } else {
                         var processed: boolean = false;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -214,7 +214,7 @@
                         this.m_counter++;
                     }
                 } else {
-                    this.m_currentVal -= this.m_releaseStep; //release phase
+                    this.m_currentVal -= this.m_releaseStep; // release phase
                 }
                 if (this.m_currentVal <= 0 && this.m_releasing) {
                     this.m_playing = false;
@@ -223,7 +223,7 @@
                 this.m_timeInSamples++;
                 var cv: number = (this.m_currentVal * 255) | 0;
                 if (cv > 255) {
-                    cv = 0;	// 0にするのは過去バージョンを再現するため。
+                    cv = 0; // 0にするのは過去バージョンを再現するため。
                 }
                 samples[i] *= MEnvelope.s_volumeMap[volMode][cv] * velocity;
             }

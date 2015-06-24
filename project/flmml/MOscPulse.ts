@@ -94,4 +94,4 @@ module flmml {
             this.m_modNoise = noise;
         }
     }
-} 
+}

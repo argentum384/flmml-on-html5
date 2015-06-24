@@ -16,8 +16,8 @@ module flmml {
         // 3.58MHz(基本)：動作周波数比 (cent)
         static OPM_RATIO: number = 0; //-192.048495012562; // 1200.0*Math.Log(3580000.0/OPM_CLOCK)/Math.Log(2.0); 
         // パラメータ長
-        static TIMB_SZ_M: number = 55;	// #OPM
-        static TIMB_SZ_N: number = 51;	// #OPN
+        static TIMB_SZ_M: number = 55; // #OPM
+        static TIMB_SZ_N: number = 51; // #OPN
         // パラメータタイプ
         static TYPE_OPM: number = 0;
         static TYPE_OPN: number = 1;
@@ -35,7 +35,7 @@ module flmml {
         
         // YM2151 アプリケーションマニュアル Fig.2.4より
         private static kctable: Array<number> = [
-        // C   C#  D   D#  E   F   F#  G   G#  A   A#  B  
+        //  C    C#   D    D#   E    F    F#   G    G#   A    A#   B  
             0xE, 0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9, 0xA, 0xC, 0xD, // 3.58MHz         
         ];
             
@@ -58,9 +58,9 @@ module flmml {
         ];
      
         private static defTimbre: Array<number> = [
-        /*  AL FB */
+        //  AL FB
             4, 5,
-        /*  AR DR SR RR SL TL KS ML D1 D2 AM　*/
+        //  AR  DR  SR RR SL  TL  KS ML D1 D2 AM　
             31,  5, 0, 0,  0, 23, 1, 1, 3, 0, 0,
             20, 10, 3, 7,  8,  0, 1, 1, 3, 0, 0,
             31,  3, 0, 0,  0, 25, 1, 1, 7, 0, 0,
@@ -76,9 +76,9 @@ module flmml {
         ];
      
         private static zeroTimbre: Array<number> = [
-        /*  AL FB */
+        //  AL FB */
             0, 0,
-        /*  AR DR SR RR SL TL KS ML D1 D2 AM　*/
+        //  AR DR SR RR SL TL KS ML D1 D2 AM
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -101,7 +101,7 @@ module flmml {
             this.m_tl = new Array<number>(4);
             super();
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, SAMPLE_RATE);
+            this.m_fm.Init(MOscOPM.OPM_CLOCK, msgr.SAMPLE_RATE);
             this.m_fm.Reset();
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.setOpMask(15);
@@ -121,7 +121,7 @@ module flmml {
                 else this.s_table[i] = null;
             }
         }
-		
+
         // AS版のみ
         private static trim(str: String): String {
             var regexHead: RegExp = /^[,]*/m;
@@ -271,7 +271,7 @@ module flmml {
         // 音色選択
         setWaveNo(waveNo: number): void {
             if (waveNo >= MOscOPM.MAX_WAVE) waveNo = MOscOPM.MAX_WAVE - 1;
-            if (MOscOPM.s_table[waveNo] === null) waveNo = 0;
+            if (MOscOPM.s_table[waveNo] == null) waveNo = 0;
             this.m_fm.SetVolume(MOscOPM.s_comGain); // コモンゲイン適用
             this.loadTimbre(MOscOPM.s_table[waveNo]);
         }
@@ -289,12 +289,18 @@ module flmml {
         // 0～127のベロシティを設定 (キャリアのトータルレベルが操作される)
         setVelocity(vel: number): void {
             this.m_velocity = vel;
-            var carrierop: Array<number> = MOscOPM.carrierop;
+            var al: number = this.m_al;
+            var tl: Array<number> = this.m_tl;
+            var carrierop: number = MOscOPM.carrierop[al];
             var slottable: Array<number> = MOscOPM.slottable;
-            if ((carrierop[this.m_al] & 0x08) !== 0) this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity)); else this.SetTL(slottable[0], this.m_tl[0]);
-            if ((carrierop[this.m_al] & 0x10) !== 0) this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity)); else this.SetTL(slottable[1], this.m_tl[1]);
-            if ((carrierop[this.m_al] & 0x20) !== 0) this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity)); else this.SetTL(slottable[2], this.m_tl[2]);
-            if ((carrierop[this.m_al] & 0x40) !== 0) this.SetTL(slottable[3], this.m_tl[3] + (127 - this.m_velocity)); else this.SetTL(slottable[3], this.m_tl[3]);
+            this.SetTL(slottable[0], tl[0] + (carrierop & 0x08 ? 127 - vel : 0));
+            this.SetTL(slottable[1], tl[1] + (carrierop & 0x10 ? 127 - vel : 0));
+            this.SetTL(slottable[2], tl[2] + (carrierop & 0x20 ? 127 - vel : 0));
+            this.SetTL(slottable[3], tl[3] + (carrierop & 0x40 ? 127 - vel : 0));
+            //if ((carrierop & 0x08) !== 0) this.SetTL(slottable[0], tl[0] + (127 - vel)); else this.SetTL(slottable[0], tl[0]);
+            //if ((carrierop & 0x10) !== 0) this.SetTL(slottable[1], tl[1] + (127 - vel)); else this.SetTL(slottable[1], tl[1]);
+            //if ((carrierop & 0x20) !== 0) this.SetTL(slottable[2], tl[2] + (127 - vel)); else this.SetTL(slottable[2], tl[2]);
+            //if ((carrierop & 0x40) !== 0) this.SetTL(slottable[3], tl[3] + (127 - vel)); else this.SetTL(slottable[3], tl[3]);
         }       
 
         // 0～1.0のエクスプレッションを設定
@@ -309,14 +315,14 @@ module flmml {
             super.setFrequency(frequency);
 
             // 指示周波数からMIDIノート番号(≠FlMMLノート番号)を逆算する（まったくもって無駄・・）
-            var n: number = Math.floor(1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5);
+            var n: number = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
             var note: number = n / 100 | 0;
             var cent: number = n % 100;
 
             // key flaction
-            var kf: number = Math.floor(64.0 * cent / 100.0 + 0.5);
+            var kf: number = 64.0 * cent / 100.0 + 0.5 | 0;
             // key code
-            //           ------ octave ------   -------- note ---------
+            //                   ------ octave ------   -------- note ---------
             var kc: number = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
 
             this.m_fm.SetReg(0x30, kf << 2);
@@ -345,4 +351,4 @@ module flmml {
          * End Class Definition
          */
     }
-} 
+}

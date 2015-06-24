@@ -17,8 +17,8 @@ module flmml {
         static boot(): void {
             if (this.s_init) return;
             this.s_table = new Array<Array<number>>(this.MAX_WAVE);
-            this.s_table[0] = new Array<number>(this.FC_TRI_TABLE_LEN);	// @6-0
-            this.s_table[1] = new Array<number>(this.FC_TRI_TABLE_LEN);	// @6-1
+            this.s_table[0] = new Array<number>(this.FC_TRI_TABLE_LEN); // @6-0
+            this.s_table[1] = new Array<number>(this.FC_TRI_TABLE_LEN); // @6-1
             var i: number;
             for (i = 0; i < 16; i++) {
                 this.s_table[0][i] = this.s_table[0][31 - i] = i * 2.0 / 15.0 - 1.0;

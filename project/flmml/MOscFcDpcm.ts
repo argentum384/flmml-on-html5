@@ -13,17 +13,17 @@ module flmml {
         static FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
         static FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
         static FC_DPCM_NEXT: number;
-        protected m_readCount: number;	//次の波形生成までのカウント値
-        protected m_address: number;	//読み込み中のアドレス位置
-        protected m_bit: number;		//読み込み中のビット位置
-        protected m_wav: number;		//現在のボリューム
-        protected m_length: number;		//残り読み込み長
-        protected m_ofs: number;		//前回のオフセット
+        protected m_readCount: number; //次の波形生成までのカウント値
+        protected m_address: number;   //読み込み中のアドレス位置
+        protected m_bit: number;       //読み込み中のビット位置
+        protected m_wav: number;       //現在のボリューム
+        protected m_length: number;    //残り読み込み長
+        protected m_ofs: number;       //前回のオフセット
         protected static s_init: number;
         protected static s_table: Array<Array<number>>;
-        protected static s_intVol: Array<number>;	//波形初期位置
-        protected static s_loopFg: Array<number>;	//ループフラグ
-        protected static s_length: Array<number>;	//再生レングス
+        protected static s_intVol: Array<number>; //波形初期位置
+        protected static s_loopFg: Array<number>; //ループフラグ
+        protected static s_length: Array<number>; //再生レングス
         protected m_waveNo: number;
         protected static s_interval: Array<number> = [ //音程
             428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54,
@@ -44,7 +44,7 @@ module flmml {
         static boot(): void {
             if (this.s_init) return;
 
-            this.FC_DPCM_NEXT = SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
+            this.FC_DPCM_NEXT = msgr.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
 
             this.s_table = new Array<Array<number>>(this.MAX_WAVE);
             this.s_intVol = new Array<number>(this.MAX_WAVE);
@@ -289,4 +289,4 @@ module flmml {
             this.setDpcmFreq(noteNo);
         }
     }
-}  
+}
