@@ -45,8 +45,8 @@ var flmml;
         MChannel.boot = function (numSamples) {
             if (!this.s_init) {
                 var i;
-                this.SAMPLE_RATE = SAMPLE_RATE;
-                this.ZEROBUFFER = ZEROBUFFER;
+                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
+                this.emptyBuffer = msgr.emptyBuffer;
                 this.s_frequencyLen = this.s_frequencyMap.length;
                 for (i = 0; i < this.s_frequencyLen; i++) {
                     this.s_frequencyMap[i] = 440.0 * Math.pow(2.0, (i - 69 * this.PITCH_RESOLUTION) / (12.0 * this.PITCH_RESOLUTION));
@@ -152,11 +152,12 @@ var flmml;
             this.m_onCounter = 0;
             var modPulse = this.m_oscSet1.getMod(flmml.MOscillator.PULSE);
             modPulse.setPWM(this.m_pulseWidth);
-            this.m_oscSet1.getMod(flmml.MOscillator.FC_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(flmml.MOscillator.GB_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(flmml.MOscillator.GB_S_NOISE).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(flmml.MOscillator.FC_DPCM).setNoteNo(this.m_noteNo);
-            this.m_oscSet1.getMod(flmml.MOscillator.OPM).setNoteNo(this.m_noteNo);
+            var oscSet1 = this.m_oscSet1;
+            oscSet1.getMod(flmml.MOscillator.FC_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(flmml.MOscillator.GB_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(flmml.MOscillator.GB_S_NOISE).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(flmml.MOscillator.FC_DPCM).setNoteNo(this.m_noteNo);
+            oscSet1.getMod(flmml.MOscillator.OPM).setNoteNo(this.m_noteNo);
         };
         MChannel.prototype.noteOff = function (noteNo) {
             if (noteNo < 0 || noteNo === this.m_noteNo) {
@@ -362,7 +363,7 @@ var flmml;
         };
         MChannel.prototype.clearOutPipe = function (max, start, delta) {
             if (this.m_outMode === 1) {
-                MChannel.s_pipeArr[this.m_outPipe].set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                MChannel.s_pipeArr[this.m_outPipe].set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
         };
         MChannel.prototype.getNextCutoff = function () {
@@ -542,7 +543,7 @@ var flmml;
             tmpFlag = playing;
             playing = playing || this.m_formant.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
             if (playing) {
                 this.m_formant.run(trackBuffer, start, end);
@@ -550,7 +551,7 @@ var flmml;
             tmpFlag = playing;
             playing = playing || this.m_filter.checkToSilence();
             if (playing !== tmpFlag) {
-                trackBuffer.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
             }
             if (playing) {
                 if (this.m_lfoTarget === 2 && this.m_osc2Connect !== 0) {
@@ -634,7 +635,7 @@ var flmml;
             else if (this.m_outMode === 1) {
                 pipe = MChannel.s_pipeArr[this.m_outPipe];
                 if (this.m_slaveVoice === false) {
-                    pipe.set(MChannel.ZEROBUFFER.subarray(0, delta), start);
+                    pipe.set(MChannel.emptyBuffer.subarray(0, delta), start);
                 }
             }
         };
@@ -1196,7 +1197,7 @@ var flmml;
         MEnvelope.boot = function () {
             if (!this.s_init) {
                 var i;
-                this.SAMPLE_RATE = SAMPLE_RATE;
+                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
                 this.s_volumeLen = 256;
                 for (i = 0; i < 3; i++) {
                     this.s_volumeMap[i] = new Array(this.s_volumeLen);
@@ -1225,7 +1226,7 @@ var flmml;
                     this.m_currentPoint = this.m_currentPoint.next;
                     this.m_counter -= this.m_currentPoint.time;
                 }
-                if (this.m_currentPoint.next === null) {
+                if (this.m_currentPoint.next == null) {
                     this.m_currentVal = this.m_currentPoint.level;
                 }
                 else {
@@ -1261,7 +1262,7 @@ var flmml;
             if (!this.m_playing)
                 return 0;
             if (!this.m_releasing) {
-                if (this.m_currentPoint.next === null) {
+                if (this.m_currentPoint.next == null) {
                     this.m_currentVal = this.m_currentPoint.level;
                 }
                 else {
@@ -1269,7 +1270,7 @@ var flmml;
                     while (this.m_counter >= this.m_currentPoint.next.time) {
                         this.m_counter = 0;
                         this.m_currentPoint = this.m_currentPoint.next;
-                        if (this.m_currentPoint.next === null) {
+                        if (this.m_currentPoint.next == null) {
                             this.m_currentVal = this.m_currentPoint.level;
                             processed = true;
                             break;
@@ -1304,14 +1305,14 @@ var flmml;
                     continue;
                 }
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {
+                    if (this.m_currentPoint.next == null) {
                     }
                     else {
                         var processed = false;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -1349,7 +1350,7 @@ var flmml;
                     continue;
                 }
                 if (!this.m_releasing) {
-                    if (this.m_currentPoint.next === null) {
+                    if (this.m_currentPoint.next == null) {
                         this.m_currentVal = this.m_currentPoint.level;
                     }
                     else {
@@ -1357,7 +1358,7 @@ var flmml;
                         while (this.m_counter >= this.m_currentPoint.next.time) {
                             this.m_counter = 0;
                             this.m_currentPoint = this.m_currentPoint.next;
-                            if (this.m_currentPoint.next === null) {
+                            if (this.m_currentPoint.next == null) {
                                 this.m_currentVal = this.m_currentPoint.level;
                                 processed = true;
                                 break;
@@ -1526,7 +1527,7 @@ var flmml;
     var MFilter = (function () {
         function MFilter() {
             if (!MFilter.SAMPLE_RATE)
-                MFilter.SAMPLE_RATE = SAMPLE_RATE;
+                MFilter.SAMPLE_RATE = msgr.SAMPLE_RATE;
             this.setSwitch(0);
         }
         MFilter.prototype.reset = function () {
@@ -3264,7 +3265,8 @@ var flmml;
                 this.m_sequencer.play();
                 return;
             }
-            msgr.stopSound(this.play2.bind(this, str), true);
+            msgr.onstopsound = this.play2.bind(this, str);
+            msgr.stopSound(true);
         };
         MML.prototype.play2 = function (str) {
             this.m_sequencer.disconnectAll();
@@ -3319,6 +3321,7 @@ var flmml;
             this.m_sequencer.createSyncSources(this.m_maxSyncSource + 1);
             msgr.compileComplete();
             this.m_sequencer.play();
+            msgr.onstopsound = null;
         };
         MML.prototype.stop = function () {
             this.m_sequencer.stop();
@@ -3328,9 +3331,6 @@ var flmml;
         };
         MML.prototype.resume = function () {
             this.m_sequencer.play();
-        };
-        MML.prototype.getGlobalTick = function () {
-            return this.m_sequencer.getGlobalTick();
         };
         MML.prototype.isPlaying = function () {
             return this.m_sequencer.isPlaying();
@@ -3381,9 +3381,10 @@ var flmml;
 (function (flmml) {
     var MSequencer = (function () {
         function MSequencer() {
-            var sLen = MSequencer.BUFFER_SIZE * MSequencer.MULTIPLE;
-            MSequencer.SAMPLE_RATE = SAMPLE_RATE;
-            ZEROBUFFER = MSequencer.ZEROBUFFER = new Float32Array(MSequencer.BUFFER_SIZE * MSequencer.MULTIPLE);
+            this.SAMPLE_RATE = msgr.SAMPLE_RATE;
+            this.BUFFER_SIZE = msgr.BUFFER_SIZE;
+            msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.BUFFER_SIZE * MSequencer.MULTIPLE);
+            var sLen = this.BUFFER_SIZE * MSequencer.MULTIPLE;
             flmml.MChannel.boot(sLen);
             flmml.MOscillator.boot();
             flmml.MEnvelope.boot();
@@ -3395,10 +3396,9 @@ var flmml;
                 [new Float32Array(sLen), new Float32Array(sLen)],
                 [new Float32Array(sLen), new Float32Array(sLen)]
             ];
-            this.m_maxProcTime = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000 * 0.9;
-            this.m_lastTime = 0;
+            this.m_maxProcTime = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0 * 0.8;
             this.processAllBinded = this.processAll.bind(this);
-            msgr.onRequestBuffer = this.onSampleData.bind(this);
+            msgr.onrequestbuffer = this.onSampleData.bind(this);
             this.stop();
         }
         MSequencer.getTimer = function () {
@@ -3406,40 +3406,45 @@ var flmml;
         };
         MSequencer.prototype.play = function () {
             if (this.m_status === 1) {
-                var bufMSec = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
-                this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
-                var totl = this.getTotalMSec();
-                var rest = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
+                var bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
                 this.m_status = 3;
-                this.m_startTime = MSequencer.getTimer();
-                this.startRestTimer(rest);
                 msgr.playSound();
-                this.m_lastTime = MSequencer.getTimer();
+                this.startProcTimer();
             }
             else {
-                this.m_globalTick = 0;
+                this.m_globalSample = 0;
+                this.m_pausedPos = 0;
+                this.m_totalMSec = this.getTotalMSec();
                 for (var i = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
                 }
                 this.m_status = 2;
                 this.processStart();
             }
+            this.m_lastTime = 0;
+            this.m_waitPause = false;
         };
-        MSequencer.prototype.stop = function (onStopSound) {
-            if (onStopSound === void 0) { onStopSound = null; }
-            clearTimeout(this.m_restTimer);
+        MSequencer.prototype.stop = function () {
             clearTimeout(this.m_procTimer);
-            msgr.stopSound(onStopSound, true);
+            msgr.stopSound(true);
             this.m_status = 0;
-            this.m_pausedPos = 0;
+            this.m_lastTime = 0;
+            this.m_waitPause = false;
         };
         MSequencer.prototype.pause = function () {
-            if (this.m_status !== 3)
-                return;
-            clearTimeout(this.m_restTimer);
-            msgr.stopSound();
-            this.m_pausedPos = this.getNowMSec();
-            this.m_status = 1;
+            switch (this.m_status) {
+                case 2:
+                    this.m_waitPause = true;
+                    break;
+                case 3:
+                    this.m_pausedPos = this.getNowMSec();
+                    msgr.stopSound();
+                    this.m_status = 1;
+                    if (this.m_waitPause) {
+                        msgr.syncInfo();
+                        this.m_waitPause = false;
+                    }
+            }
         };
         MSequencer.prototype.disconnectAll = function () {
             while (this.m_trackArr.pop()) { }
@@ -3448,22 +3453,12 @@ var flmml;
         MSequencer.prototype.connect = function (track) {
             this.m_trackArr.push(track);
         };
-        MSequencer.prototype.getGlobalTick = function () {
-            return this.m_globalTick;
-        };
-        MSequencer.prototype.onStopReq = function () {
-            this.stop();
-            msgr.complete();
-            this.m_restTimer = 0;
-        };
         MSequencer.prototype.reqBuffering = function () {
             if (!this.m_buffTimer) {
                 this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this), 0);
             }
         };
         MSequencer.prototype.onBufferingReq = function () {
-            clearTimeout(this.m_restTimer);
-            this.m_pausedPos = this.getNowMSec();
             this.m_status = 2;
             this.startProcTimer();
             this.m_buffTimer = 0;
@@ -3471,25 +3466,21 @@ var flmml;
         MSequencer.prototype.startProcTimer = function (interval) {
             if (interval === void 0) { interval = 0; }
             clearTimeout(this.m_procTimer);
+            if (this.m_status === 0)
+                return;
             this.m_procTimer = setTimeout(this.processAllBinded, interval);
-        };
-        MSequencer.prototype.startRestTimer = function (interval) {
-            if (interval === void 0) { interval = 0; }
-            if (!this.m_restTimer) {
-                this.m_restTimer = setTimeout(this.onStopReq.bind(this), interval);
-            }
         };
         MSequencer.prototype.processStart = function () {
             this.m_step = 1;
             this.startProcTimer();
         };
         MSequencer.prototype.processAll = function () {
-            var buffer = this.m_buffer[1 - this.m_playSide], bufSize = MSequencer.BUFFER_SIZE, sLen = bufSize * MSequencer.MULTIPLE, bLen = bufSize * 2, nLen = this.m_trackArr.length;
+            var buffer = this.m_buffer[1 - this.m_playSide], bufSize = this.BUFFER_SIZE, sLen = bufSize * MSequencer.MULTIPLE, bLen = bufSize * 2, nLen = this.m_trackArr.length, msgr_ = msgr;
             switch (this.m_step) {
                 case 1:
                     buffer = this.m_buffer[1 - this.m_playSide];
-                    buffer[0].set(MSequencer.ZEROBUFFER);
-                    buffer[1].set(MSequencer.ZEROBUFFER);
+                    buffer[0].set(this.emptyBuffer);
+                    buffer[1].set(this.emptyBuffer);
                     if (nLen > 0) {
                         var track = this.m_trackArr[flmml.MTrack.TEMPO_TRACK];
                         track.onSampleData(null, 0, bufSize * MSequencer.MULTIPLE, true);
@@ -3497,13 +3488,11 @@ var flmml;
                     this.m_processTrack = flmml.MTrack.FIRST_TRACK;
                     this.m_processOffset = 0;
                     this.m_step++;
-                    if (this.m_status !== 3)
-                        this.startProcTimer();
+                    this.startProcTimer();
                     break;
                 case 2:
-                    var cnt = 0, status = this.m_status, endTime = this.m_maxProcTime + this.m_lastTime, infoInterval = msgr.infoInterval, infoTime = msgr.lastInfoTime + infoInterval;
+                    var status = this.m_status, endTime = this.m_lastTime ? this.m_maxProcTime + this.m_lastTime : 0.0, infoInterval = msgr_.infoInterval, infoTime = msgr_.lastInfoTime + infoInterval;
                     do {
-                        cnt++;
                         this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
                         this.m_processOffset += bLen;
                         if (this.m_processOffset >= sLen) {
@@ -3511,53 +3500,50 @@ var flmml;
                             this.m_processOffset = 0;
                         }
                         if (status === 2) {
-                            msgr.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100 | 0);
+                            msgr_.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100.0 | 0);
                         }
                         if (this.m_processTrack >= nLen) {
                             this.m_step++;
                             break;
                         }
                         if (infoInterval > 0 && MSequencer.getTimer() > infoTime) {
-                            msgr.syncInfo();
-                            infoTime = msgr.lastInfoTime + infoInterval;
+                            msgr_.syncInfo();
+                            infoTime = msgr_.lastInfoTime + infoInterval;
                         }
-                    } while (status !== 3 || MSequencer.getTimer() < endTime);
+                    } while (status < 3 || MSequencer.getTimer() < endTime);
                     if (infoInterval > 0) {
-                        msgr.syncInfo();
-                        setInterval(msgr.onInfoTimerBinded, msgr.infoInterval);
+                        msgr_.syncInfo();
+                        setInterval(msgr_.onInfoTimerBinded, msgr_.infoInterval);
                     }
-                    if (status !== 3 || this.m_step === 3) {
-                        this.startProcTimer();
-                    }
+                    this.startProcTimer();
                     break;
                 case 3:
                     this.m_step = 4;
                     if (this.m_status === 2) {
-                        var bufMSec = MSequencer.BUFFER_SIZE / MSequencer.SAMPLE_RATE * 1000;
-                        this.m_pausedPos = bufMSec * Math.ceil(this.m_pausedPos / bufMSec);
-                        var totl = this.getTotalMSec();
-                        var rest = (totl > this.m_pausedPos) ? (totl - this.m_pausedPos) : 0;
                         this.m_status = 3;
                         this.m_playSide = 1 - this.m_playSide;
                         this.m_playSize = 0;
-                        this.m_startTime = this.m_lastTime = MSequencer.getTimer();
-                        this.processStart();
-                        this.startRestTimer(rest);
-                        msgr.playSound();
+                        if (this.m_waitPause) {
+                            this.pause();
+                            this.m_step = 1;
+                        }
+                        else {
+                            msgr_.playSound();
+                            this.processStart();
+                        }
                     }
-                    break;
-                default:
                     break;
             }
         };
         MSequencer.prototype.onSampleData = function (e) {
-            var base;
-            var sendBuf;
             this.m_lastTime = MSequencer.getTimer();
-            if (this.m_status !== 3)
+            if (this.m_status < 3)
                 return;
-            if (this.m_step === 2)
-                this.startProcTimer();
+            if (this.m_globalSample / this.SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
+                this.stop();
+                msgr.complete();
+                return;
+            }
             if (this.m_playSize >= MSequencer.MULTIPLE) {
                 if (this.m_step === 4) {
                     this.m_playSide = 1 - this.m_playSide;
@@ -3577,13 +3563,14 @@ var flmml;
                     }
                 }
             }
-            var bufSize = MSequencer.BUFFER_SIZE;
-            sendBuf = (e.retBuf) ? e.retBuf : [new Float32Array(bufSize), new Float32Array(bufSize)];
-            base = bufSize * this.m_playSize;
+            var bufSize = this.BUFFER_SIZE;
+            var sendBuf = e.retBuf ? e.retBuf : [new Float32Array(bufSize), new Float32Array(bufSize)];
+            var base = bufSize * this.m_playSize;
             sendBuf[0].set(this.m_buffer[this.m_playSide][0].subarray(base, base + bufSize));
             sendBuf[1].set(this.m_buffer[this.m_playSide][1].subarray(base, base + bufSize));
             msgr.sendBuffer(sendBuf);
             this.m_playSize++;
+            this.m_globalSample += bufSize;
         };
         MSequencer.prototype.createPipes = function (num) {
             flmml.MChannel.createPipes(num);
@@ -3602,33 +3589,24 @@ var flmml;
                 return this.m_trackArr[flmml.MTrack.TEMPO_TRACK].getTotalMSec();
             }
             else {
-                return 0;
+                return 0.0;
             }
         };
         MSequencer.prototype.getNowMSec = function () {
-            var now;
-            var tot = this.getTotalMSec();
-            switch (this.m_status) {
-                case 3:
-                case 4:
-                    now = MSequencer.getTimer() - this.m_startTime + this.m_pausedPos;
-                    break;
-                case 1:
-                case 2:
-                    now = this.m_pausedPos;
-                    break;
-                default:
-                    return 0;
+            if (this.m_status === 0) {
+                return 0.0;
             }
-            return (now < tot) ? now : tot;
+            else {
+                var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0, elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0;
+                return Math.max(globalMSec + elapsed, this.m_pausedPos);
+            }
         };
         MSequencer.prototype.getNowTimeStr = function () {
-            var sec = this.getNowMSec() / 1000;
+            var sec = this.getNowMSec() / 1000.0;
             var smin = "0" + (sec / 60 | 0);
             var ssec = "0" + (sec % 60 | 0);
             return smin.substr(smin.length - 2, 2) + ":" + ssec.substr(ssec.length - 2, 2);
         };
-        MSequencer.BUFFER_SIZE = 8192;
         MSequencer.MULTIPLE = 32;
         return MSequencer;
     })();
@@ -3642,7 +3620,7 @@ var flmml;
             this.resetPhase();
             this.setFrequency(440.0);
             if (!MOscMod.SAMPLE_RATE)
-                MOscMod.SAMPLE_RATE = SAMPLE_RATE;
+                MOscMod.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
         MOscMod.prototype.resetPhase = function () {
             this.m_phase = 0;
@@ -3675,7 +3653,6 @@ var flmml;
         };
         MOscMod.prototype.setNoteNo = function (noteNo) {
         };
-        MOscMod.SAMPLE_RATE = null;
         MOscMod.TABLE_LEN = 1 << 16;
         MOscMod.PHASE_SFT = 14;
         MOscMod.PHASE_LEN = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
@@ -3710,7 +3687,7 @@ var flmml;
         MOscFcDpcm.boot = function () {
             if (this.s_init)
                 return;
-            this.FC_DPCM_NEXT = SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
+            this.FC_DPCM_NEXT = msgr.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
             this.s_table = new Array(this.MAX_WAVE);
             this.s_intVol = new Array(this.MAX_WAVE);
             this.s_loopFg = new Array(this.MAX_WAVE);
@@ -3996,7 +3973,7 @@ var flmml;
             }
         };
         MOscFcNoise.boot = function () {
-            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / SAMPLE_RATE | 0;
+            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / msgr.SAMPLE_RATE | 0;
         };
         MOscFcNoise.prototype.getNextSample = function () {
             var val = this.m_val;
@@ -4627,7 +4604,7 @@ var fmgenAs;
                     this.TimerA();
                     while (this.timera_count <= 0)
                         this.timera_count += this.timera;
-                    if ((this.regtc & 4) !== 0)
+                    if (this.regtc & 4)
                         this.SetStatus(1);
                 }
             }
@@ -4637,7 +4614,7 @@ var fmgenAs;
                     f = true;
                     while (this.timerb_count <= 0)
                         this.timerb_count += this.timerb;
-                    if ((this.regtc & 8) !== 0)
+                    if (this.regtc & 8)
                         this.SetStatus(2);
                 }
             }
@@ -4665,14 +4642,14 @@ var fmgenAs;
         Timer.prototype.SetTimerControl = function (data) {
             var tmp = this.regtc ^ data;
             this.regtc = data | 0;
-            if ((data & 0x10) !== 0)
+            if (data & 0x10)
                 this.ResetStatus(1);
-            if ((data & 0x20) !== 0)
+            if (data & 0x20)
                 this.ResetStatus(2);
-            if ((tmp & 0x01) !== 0)
-                this.timera_count = ((data & 1) !== 0) ? this.timera : 0;
-            if ((tmp & 0x02) !== 0)
-                this.timerb_count = ((data & 2) !== 0) ? this.timerb : 0;
+            if (tmp & 0x01)
+                this.timera_count = (data & 1) ? this.timera : 0;
+            if (tmp & 0x02)
+                this.timerb_count = (data & 2) ? this.timerb : 0;
         };
         Timer.prototype.TimerA = function () { };
         return Timer;
@@ -4706,9 +4683,9 @@ var fmgenAs;
     fmgenAs.JaggArray = JaggArray;
 })(fmgenAs || (fmgenAs = {}));
 // ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 /// <reference path="JaggArray.ts" />
 var fmgenAs;
@@ -5285,9 +5262,9 @@ var fmgenAs;
     fmgenAs.Operator = Operator;
 })(fmgenAs || (fmgenAs = {}));
 // ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 /// <reference path="Timer.ts" />
 /// <reference path="Operator.ts" />
@@ -5392,7 +5369,7 @@ var fmgenAs;
             this.chip.SetRatio(this.rateratio);
         };
         OPM.prototype.TimerA = function () {
-            if ((this.regtc & 0x80) !== 0) {
+            if (this.regtc & 0x80) {
                 for (var i = 0; i < 8; i++) {
                     this.ch[i].KeyControl(0x0);
                     this.ch[i].KeyControl(0xf);
@@ -5419,7 +5396,7 @@ var fmgenAs;
             }
         };
         OPM.prototype.ResetStatus = function (bits) {
-            if ((this.status & bits) !== 0) {
+            if (this.status & bits) {
                 this.status &= ~bits;
                 if (this.status === 0)
                     this.Intr(false);
@@ -5431,7 +5408,7 @@ var fmgenAs;
             var c = addr & 7;
             switch (addr & 0xff) {
                 case 0x01:
-                    if ((data & 2) !== 0) {
+                    if (data & 2) {
                         this.lfo_count_ = 0;
                         this.lfo_count_prev_ = ~0;
                     }
@@ -5468,7 +5445,7 @@ var fmgenAs;
                     this.lfo_count_diff_ = this.rateratio * ((16 + (this.lfofreq & 15)) << (16 - 4 - 7)) / (1 << (15 - (this.lfofreq >> 4)));
                     break;
                 case 0x19:
-                    if ((data & 0x80) !== 0)
+                    if (data & 0x80)
                         this.pmd = data & 0x7f;
                     else
                         this.amd = data & 0x7f;
@@ -5564,8 +5541,8 @@ var fmgenAs;
             var activech = 0;
             for (i = 0; i < 8; i++)
                 activech = (activech << 2) | this.ch[i].Prepare();
-            if ((activech & 0x5555) !== 0) {
-                if ((this.reg01 & 0x02) !== 0)
+            if (activech & 0x5555) {
+                if (this.reg01 & 0x02)
                     activech &= 0x5555;
                 var a, c, r, o, ii;
                 var pgex, pgin, sino;
@@ -5593,7 +5570,7 @@ var fmgenAs;
                         this.chip.aml_ = (amtable[this.lfowaveform][c] * this.amd / 128) & (256 - 1);
                     }
                     else {
-                        if (((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) !== 0) {
+                        if ((this.lfo_count_ ^ this.lfo_count_prev_) & ~((1 << 17) - 1)) {
                             c = ((Math.random() * 32768 | 0) / 17) & 0xff;
                             this.chip.pml_ = ((c - 0x80) * this.pmd / 128 + 0x80) & (256 - 1);
                             this.chip.aml_ = (c * this.amd / 128) & (256 - 1);
@@ -5605,8 +5582,8 @@ var fmgenAs;
                         this.lfo_count_ += this.lfo_count_diff_;
                     }
                     r = 0;
-                    if ((activech & 0x4000) !== 0) {
-                        if ((activech & 0xaaaa) !== 0) {
+                    if (activech & 0x4000) {
+                        if (activech & 0xaaaa) {
                             this.ch[0].chip_.pmv_ = this.ch[0].pms[this.ch[0].chip_.pml_];
                             buf[1] = buf[2] = buf[3] = 0;
                             buf[0] = op0.out_;
@@ -5854,7 +5831,7 @@ var fmgenAs;
                 }
             }
             else {
-                buffer.set(ZEROBUFFER.subarray(0, nsamples), start);
+                buffer.set(msgr.emptyBuffer.subarray(0, nsamples), start);
             }
         };
         OPM.prototype.Intr = function (f) {
@@ -5910,7 +5887,7 @@ var flmml;
             this.m_tl = new Array(4);
             _super.call(this);
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, SAMPLE_RATE);
+            this.m_fm.Init(MOscOPM.OPM_CLOCK, msgr.SAMPLE_RATE);
             this.m_fm.Reset();
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.setOpMask(15);
@@ -6066,7 +6043,7 @@ var flmml;
         MOscOPM.prototype.setWaveNo = function (waveNo) {
             if (waveNo >= MOscOPM.MAX_WAVE)
                 waveNo = MOscOPM.MAX_WAVE - 1;
-            if (MOscOPM.s_table[waveNo] === null)
+            if (MOscOPM.s_table[waveNo] == null)
                 waveNo = 0;
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.loadTimbre(MOscOPM.s_table[waveNo]);
@@ -6079,24 +6056,14 @@ var flmml;
         };
         MOscOPM.prototype.setVelocity = function (vel) {
             this.m_velocity = vel;
-            var carrierop = MOscOPM.carrierop;
+            var al = this.m_al;
+            var tl = this.m_tl;
+            var carrierop = MOscOPM.carrierop[al];
             var slottable = MOscOPM.slottable;
-            if ((carrierop[this.m_al] & 0x08) !== 0)
-                this.SetTL(slottable[0], this.m_tl[0] + (127 - this.m_velocity));
-            else
-                this.SetTL(slottable[0], this.m_tl[0]);
-            if ((carrierop[this.m_al] & 0x10) !== 0)
-                this.SetTL(slottable[1], this.m_tl[1] + (127 - this.m_velocity));
-            else
-                this.SetTL(slottable[1], this.m_tl[1]);
-            if ((carrierop[this.m_al] & 0x20) !== 0)
-                this.SetTL(slottable[2], this.m_tl[2] + (127 - this.m_velocity));
-            else
-                this.SetTL(slottable[2], this.m_tl[2]);
-            if ((carrierop[this.m_al] & 0x40) !== 0)
-                this.SetTL(slottable[3], this.m_tl[3] + (127 - this.m_velocity));
-            else
-                this.SetTL(slottable[3], this.m_tl[3]);
+            this.SetTL(slottable[0], tl[0] + (carrierop & 0x08 ? 127 - vel : 0));
+            this.SetTL(slottable[1], tl[1] + (carrierop & 0x10 ? 127 - vel : 0));
+            this.SetTL(slottable[2], tl[2] + (carrierop & 0x20 ? 127 - vel : 0));
+            this.SetTL(slottable[3], tl[3] + (carrierop & 0x40 ? 127 - vel : 0));
         };
         MOscOPM.prototype.setExpression = function (ex) {
             this.m_fm.SetExpression(ex);
@@ -6106,10 +6073,10 @@ var flmml;
                 return;
             }
             _super.prototype.setFrequency.call(this, frequency);
-            var n = Math.floor(1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5);
+            var n = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
             var note = n / 100 | 0;
             var cent = n % 100;
-            var kf = Math.floor(64.0 * cent / 100.0 + 0.5);
+            var kf = 64.0 * cent / 100.0 + 0.5 | 0;
             var kc = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
             this.m_fm.SetReg(0x30, kf << 2);
             this.m_fm.SetReg(0x28, kc);
@@ -6644,7 +6611,7 @@ var flmml;
                     }
                 }
             }
-            if (vo === null) {
+            if (vo == null) {
                 var minId = Number.MAX_VALUE;
                 for (i = 0; i < this.m_voiceLen; i++) {
                     if (minId > this.m_voices[i].getId()) {
@@ -6831,7 +6798,7 @@ var flmml;
             this.m_chordEnd = 0;
             this.m_chordMode = false;
             if (!MTrack.SAMPLE_RATE)
-                MTrack.SAMPLE_RATE = SAMPLE_RATE;
+                MTrack.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
         MTrack.prototype.getNumEvents = function () {
             return this.m_events.length;
@@ -7326,7 +7293,7 @@ var flmml;
             this.recRestMSec(3000);
             this.recEOT();
             globalSample += 3 * MTrack.SAMPLE_RATE;
-            this.m_totalMSec = globalSample * 1000 / MTrack.SAMPLE_RATE;
+            this.m_totalMSec = globalSample * 1000.0 / MTrack.SAMPLE_RATE;
         };
         MTrack.prototype.calcSpt = function (bpm) {
             var tps = bpm * 96.0 / 60.0;
@@ -7357,7 +7324,6 @@ var flmml;
         MTrack.prototype.findPoly = function () {
             return this.m_polyFound;
         };
-        MTrack.SAMPLE_RATE = null;
         MTrack.TEMPO_TRACK = 0;
         MTrack.FIRST_TRACK = 1;
         MTrack.DEFAULT_BPM = 120;
@@ -7398,9 +7364,9 @@ var flmml;
     flmml.MWarning = MWarning;
 })(flmml || (flmml = {}));
 // ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 /// <reference path="Operator.ts" />
 /// <reference path="JaggArray.ts" />
@@ -7453,13 +7419,14 @@ var fmgenAs;
             this.op[3].Reset();
         };
         Channel4.prototype.Prepare = function () {
-            this.op[0].Prepare();
-            this.op[1].Prepare();
-            this.op[2].Prepare();
-            this.op[3].Prepare();
-            this.pms = Channel4.pmtable[this.op[0].type_][this.op[0].ms_ & 7];
-            var key = (this.op[0].IsOn() || this.op[1].IsOn() || this.op[2].IsOn() || this.op[3].IsOn()) ? 1 : 0;
-            var lfo = (this.op[0].ms_ & (this.op[0].amon_ || this.op[1].amon_ || this.op[2].amon_ || this.op[3].amon_ ? 0x37 : 7)) !== 0 ? 2 : 0;
+            var op = this.op;
+            op[0].Prepare();
+            op[1].Prepare();
+            op[2].Prepare();
+            op[3].Prepare();
+            this.pms = Channel4.pmtable[op[0].type_][op[0].ms_ & 7];
+            var key = (op[0].IsOn() || op[1].IsOn() || op[2].IsOn() || op[3].IsOn()) ? 1 : 0;
+            var lfo = (op[0].ms_ & (op[0].amon_ || op[1].amon_ || op[2].amon_ || op[3].amon_ ? 0x37 : 7)) ? 2 : 0;
             return key | lfo;
         };
         Channel4.prototype.SetFNum = function (f) {
@@ -7481,22 +7448,23 @@ var fmgenAs;
             this.op[3].SetDPBN(dp, bn);
         };
         Channel4.prototype.KeyControl = function (key) {
-            if ((key & 0x1) !== 0)
-                this.op[0].KeyOn();
+            var op = this.op;
+            if (key & 0x1)
+                op[0].KeyOn();
             else
-                this.op[0].KeyOff();
-            if ((key & 0x2) !== 0)
-                this.op[1].KeyOn();
+                op[0].KeyOff();
+            if (key & 0x2)
+                op[1].KeyOn();
             else
-                this.op[1].KeyOff();
-            if ((key & 0x4) !== 0)
-                this.op[2].KeyOn();
+                op[1].KeyOff();
+            if (key & 0x4)
+                op[2].KeyOn();
             else
-                this.op[2].KeyOff();
-            if ((key & 0x8) !== 0)
-                this.op[3].KeyOn();
+                op[2].KeyOff();
+            if (key & 0x8)
+                op[3].KeyOn();
             else
-                this.op[3].KeyOff();
+                op[3].KeyOff();
         };
         Channel4.prototype.SetAlgorithm = function (algo) {
             var iotable = Channel4.iotable;
@@ -7689,9 +7657,9 @@ var fmgenAs;
     fmgenAs.Channel4 = Channel4;
 })(fmgenAs || (fmgenAs = {}));
 // ---------------------------------------------------------------------------
-//	FM Sound Generator - Core Unit
-//	Copyright (C) cisc 1998, 2003.
-//	Copyright (C) 2011 ALOE. All rights reserved.
+//  FM Sound Generator - Core Unit
+//  Copyright (C) cisc 1998, 2003.
+//  Copyright (C) 2011 ALOE. All rights reserved.
 // ---------------------------------------------------------------------------
 /// <reference path="JaggArray.ts" />
 var fmgenAs;
@@ -7781,8 +7749,6 @@ var fmgenAs;
     })();
     fmgenAs.OpType = OpType;
 })(fmgenAs || (fmgenAs = {}));
-var SAMPLE_RATE;
-var ZEROBUFFER;
 /// <reference path="../flmml/MML.ts" />
 var messenger;
 (function (messenger) {
@@ -7790,18 +7756,17 @@ var messenger;
     var COM_BOOT = 1, COM_PLAY = 2, COM_STOP = 3, COM_PAUSE = 4, COM_BUFFER = 5, COM_COMPCOMP = 6, COM_BUFRING = 7, COM_COMPLETE = 8, COM_SYNCINFO = 9, COM_PLAYSOUND = 10, COM_STOPSOUND = 11, COM_DEBUG = 12;
     var Messenger = (function () {
         function Messenger() {
-            this.onStopSound = null;
-            this.onRequestBuffer = null;
+            this.onstopsound = null;
+            this.onrequestbuffer = null;
             this.onInfoTimerBinded = this.onInfoTimer.bind(this);
             addEventListener("message", this.onMessage.bind(this));
         }
         Messenger.prototype.onMessage = function (e) {
             var data = e.data, type = data.type, mml = this.mml;
-            if (!type)
-                return;
             switch (type) {
                 case COM_BOOT:
-                    SAMPLE_RATE = data.sampleRate;
+                    this.SAMPLE_RATE = data.sampleRate;
+                    this.BUFFER_SIZE = data.bufferSize;
                     this.mml = new MML();
                     break;
                 case COM_PLAY:
@@ -7816,8 +7781,7 @@ var messenger;
                     this.syncInfo();
                     break;
                 case COM_BUFFER:
-                    if (this.onRequestBuffer)
-                        this.onRequestBuffer(data);
+                    this.onrequestbuffer && this.onrequestbuffer(data);
                     break;
                 case COM_SYNCINFO:
                     if (typeof data.interval === "number") {
@@ -7832,8 +7796,7 @@ var messenger;
                     }
                     break;
                 case COM_STOPSOUND:
-                    if (this.onStopSound)
-                        this.onStopSound();
+                    this.onstopsound && this.onstopsound();
                     break;
             }
         };
@@ -7859,19 +7822,12 @@ var messenger;
             postMessage({ type: COM_PLAYSOUND });
             this.syncInfo();
         };
-        Messenger.prototype.stopSound = function (onStopSound, isFlushBuf) {
-            if (onStopSound === void 0) { onStopSound = null; }
+        Messenger.prototype.stopSound = function (isFlushBuf) {
             if (isFlushBuf === void 0) { isFlushBuf = false; }
             postMessage({ type: COM_STOPSOUND, isFlushBuf: isFlushBuf });
-            this.onStopSound = (onStopSound) ? onStopSound : null;
         };
         Messenger.prototype.sendBuffer = function (buffer) {
-            try {
-                postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
-            }
-            catch (e) {
-                console.log("Buffer is null");
-            }
+            postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
         };
         Messenger.prototype.complete = function () {
             postMessage({ type: COM_COMPLETE });
@@ -7896,7 +7852,8 @@ var messenger;
                 this.syncInfo();
         };
         Messenger.prototype.debug = function (str) {
-            postMessage({ type: COM_DEBUG, str: str ? str : "" });
+            if (str === void 0) { str = ""; }
+            postMessage({ type: COM_DEBUG, str: str });
         };
         return Messenger;
     })();
