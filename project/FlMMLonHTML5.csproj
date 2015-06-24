@@ -58,7 +58,6 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="fmgenAs\FM.ts" />
-    <TypeScriptCompile Include="global.ts" />
     <TypeScriptCompile Include="flmml\IChannel.ts" />
     <TypeScriptCompile Include="flmml\MChannel.ts" />
     <TypeScriptCompile Include="flmml\MEnvelope.ts" />
