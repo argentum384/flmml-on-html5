@@ -83,7 +83,7 @@ var FlMMLPlayer = function (window, document) {
 
         var svg = this.svg = createSVGElem("svg");
         setAttrsNS(svg, {
-            id: "FlMMLPlayer" + no,
+            id: "flmmlplayer" + no,
             viewBox: "0 0 600 100"
         });
         svg.style.height = options.height || "1.5em";
@@ -93,9 +93,9 @@ var FlMMLPlayer = function (window, document) {
         var style = document.createElement("style");
         style.setAttribute("type", "text/css");
         apdChild(style, document.createTextNode("\
-svg#FlMMLPlayer" + no + " .button:active{fill:url(#gradBtnPushed" + no + ");}\
-svg#FlMMLPlayer" + no + " .button:hover{stroke:hsl(" + hue + ",100%,75%)}\
-svg#FlMMLPlayer" + no + " text{text-anchor:middle;pointer-events:none}\
+svg#flmmlplayer" + no + " .clickable-button:active{fill:url(#gradBtnPushed" + no + ");}\
+svg#flmmlplayer" + no + " .clickable-button:hover{stroke:hsl(" + hue + ",100%,75%)}\
+svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
 "));
         apdChild(svg, style);
 
@@ -201,7 +201,7 @@ svg#FlMMLPlayer" + no + " text{text-anchor:middle;pointer-events:none}\
             fill: "url(#gradBtn" + no + ")",
             stroke: "hsl(" + hue + ",15%,50%)",
             "stroke-width": 4,
-            "class": "button"
+            "class": "clickable-button"
         });
         var rectBtnPlayFirst = clone(rectBtn);
         setAttrNS(rectBtnPlayFirst, "width", 590);
