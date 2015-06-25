@@ -16,29 +16,9 @@ var FlMMLonHTML5 = function () {
         COM_STOPSOUND = 11, // Worker->Main->Worker
         COM_DEBUG     = 12; // Worker->Main
 
-    var emptyBuffer = new Float32Array(BUFFER_SIZE * 2);
+    var emptyBuffer = new Float32Array(BUFFER_SIZE);
 
     var divDebug;
-
-    // バックグラウンドでsetIntervalが動かないブラウザがあるため、
-    // Workerで動くタイマーを導入
-    // (workertimer.js)
-    var workerTimer = new Worker(URL.createObjectURL(new Blob(["\
-function n(n){postMessage(n)}var a={};onmessage=function(t){var e=t.data,i=e.id,s=e.interval;s?a[i]=setInterval(n.bind(this,i),s):clearInterval(a[i])}\
-"], { type: "text/javascript" })));
-    var workerTimerCurID = 0;
-    var workerTimerFunc = {};
-    function setIntervalWorker(func, interval) {
-        workerTimer.postMessage({ id: ++workerTimerCurID, interval: interval });
-        workerTimerFunc[workerTimerCurID] = func;
-        return workerTimerCurID;
-    }
-    function clearIntervalWorker(id) {
-        workerTimer.postMessage({ id: id });
-    }
-    workerTimer.onmessage = function (e) {
-        workerTimerFunc[e.data] && workerTimerFunc[e.data]();
-    };
 
     function debug(str) {
         if (!divDebug) {
@@ -75,11 +55,9 @@ function n(n){postMessage(n)}var a={};onmessage=function(t){var e=t.data,i=e.id,
         }
         var audioCtx = FlMMLonHTML5.audioCtx;
 
-        this.bufSec = BUFFER_SIZE / audioCtx.sampleRate;
-
+        this.onAudioProcessBinded = this.onAudioProcess.bind(this);
         this.warnings = "";
         this.totalTimeStr = "00:00";
-        this.ringBuf = audioCtx.createBuffer(2, BUFFER_SIZE * 2, audioCtx.sampleRate);
         this.bufferReady = false;
         this.volume = 100.0;
 
@@ -137,7 +115,7 @@ function n(n){postMessage(n)}var a={};onmessage=function(t){var e=t.data,i=e.id,
         },
 
         playSound: function () {
-            if (this.gain || this.bufSrc) return;
+            if (this.gain || this.scrProc || this.oscDmy) return;
 
             var audioCtx = FlMMLonHTML5.audioCtx,
                 ringBuf = this.ringBuf;
@@ -146,33 +124,23 @@ function n(n){postMessage(n)}var a={};onmessage=function(t){var e=t.data,i=e.id,
             gain.gain.value = this.volume / 127.0;
             gain.connect(audioCtx.destination);
 
-            var bufSrc = this.bufSrc = audioCtx.createBufferSource();
-            bufSrc.buffer = ringBuf;
-            bufSrc.loop = true;
-            bufSrc.connect(gain);
-            ringBuf.getChannelData(0).set(emptyBuffer);
-            ringBuf.getChannelData(1).set(emptyBuffer);
-            bufSrc.start(0);
-            this.startSec = audioCtx.currentTime;
-            this.playSide = -1;
-            this.handleRingBuf();
-            if (this.tIDRing) clearIntervalWorker(this.tIDRing);
-            this.tIDRing = setIntervalWorker(this.handleRingBuf.bind(this), this.bufSec * 1000.0 / 4.0 | 0);
+            this.scrProc = audioCtx.createScriptProcessor(BUFFER_SIZE, 1, 2);
+            this.scrProc.addEventListener("audioprocess", this.onAudioProcessBinded);
+            this.scrProc.connect(this.gain);
+
+            // iOS Safari対策
+            this.oscDmy = audioCtx.createOscillator();
+            this.oscDmy.connect(this.scrProc);
+            this.oscDmy.start(0);
         },
 
         stopSound: function (isFlushBuf) {
             if (isFlushBuf) this.bufferReady = false;
-            if (this.gain) {
-                this.gain.disconnect();
-                this.gain = null;
-            }
-            if (this.bufSrc) {
-                this.bufSrc.disconnect();
-                this.bufSrc = null;
-                if (this.tIDRing) {
-                    clearIntervalWorker(this.tIDRing);
-                    this.tIDRing = 0;
-                }
+            if (this.gain || this.scrProc || this.oscDmy) {
+                this.scrProc.removeEventListener("audioprocess", this.onAudioProcessBinded);
+                if (this.gain) { this.gain.disconnect(); this.gain = null; }
+                if (this.scrProc) { this.scrProc.disconnect(); this.scrProc = null; }
+                if (this.oscDmy) { this.oscDmy.disconnect(); this.oscDmy = null; }
             }
         },
 
@@ -185,23 +153,18 @@ function n(n){postMessage(n)}var a={};onmessage=function(t){var e=t.data,i=e.id,
             removeEventListener("touchstart", onTouchStart);
         },
 
-        handleRingBuf: function () {
-            var currentSide = this.playSide,
-                newSide = ((FlMMLonHTML5.audioCtx.currentTime - this.startSec) / this.bufSec | 0) % 2;
-            if (currentSide !== newSide) {
-                this.playSide = newSide;
-                var outBuf = this.ringBuf;
-                var offset = BUFFER_SIZE * (1 - newSide);
-                if (this.bufferReady) {
-                    outBuf.getChannelData(0).set(this.buffer[0], offset);
-                    outBuf.getChannelData(1).set(this.buffer[1], offset);
-                    this.bufferReady = false;
-                    this.worker.postMessage({ type: COM_BUFFER, retBuf: this.buffer }, [this.buffer[0].buffer, this.buffer[1].buffer]);
-                } else {
-                    outBuf.getChannelData(0).set(emptyBuffer.subarray(0, BUFFER_SIZE), offset);
-                    outBuf.getChannelData(1).set(emptyBuffer.subarray(0, BUFFER_SIZE), offset);
-                    this.worker.postMessage({ type: COM_BUFFER, retBuf: null });
-                }
+        onAudioProcess: function (e) {
+            var outBuf = e.outputBuffer;
+
+            if (this.bufferReady) {
+                outBuf.getChannelData(0).set(this.buffer[0]);
+                outBuf.getChannelData(1).set(this.buffer[1]);
+                this.bufferReady = false;
+                this.worker.postMessage({ type: COM_BUFFER, retBuf: this.buffer }, [this.buffer[0].buffer, this.buffer[1].buffer]);
+            } else {
+                outBuf.getChannelData(0).set(emptyBuffer);
+                outBuf.getChannelData(1).set(emptyBuffer);
+                this.worker.postMessage({ type: COM_BUFFER, retBuf: null });
             }
         },
 
