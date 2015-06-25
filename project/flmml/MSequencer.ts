@@ -32,7 +32,7 @@
         protected m_trackArr: Array<MTrack>;
         //protected m_globalTick: number;
         protected m_globalSample: number;
-        protected m_pausedPos: number;
+        protected m_maxNowMSec: number;
         protected m_totalMSec: number;
         protected m_status: number;
         protected m_buffTimer: number;
@@ -79,7 +79,6 @@
             } else {
                 //this.m_globalTick = 0;
                 this.m_globalSample = 0;
-                this.m_pausedPos = 0;
                 this.m_totalMSec = this.getTotalMSec();
                 for (var i: number = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
@@ -96,6 +95,7 @@
             msgr.stopSound(true);
             this.m_status = /*MSequencer.STATUS_STOP*/0;
             this.m_lastTime = 0;
+            this.m_maxNowMSec = 0;
             this.m_waitPause = false;
         }
 
@@ -105,7 +105,6 @@
                     this.m_waitPause = true;
                     break;
                 case /*MSequencer.STATUS_PLAY*/3:
-                    this.m_pausedPos = this.getNowMSec();
                     msgr.stopSound();
                     this.m_status = /*MSequencer.STATUS_PAUSE*/1;
                     if (this.m_waitPause) {
@@ -291,8 +290,10 @@
                 return 0.0;
             } else {
                 var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0,
-                    elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0;
-                return Math.max(globalMSec + elapsed, this.m_pausedPos);
+                    elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0,
+                    bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                this.m_maxNowMSec = Math.max(this.m_maxNowMSec, globalMSec + Math.min(elapsed, bufMSec));
+                return this.m_maxNowMSec
             }
         }
 

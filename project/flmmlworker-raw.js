@@ -3413,7 +3413,6 @@ var flmml;
             }
             else {
                 this.m_globalSample = 0;
-                this.m_pausedPos = 0;
                 this.m_totalMSec = this.getTotalMSec();
                 for (var i = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
@@ -3429,6 +3428,7 @@ var flmml;
             msgr.stopSound(true);
             this.m_status = 0;
             this.m_lastTime = 0;
+            this.m_maxNowMSec = 0;
             this.m_waitPause = false;
         };
         MSequencer.prototype.pause = function () {
@@ -3437,7 +3437,6 @@ var flmml;
                     this.m_waitPause = true;
                     break;
                 case 3:
-                    this.m_pausedPos = this.getNowMSec();
                     msgr.stopSound();
                     this.m_status = 1;
                     if (this.m_waitPause) {
@@ -3564,7 +3563,7 @@ var flmml;
                 }
             }
             var bufSize = this.BUFFER_SIZE;
-            var sendBuf = e.retBuf ? e.retBuf : [new Float32Array(bufSize), new Float32Array(bufSize)];
+            var sendBuf = e.retBuf || [new Float32Array(bufSize), new Float32Array(bufSize)];
             var base = bufSize * this.m_playSize;
             sendBuf[0].set(this.m_buffer[this.m_playSide][0].subarray(base, base + bufSize));
             sendBuf[1].set(this.m_buffer[this.m_playSide][1].subarray(base, base + bufSize));
@@ -3597,8 +3596,9 @@ var flmml;
                 return 0.0;
             }
             else {
-                var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0, elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0;
-                return Math.max(globalMSec + elapsed, this.m_pausedPos);
+                var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0, elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0, bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                this.m_maxNowMSec = Math.max(this.m_maxNowMSec, globalMSec + Math.min(elapsed, bufMSec));
+                return this.m_maxNowMSec;
             }
         };
         MSequencer.prototype.getNowTimeStr = function () {
