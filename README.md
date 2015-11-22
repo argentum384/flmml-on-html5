@@ -57,9 +57,8 @@ HTMLファイルの`<head>`タグ内に
     * FireFox
     * Opera
     * Safari
-    * Microsoft Edge
-* 対応したはずが動作せず \(動作確認報告求む\)
     * iOS Safari
+    * Microsoft Edge
 * 非対応確認済み
     * Internet Explorer
     * Android Browser
@@ -71,7 +70,8 @@ HTMLファイルの`<head>`タグ内に
 プロジェクト形式はVisual Studio for WebのTypeScriptを使用したWeb アプリケーションです。  
 \.tsファイルをコンパイルして全て結合したのが`flmmlworker-raw.js`になります。  
 `flmmlonhtml5-raw.js`, `flmmlplayer-raw.js`はそれらとは別に記述したJavaScriptファイルです。  
-これら3つのファイルをそれぞれ[Online JavaScript/CSS Compressor](http://refresh-sf.com/)で圧縮したのが`flmmlworker.js`, `flmmlonhtml5.js`, `flmmlplayer.js`です。
+これら3つのファイルをそれぞれ[UglifyJS](https://github.com/mishoo/UglifyJS2)で圧縮したのが`flmmlworker.js`, `flmmlonhtml5.js`, `flmmlplayer.js`です。  
+圧縮用のバッチファイル`compress.bat`を同梱しています。
 
 ## 謝辞
 [FlMML](https://flmml.codeplex.com/)作者のおー氏と、CodeRepos/CodePlexにコミットし新機能追加や不具合修正をされてきた方々など、FlMMLの発展に関わってきたすべての方々に感謝します。

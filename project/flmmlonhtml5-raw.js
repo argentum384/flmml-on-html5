@@ -49,12 +49,6 @@ var FlMMLonHTML5 = function () {
         var worker = this.worker = new Worker(workerURL);
         worker.addEventListener("message", this.onMessage.bind(this));
 
-        if (!FlMMLonHTML5.audioCtx) {
-            var AudioCtx = window.AudioContext || window.webkitAudioContext;
-            FlMMLonHTML5.audioCtx = new AudioCtx();
-        }
-        var audioCtx = FlMMLonHTML5.audioCtx;
-
         this.onAudioProcessBinded = this.onAudioProcess.bind(this);
         this.warnings = "";
         this.totalTimeStr = "00:00";
@@ -65,12 +59,10 @@ var FlMMLonHTML5 = function () {
         
         worker.postMessage({
             type: COM_BOOT,
-            sampleRate: audioCtx.sampleRate,
+            sampleRate: FlMMLonHTML5.audioCtx.sampleRate,
             bufferSize: BUFFER_SIZE
         });
         this.setInfoInterval(125);
-
-        addEventListener("touchstart", this.onTouchStart);
     }
 
     extend(FlMMLonHTML5.prototype, {
@@ -117,8 +109,7 @@ var FlMMLonHTML5 = function () {
         playSound: function () {
             if (this.gain || this.scrProc || this.oscDmy) return;
 
-            var audioCtx = FlMMLonHTML5.audioCtx,
-                ringBuf = this.ringBuf;
+            var audioCtx = FlMMLonHTML5.audioCtx;
 
             var gain = this.gain = audioCtx.createGain();
             gain.gain.value = this.volume / 127.0;
@@ -142,15 +133,6 @@ var FlMMLonHTML5 = function () {
                 if (this.scrProc) { this.scrProc.disconnect(); this.scrProc = null; }
                 if (this.oscDmy) { this.oscDmy.disconnect(); this.oscDmy = null; }
             }
-        },
-
-        // iOS Safari対策
-        onTouchStart: function onTouchStart(e) {
-            var audioCtx = FlMMLonHTML5.audioCtx;
-            var bufSrcDmy = audioCtx.createBufferSource();
-            bufSrcDmy.connect(audioCtx.destination);
-            bufSrcDmy.start(0);
-            removeEventListener("touchstart", onTouchStart);
         },
 
         onAudioProcess: function (e) {
@@ -281,6 +263,24 @@ var FlMMLonHTML5 = function () {
             this.worker.terminate();
         }
     });
-
+    
     return FlMMLonHTML5;
 }();
+
+// Web Audioコンテキスト作成
+(function () {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    FlMMLonHTML5.audioCtx = new AudioCtx();
+})();
+
+// iOS Safari対策
+document.addEventListener("DOMContentLoaded", function () {
+    // iOS 9からtouchstartだと駄目
+    addEventListener("touchend", function onTouchEnd(e) {
+        var audioCtx = FlMMLonHTML5.audioCtx;
+        var bufSrcDmy = audioCtx.createBufferSource();
+        bufSrcDmy.connect(audioCtx.destination);
+        bufSrcDmy.start(0);
+        removeEventListener("touchend", onTouchEnd);
+    });
+});
