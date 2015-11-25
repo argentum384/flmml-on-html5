@@ -1075,7 +1075,7 @@
                 this.m_string = this.m_string.replace(e1, "");
                 for (i = 0; i < matched.length; i++) {
                     mm = matched[i].match(e2);
-                    if (mm.length >= 3) {
+                    if (mm[2] !== undefined) {
                         tt.push(mm[2]);
                     }
                 }
@@ -1101,7 +1101,7 @@
                 this.m_string = this.m_string.replace(e1, "");
                 for (i = 0; i < matched.length; i++) {
                     mm = matched[i].match(e2);
-                    if (mm.length >= 3) {
+                    if (mm[2] !== undefined) {
                         tt += mm[2];
                         if (i + 1 < matched.length) {
                             tt += "\r\n";
