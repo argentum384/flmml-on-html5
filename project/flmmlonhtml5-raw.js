@@ -211,15 +211,15 @@ var FlMMLonHTML5 = function () {
         },
 
         getMetaTitle: function () {
-            return this.metMetaTitle;
+            return this.metaTitle;
         },
 
         getMetaComment: function () {
-            return this.metMetaComment;
+            return this.metaComment;
         },
 
         getMetaArtist: function () {
-            return this.metMetaArtist;
+            return this.metaArtist;
         },
 
         getMetaCoding: function () {
@@ -263,24 +263,22 @@ var FlMMLonHTML5 = function () {
             this.worker.terminate();
         }
     });
+
+    // Web Audioコンテキスト作成
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    FlMMLonHTML5.audioCtx = new AudioCtx();
+
+    // iOS Safari対策
+    document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("click", function onClick(e) {
+            var audioCtx = FlMMLonHTML5.audioCtx;
+            var bufSrcDmy = audioCtx.createBufferSource();
+            bufSrcDmy.connect(audioCtx.destination);
+            bufSrcDmy.start(0);
+            document.removeEventListener("click", onClick);
+        });
+    });
     
     return FlMMLonHTML5;
 }();
 
-// Web Audioコンテキスト作成
-(function () {
-    var AudioCtx = window.AudioContext || window.webkitAudioContext;
-    FlMMLonHTML5.audioCtx = new AudioCtx();
-})();
-
-// iOS Safari対策
-document.addEventListener("DOMContentLoaded", function () {
-    // iOS 9からtouchstartだと駄目
-    addEventListener("touchend", function onTouchEnd(e) {
-        var audioCtx = FlMMLonHTML5.audioCtx;
-        var bufSrcDmy = audioCtx.createBufferSource();
-        bufSrcDmy.connect(audioCtx.destination);
-        bufSrcDmy.start(0);
-        removeEventListener("touchend", onTouchEnd);
-    });
-});
