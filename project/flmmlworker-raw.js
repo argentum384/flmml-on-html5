@@ -379,7 +379,7 @@ var flmml;
             var amplitude, rightAmplitude;
             var playing = this.isPlaying(), tmpFlag;
             var vol, lpffrq, pan, depth;
-            var i, j, s, e;
+            var i, s, e;
             if (end >= max)
                 end = max;
             var key = MChannel.getFrequency(this.m_freqNo);
@@ -3077,7 +3077,7 @@ var flmml;
                 this.m_string = this.m_string.replace(e1, "");
                 for (i = 0; i < matched.length; i++) {
                     mm = matched[i].match(e2);
-                    if (mm.length >= 3) {
+                    if (mm[2] !== undefined) {
                         tt.push(mm[2]);
                     }
                 }
@@ -3098,7 +3098,7 @@ var flmml;
                 this.m_string = this.m_string.replace(e1, "");
                 for (i = 0; i < matched.length; i++) {
                     mm = matched[i].match(e2);
-                    if (mm.length >= 3) {
+                    if (mm[2] !== undefined) {
                         tt += mm[2];
                         if (i + 1 < matched.length) {
                             tt += "\r\n";
