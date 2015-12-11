@@ -26,7 +26,7 @@ module flmml {
         static setWave(waveNo: number, wave: String): void {
             //console.log("["+waveNo+"]"+wave);
             this.s_length[waveNo] = 0;
-            this.s_table[waveNo] = new Array<number>(wave.length / 2);
+            this.s_table[waveNo] = new Array<number>(wave.length / 2 | 0);
             this.s_table[waveNo][0] = 0;
             for (var i: number = 0, j: number = 0, val: number = 0; i < this.MAX_LENGTH && i < wave.length; i++ , j++) {
                 var code: number = wave.charCodeAt(i);
