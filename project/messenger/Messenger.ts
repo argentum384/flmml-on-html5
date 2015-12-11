@@ -66,8 +66,8 @@ module messenger {
                     if (typeof data.interval === "number") {
                         this.infoInterval = data.interval;
                         clearInterval(this.tIDInfo);
-                        if (this.infoInterval !== 0) {
-                            setInterval(this.onInfoTimerBinded, this.infoInterval);
+                        if (this.infoInterval > 0 && this.mml.isPlaying()) {
+                            this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
                         }
                     } else {
                         this.syncInfo();
@@ -135,7 +135,11 @@ module messenger {
         }
 
         onInfoTimer(): void {
-            if (this.mml.isPlaying()) this.syncInfo();
+            if (this.mml.isPlaying()) {
+                this.syncInfo();
+            } else {
+                clearInterval(this.tIDInfo);
+            }
         }
 
         debug(str: string = ""): void {

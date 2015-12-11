@@ -88,6 +88,10 @@
             }
             this.m_lastTime = 0;
             this.m_waitPause = false;
+            if (msgr.infoInterval > 0) {
+                clearInterval(msgr.tIDInfo);
+                msgr.tIDInfo = setInterval(msgr.onInfoTimerBinded, msgr.infoInterval);
+            }
         }
 
         stop(): void {
@@ -200,7 +204,8 @@
                     } while (status < /*MSequencer.STATUS_PLAY*/3 || MSequencer.getTimer() < endTime);
                     if (infoInterval > 0) {
                         msgr_.syncInfo();
-                        setInterval(msgr_.onInfoTimerBinded, msgr_.infoInterval);
+                        clearInterval(msgr_.tIDInfo);
+                        msgr_.tIDInfo = setInterval(msgr_.onInfoTimerBinded, msgr_.infoInterval);
                     }
                     this.startProcTimer();
                     break;
