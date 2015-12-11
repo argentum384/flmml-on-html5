@@ -3422,6 +3422,10 @@ var flmml;
             }
             this.m_lastTime = 0;
             this.m_waitPause = false;
+            if (msgr.infoInterval > 0) {
+                clearInterval(msgr.tIDInfo);
+                msgr.tIDInfo = setInterval(msgr.onInfoTimerBinded, msgr.infoInterval);
+            }
         };
         MSequencer.prototype.stop = function () {
             clearTimeout(this.m_procTimer);
@@ -3512,7 +3516,8 @@ var flmml;
                     } while (status < 3 || MSequencer.getTimer() < endTime);
                     if (infoInterval > 0) {
                         msgr_.syncInfo();
-                        setInterval(msgr_.onInfoTimerBinded, msgr_.infoInterval);
+                        clearInterval(msgr_.tIDInfo);
+                        msgr_.tIDInfo = setInterval(msgr_.onInfoTimerBinded, msgr_.infoInterval);
                     }
                     this.startProcTimer();
                     break;
@@ -6481,7 +6486,7 @@ var flmml;
         };
         MOscWave.setWave = function (waveNo, wave) {
             this.s_length[waveNo] = 0;
-            this.s_table[waveNo] = new Array(wave.length / 2);
+            this.s_table[waveNo] = new Array(wave.length / 2 | 0);
             this.s_table[waveNo][0] = 0;
             for (var i = 0, j = 0, val = 0; i < this.MAX_LENGTH && i < wave.length; i++, j++) {
                 var code = wave.charCodeAt(i);
@@ -7787,8 +7792,8 @@ var messenger;
                     if (typeof data.interval === "number") {
                         this.infoInterval = data.interval;
                         clearInterval(this.tIDInfo);
-                        if (this.infoInterval !== 0) {
-                            setInterval(this.onInfoTimerBinded, this.infoInterval);
+                        if (this.infoInterval > 0 && this.mml.isPlaying()) {
+                            this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
                         }
                     }
                     else {
@@ -7848,8 +7853,12 @@ var messenger;
             });
         };
         Messenger.prototype.onInfoTimer = function () {
-            if (this.mml.isPlaying())
+            if (this.mml.isPlaying()) {
                 this.syncInfo();
+            }
+            else {
+                clearInterval(this.tIDInfo);
+            }
         };
         Messenger.prototype.debug = function (str) {
             if (str === void 0) { str = ""; }
