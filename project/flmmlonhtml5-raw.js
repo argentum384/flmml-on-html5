@@ -1,4 +1,6 @@
-﻿"use strict";
+﻿/*! FlMMLonHTML5 v1.0.0 | (c) 2018, carborane3 | BSD-3-Clause | https://github.com/carborane3/FlMMLonHTML5 */
+
+"use strict";
 
 var FlMMLonHTML5 = function () {
     var BUFFER_SIZE = 8192;
