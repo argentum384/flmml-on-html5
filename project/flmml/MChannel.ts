@@ -14,7 +14,6 @@ module flmml {
         //private static LFO_TARGET_FM: number = 4;
         //private static LFO_TARGET_PANPOT: number = 5;
 
-        private static SAMPLE_RATE: number;
         private static emptyBuffer: Float32Array;
 
         private m_noteNo: number;
@@ -118,7 +117,6 @@ module flmml {
         static boot(numSamples: number): void {
             if (!this.s_init) {
                 var i: number;
-                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
                 this.emptyBuffer = msgr.emptyBuffer;
                 this.s_frequencyLen = this.s_frequencyMap.length;
                 for (i = 0; i < this.s_frequencyLen; i++) {
@@ -355,7 +353,7 @@ module flmml {
             this.m_osc2Connect = (depth === 0) ? 0 : 1;
             this.m_oscMod2.setFrequency(freq);
             this.m_oscMod2.resetPhase();
-            (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / MChannel.SAMPLE_RATE);
+            (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / MSequencer.SAMPLE_RATE);
         }
 
         setLFODLTM(delay: number, time: number): void {
@@ -497,7 +495,7 @@ module flmml {
 
         protected getNextCutoff(): number {
             var cut: number = this.m_lpfFrq + this.m_lpfAmt * this.m_envelope2.getNextAmplitudeLinear();
-            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MChannel.SAMPLE_RATE * 440.0));
+            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
             if (cut < (1.0 / 127.0)) cut = 0.0;
             return cut;
         }

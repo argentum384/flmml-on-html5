@@ -101,7 +101,7 @@ module flmml {
             this.m_tl = new Array<number>(4);
             super();
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, msgr.SAMPLE_RATE);
+            this.m_fm.Init(MOscOPM.OPM_CLOCK, MSequencer.SAMPLE_RATE);
             this.m_fm.Reset();
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.setOpMask(15);

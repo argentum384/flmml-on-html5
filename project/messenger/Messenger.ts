@@ -21,8 +21,8 @@ module messenger {
         tIDInfo: number;
         infoInterval: number;
         lastInfoTime: number;
-        SAMPLE_RATE: number;
-        BUFFER_SIZE: number;
+        audioSampleRate: number;
+        audioBufferSize: number;
         emptyBuffer: Float32Array;
 
         onstopsound: Function = null;
@@ -44,8 +44,8 @@ module messenger {
             //console.log("Worker received " + type);
             switch (type) {
                 case COM_BOOT:
-                    this.SAMPLE_RATE = data.sampleRate;
-                    this.BUFFER_SIZE = data.bufferSize;
+                    this.audioSampleRate = data.sampleRate;
+                    this.audioBufferSize = data.bufferSize;
                     this.mml = new MML();
                     break;
                 case COM_PLAY:

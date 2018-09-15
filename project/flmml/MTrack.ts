@@ -1,7 +1,5 @@
 ﻿module flmml {
     export class MTrack {
-        static SAMPLE_RATE: number;
-
         static TEMPO_TRACK: number = 0;
         static FIRST_TRACK: number = 1;
         static DEFAULT_BPM: number = 120;
@@ -42,7 +40,6 @@
             this.m_chordBegin = 0;
             this.m_chordEnd = 0;
             this.m_chordMode = false;
-            if (!MTrack.SAMPLE_RATE) MTrack.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
 
         getNumEvents(): number {
@@ -121,7 +118,7 @@
                                     break;
                                 case /*MStatus.LFO_DPWD*/17:
                                     this.m_lfoWidth = e.getLFOWidth() * this.m_spt;
-                                    this.m_ch.setLFODPWD(e.getLFODepth(), MTrack.SAMPLE_RATE / this.m_lfoWidth);
+                                    this.m_ch.setLFODPWD(e.getLFODepth(), MSequencer.SAMPLE_RATE / this.m_lfoWidth);
                                     break;
                                 case /*MStatus.LFO_DLTM*/18:
                                     this.m_ch.setLFODLTM(e.getLFODelay() * this.m_spt, e.getLFOTime() * this.m_lfoWidth);
@@ -284,7 +281,7 @@
         }
 
         recRestMSec(msec: number): void {
-            var len: number = (msec * MTrack.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
+            var len: number = (msec * MSequencer.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
             this.seek(len);
         }
 
@@ -574,14 +571,14 @@
 
             this.recRestMSec(3000);
             this.recEOT();
-            globalSample += 3 * MTrack.SAMPLE_RATE;
+            globalSample += 3 * MSequencer.SAMPLE_RATE;
 
-            this.m_totalMSec = globalSample * 1000.0 / MTrack.SAMPLE_RATE;
+            this.m_totalMSec = globalSample * 1000.0 / MSequencer.SAMPLE_RATE;
         }
         // calc number of samples per tick
         private calcSpt(bpm: number): number {
             var tps: number = bpm * 96.0 / 60.0; // ticks per second (quater note = 96ticks)
-            return MTrack.SAMPLE_RATE / tps;              // samples per tick
+            return MSequencer.SAMPLE_RATE / tps;              // samples per tick
         }
         // set tempo
         private playTempo(bpm: number): void {
