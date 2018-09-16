@@ -3,7 +3,7 @@
     export class MSequencer {
         static SAMPLE_RATE: number = 44100;
 
-        protected static MULTIPLE: number = 16;
+        protected static MULTIPLE: number = 32;
         
         // 戻すときは正規表現使用の置換で
         // /\*MSequencer\.(STATUS_|STEP_)(.*)\*/[0-9]*

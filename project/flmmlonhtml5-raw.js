@@ -3,7 +3,7 @@
 "use strict";
 
 var FlMMLonHTML5 = function () {
-    var BUFFER_SIZE = 16384;
+    var BUFFER_SIZE = 8192;
 
     var COM_BOOT      =  1, // Main->Worker
         COM_PLAY      =  2, // Main->Worker
