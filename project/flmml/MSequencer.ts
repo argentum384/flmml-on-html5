@@ -264,8 +264,13 @@
             var sendBuf: Array<Float32Array> = e.retBuf || [new Float32Array(audioBufSize), new Float32Array(audioBufSize)];
             var base: number = bufSize * this.m_playSize;
             [0, 1].forEach(ch => {
-                this.convertRate(this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize), sendBuf[ch], rateRatio, this.lastSample[ch]);
-                this.lastSample[ch] = this.m_buffer[this.m_playSide][ch][base + bufSize - 1];
+                var samples: Float32Array = this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize);
+                if (bufSize === audioBufSize) {
+                    sendBuf[ch].set(samples);
+                } else {
+                    this.convertRate(samples, sendBuf[ch], rateRatio, this.lastSample[ch]);
+                    this.lastSample[ch] = samples[samples.length - 1];
+                }
             });
             msgr.sendBuffer(sendBuf);
 
