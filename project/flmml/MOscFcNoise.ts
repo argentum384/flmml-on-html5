@@ -50,7 +50,7 @@ module flmml {
         }
 
         static boot(): void {
-            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / msgr.SAMPLE_RATE | 0;
+            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / MSequencer.SAMPLE_RATE | 0;
         }
 
         getNextSample(): number {

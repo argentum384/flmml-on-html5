@@ -45,7 +45,6 @@ var flmml;
         MChannel.boot = function (numSamples) {
             if (!this.s_init) {
                 var i;
-                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
                 this.emptyBuffer = msgr.emptyBuffer;
                 this.s_frequencyLen = this.s_frequencyMap.length;
                 for (i = 0; i < this.s_frequencyLen; i++) {
@@ -246,7 +245,7 @@ var flmml;
             this.m_osc2Connect = (depth === 0) ? 0 : 1;
             this.m_oscMod2.setFrequency(freq);
             this.m_oscMod2.resetPhase();
-            this.m_oscSet2.getMod(flmml.MOscillator.NOISE).setNoiseFreq(freq / MChannel.SAMPLE_RATE);
+            this.m_oscSet2.getMod(flmml.MOscillator.NOISE).setNoiseFreq(freq / flmml.MSequencer.SAMPLE_RATE);
         };
         MChannel.prototype.setLFODLTM = function (delay, time) {
             this.m_lfoDelay = delay;
@@ -368,7 +367,7 @@ var flmml;
         };
         MChannel.prototype.getNextCutoff = function () {
             var cut = this.m_lpfFrq + this.m_lpfAmt * this.m_envelope2.getNextAmplitudeLinear();
-            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MChannel.SAMPLE_RATE * 440.0));
+            cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (flmml.MSequencer.SAMPLE_RATE * 440.0));
             if (cut < (1.0 / 127.0))
                 cut = 0.0;
             return cut;
@@ -379,7 +378,7 @@ var flmml;
             var amplitude, rightAmplitude;
             var playing = this.isPlaying(), tmpFlag;
             var vol, lpffrq, pan, depth;
-            var i, s, e;
+            var i, j, s, e;
             if (end >= max)
                 end = max;
             var key = MChannel.getFrequency(this.m_freqNo);
@@ -1197,7 +1196,6 @@ var flmml;
         MEnvelope.boot = function () {
             if (!this.s_init) {
                 var i;
-                this.SAMPLE_RATE = msgr.SAMPLE_RATE;
                 this.s_volumeLen = 256;
                 for (i = 0; i < 3; i++) {
                     this.s_volumeMap[i] = new Array(this.s_volumeLen);
@@ -1218,7 +1216,7 @@ var flmml;
             this.addPoint(attack, 1.0);
         };
         MEnvelope.prototype.setRelease = function (release) {
-            this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * MEnvelope.SAMPLE_RATE;
+            this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * flmml.MSequencer.SAMPLE_RATE;
             if (this.m_playing && !this.m_releasing) {
                 this.m_counter = this.m_timeInSamples;
                 this.m_currentPoint = this.m_envelopePoint;
@@ -1237,7 +1235,7 @@ var flmml;
         };
         MEnvelope.prototype.addPoint = function (time, level) {
             var point = new flmml.MEnvelopePoint();
-            point.time = time * MEnvelope.SAMPLE_RATE;
+            point.time = time * flmml.MSequencer.SAMPLE_RATE;
             point.level = level;
             this.m_envelopeLastPoint.next = point;
             this.m_envelopeLastPoint = point;
@@ -1526,8 +1524,6 @@ var flmml;
 (function (flmml) {
     var MFilter = (function () {
         function MFilter() {
-            if (!MFilter.SAMPLE_RATE)
-                MFilter.SAMPLE_RATE = msgr.SAMPLE_RATE;
             this.setSwitch(0);
         }
         MFilter.prototype.reset = function () {
@@ -1578,7 +1574,7 @@ var flmml;
             var i;
             var fb;
             var cut;
-            var k = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
+            var k = key * (2.0 * Math.PI / (flmml.MSequencer.SAMPLE_RATE * 440.0));
             if (amt > 0.0001 || amt < -0.0001) {
                 for (i = start; i < end; i++) {
                     cut = flmml.MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
@@ -1608,7 +1604,7 @@ var flmml;
         };
         MFilter.prototype.lpf2 = function (samples, start, end, envelope, frq, amt, res, key) {
             var t1 = this.m_t1, t2 = this.m_t2, b0 = this.m_b0, b1 = this.m_b1, b2 = this.m_b2, b3 = this.m_b3, b4 = this.m_b4;
-            var k = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
+            var k = key * (2.0 * Math.PI / (flmml.MSequencer.SAMPLE_RATE * 440.0));
             for (var i = start; i < end; i++) {
                 var cut = flmml.MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
                 if (cut < (1.0 / 127.0))
@@ -1645,7 +1641,7 @@ var flmml;
             var i;
             var fb;
             var cut;
-            var k = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
+            var k = key * (2.0 * Math.PI / (flmml.MSequencer.SAMPLE_RATE * 440.0));
             var input;
             if (amt > 0.0001 || amt < -0.0001) {
                 for (i = start; i < end; i++) {
@@ -1680,7 +1676,7 @@ var flmml;
         };
         MFilter.prototype.hpf2 = function (samples, start, end, envelope, frq, amt, res, key) {
             var t1 = this.m_t1, t2 = this.m_t2, b0 = this.m_b0, b1 = this.m_b1, b2 = this.m_b2, b3 = this.m_b3, b4 = this.m_b4;
-            var k = key * (2.0 * Math.PI / (MFilter.SAMPLE_RATE * 440.0));
+            var k = key * (2.0 * Math.PI / (flmml.MSequencer.SAMPLE_RATE * 440.0));
             for (var i = start; i < end; i++) {
                 var cut = flmml.MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
                 if (cut < (1.0 / 127.0))
@@ -1712,7 +1708,6 @@ var flmml;
             this.m_b3 = b3;
             this.m_b4 = b4;
         };
-        MFilter.SAMPLE_RATE = null;
         return MFilter;
     })();
     flmml.MFilter = MFilter;
@@ -3381,10 +3376,9 @@ var flmml;
 (function (flmml) {
     var MSequencer = (function () {
         function MSequencer() {
-            this.SAMPLE_RATE = msgr.SAMPLE_RATE;
-            this.BUFFER_SIZE = msgr.BUFFER_SIZE;
-            msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.BUFFER_SIZE * MSequencer.MULTIPLE);
-            var sLen = this.BUFFER_SIZE * MSequencer.MULTIPLE;
+            this.bufferSize = Math.round(msgr.audioBufferSize * MSequencer.SAMPLE_RATE / msgr.audioSampleRate);
+            msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.bufferSize * MSequencer.MULTIPLE);
+            var sLen = this.bufferSize * MSequencer.MULTIPLE;
             flmml.MChannel.boot(sLen);
             flmml.MOscillator.boot();
             flmml.MEnvelope.boot();
@@ -3396,7 +3390,7 @@ var flmml;
                 [new Float32Array(sLen), new Float32Array(sLen)],
                 [new Float32Array(sLen), new Float32Array(sLen)]
             ];
-            this.m_maxProcTime = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0 * 0.8;
+            this.m_maxProcTime = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0 * 0.8;
             this.processAllBinded = this.processAll.bind(this);
             msgr.onrequestbuffer = this.onSampleData.bind(this);
             this.stop();
@@ -3406,7 +3400,7 @@ var flmml;
         };
         MSequencer.prototype.play = function () {
             if (this.m_status === 1) {
-                var bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                var bufMSec = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0;
                 this.m_status = 3;
                 msgr.playSound();
                 this.startProcTimer();
@@ -3417,6 +3411,7 @@ var flmml;
                 for (var i = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
                 }
+                this.lastSample = [0.0, 0.0];
                 this.m_status = 2;
                 this.processStart();
             }
@@ -3478,7 +3473,7 @@ var flmml;
             this.startProcTimer();
         };
         MSequencer.prototype.processAll = function () {
-            var buffer = this.m_buffer[1 - this.m_playSide], bufSize = this.BUFFER_SIZE, sLen = bufSize * MSequencer.MULTIPLE, bLen = bufSize * 2, nLen = this.m_trackArr.length, msgr_ = msgr;
+            var buffer = this.m_buffer[1 - this.m_playSide], bufSize = this.bufferSize, sLen = bufSize * MSequencer.MULTIPLE, bLen = bufSize * 2, nLen = this.m_trackArr.length, msgr_ = msgr;
             switch (this.m_step) {
                 case 1:
                     buffer = this.m_buffer[1 - this.m_playSide];
@@ -3540,10 +3535,11 @@ var flmml;
             }
         };
         MSequencer.prototype.onSampleData = function (e) {
+            var _this = this;
             this.m_lastTime = MSequencer.getTimer();
             if (this.m_status < 3)
                 return;
-            if (this.m_globalSample / this.SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
+            if (this.m_globalSample / MSequencer.SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
                 this.stop();
                 msgr.complete();
                 return;
@@ -3567,14 +3563,36 @@ var flmml;
                     }
                 }
             }
-            var bufSize = this.BUFFER_SIZE;
-            var sendBuf = e.retBuf || [new Float32Array(bufSize), new Float32Array(bufSize)];
+            var bufSize = this.bufferSize;
+            var audioBufSize = msgr.audioBufferSize;
+            var rateRatio = audioBufSize / bufSize;
+            var sendBuf = e.retBuf || [new Float32Array(audioBufSize), new Float32Array(audioBufSize)];
             var base = bufSize * this.m_playSize;
-            sendBuf[0].set(this.m_buffer[this.m_playSide][0].subarray(base, base + bufSize));
-            sendBuf[1].set(this.m_buffer[this.m_playSide][1].subarray(base, base + bufSize));
+            [0, 1].forEach(function (ch) {
+                var samples = _this.m_buffer[_this.m_playSide][ch].subarray(base, base + bufSize);
+                if (bufSize === audioBufSize) {
+                    sendBuf[ch].set(samples);
+                }
+                else {
+                    _this.convertRate(samples, sendBuf[ch], rateRatio, _this.lastSample[ch]);
+                    _this.lastSample[ch] = samples[samples.length - 1];
+                }
+            });
             msgr.sendBuffer(sendBuf);
             this.m_playSize++;
             this.m_globalSample += bufSize;
+        };
+        MSequencer.prototype.convertRate = function (samplesIn, samplesOut, ratio, last) {
+            var xa = (samplesOut.length - 1) / ratio % 1;
+            last = last == null ? 0.0 : last;
+            for (var i = 0; i < samplesOut.length; i++) {
+                var x = i / ratio - xa;
+                var x0 = Math.floor(x);
+                var x1 = Math.ceil(x);
+                var y0 = x0 < 0.0 ? last : samplesIn[x0];
+                var y1 = samplesIn[x1];
+                samplesOut[i] = x0 === x1 ? y0 : y0 + (y1 - y0) * (x - x0);
+            }
         };
         MSequencer.prototype.createPipes = function (num) {
             flmml.MChannel.createPipes(num);
@@ -3601,7 +3619,7 @@ var flmml;
                 return 0.0;
             }
             else {
-                var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0, elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0, bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                var globalMSec = this.m_globalSample / MSequencer.SAMPLE_RATE * 1000.0, elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0, bufMSec = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0;
                 this.m_maxNowMSec = Math.max(this.m_maxNowMSec, globalMSec + Math.min(elapsed, bufMSec));
                 return this.m_maxNowMSec;
             }
@@ -3612,6 +3630,7 @@ var flmml;
             var ssec = "0" + (sec % 60 | 0);
             return smin.substr(smin.length - 2, 2) + ":" + ssec.substr(ssec.length - 2, 2);
         };
+        MSequencer.SAMPLE_RATE = 44100;
         MSequencer.MULTIPLE = 32;
         return MSequencer;
     })();
@@ -3624,8 +3643,6 @@ var flmml;
         function MOscMod() {
             this.resetPhase();
             this.setFrequency(440.0);
-            if (!MOscMod.SAMPLE_RATE)
-                MOscMod.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
         MOscMod.prototype.resetPhase = function () {
             this.m_phase = 0;
@@ -3652,7 +3669,7 @@ var flmml;
         };
         MOscMod.prototype.setFrequency = function (frequency) {
             this.m_frequency = frequency;
-            this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MOscMod.SAMPLE_RATE) | 0;
+            this.m_freqShift = frequency * (MOscMod.PHASE_LEN / flmml.MSequencer.SAMPLE_RATE) | 0;
         };
         MOscMod.prototype.setWaveNo = function (waveNo) {
         };
@@ -3692,7 +3709,7 @@ var flmml;
         MOscFcDpcm.boot = function () {
             if (this.s_init)
                 return;
-            this.FC_DPCM_NEXT = msgr.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
+            this.FC_DPCM_NEXT = flmml.MSequencer.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
             this.s_table = new Array(this.MAX_WAVE);
             this.s_intVol = new Array(this.MAX_WAVE);
             this.s_loopFg = new Array(this.MAX_WAVE);
@@ -3978,7 +3995,7 @@ var flmml;
             }
         };
         MOscFcNoise.boot = function () {
-            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / msgr.SAMPLE_RATE | 0;
+            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / flmml.MSequencer.SAMPLE_RATE | 0;
         };
         MOscFcNoise.prototype.getNextSample = function () {
             var val = this.m_val;
@@ -5892,7 +5909,7 @@ var flmml;
             this.m_tl = new Array(4);
             _super.call(this);
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, msgr.SAMPLE_RATE);
+            this.m_fm.Init(MOscOPM.OPM_CLOCK, flmml.MSequencer.SAMPLE_RATE);
             this.m_fm.Reset();
             this.m_fm.SetVolume(MOscOPM.s_comGain);
             this.setOpMask(15);
@@ -6802,8 +6819,6 @@ var flmml;
             this.m_chordBegin = 0;
             this.m_chordEnd = 0;
             this.m_chordMode = false;
-            if (!MTrack.SAMPLE_RATE)
-                MTrack.SAMPLE_RATE = msgr.SAMPLE_RATE;
         }
         MTrack.prototype.getNumEvents = function () {
             return this.m_events.length;
@@ -6880,7 +6895,7 @@ var flmml;
                                     break;
                                 case 17:
                                     this.m_lfoWidth = e.getLFOWidth() * this.m_spt;
-                                    this.m_ch.setLFODPWD(e.getLFODepth(), MTrack.SAMPLE_RATE / this.m_lfoWidth);
+                                    this.m_ch.setLFODPWD(e.getLFODepth(), flmml.MSequencer.SAMPLE_RATE / this.m_lfoWidth);
                                     break;
                                 case 18:
                                     this.m_ch.setLFODLTM(e.getLFODelay() * this.m_spt, e.getLFOTime() * this.m_lfoWidth);
@@ -7039,7 +7054,7 @@ var flmml;
             }
         };
         MTrack.prototype.recRestMSec = function (msec) {
-            var len = (msec * MTrack.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
+            var len = (msec * flmml.MSequencer.SAMPLE_RATE / (this.m_spt * 1000)) | 0;
             this.seek(len);
         };
         MTrack.prototype.recVolume = function (vol) {
@@ -7297,12 +7312,12 @@ var flmml;
             globalSample += (maxGlobalTick - globalTick) * spt;
             this.recRestMSec(3000);
             this.recEOT();
-            globalSample += 3 * MTrack.SAMPLE_RATE;
-            this.m_totalMSec = globalSample * 1000.0 / MTrack.SAMPLE_RATE;
+            globalSample += 3 * flmml.MSequencer.SAMPLE_RATE;
+            this.m_totalMSec = globalSample * 1000.0 / flmml.MSequencer.SAMPLE_RATE;
         };
         MTrack.prototype.calcSpt = function (bpm) {
             var tps = bpm * 96.0 / 60.0;
-            return MTrack.SAMPLE_RATE / tps;
+            return flmml.MSequencer.SAMPLE_RATE / tps;
         };
         MTrack.prototype.playTempo = function (bpm) {
             this.m_bpm = bpm;
@@ -7770,8 +7785,8 @@ var messenger;
             var data = e.data, type = data.type, mml = this.mml;
             switch (type) {
                 case COM_BOOT:
-                    this.SAMPLE_RATE = data.sampleRate;
-                    this.BUFFER_SIZE = data.bufferSize;
+                    this.audioSampleRate = data.sampleRate;
+                    this.audioBufferSize = data.bufferSize;
                     this.mml = new MML();
                     break;
                 case COM_PLAY:

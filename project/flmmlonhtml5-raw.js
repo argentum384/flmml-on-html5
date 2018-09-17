@@ -1,4 +1,4 @@
-﻿/*! FlMMLonHTML5 v1.0.0 | (c) 2018, carborane3 | BSD-3-Clause | https://github.com/carborane3/FlMMLonHTML5 */
+﻿/*! FlMMLonHTML5 v1.1.0 | (c) 2018, carborane3 | BSD-3-Clause | https://github.com/carborane3/FlMMLonHTML5 */
 
 "use strict";
 

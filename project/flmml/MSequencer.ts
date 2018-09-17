@@ -1,6 +1,8 @@
 ﻿module flmml {
     // Web Audio + Web Worker利用につき大幅改定
     export class MSequencer {
+        static SAMPLE_RATE: number = 44100;
+
         protected static MULTIPLE: number = 32;
         
         // 戻すときは正規表現使用の置換で
@@ -19,8 +21,8 @@
         //protected static STEP_POST:     number = 3;
         //protected static STEP_COMPLETE: number = 4;
 
-        protected BUFFER_SIZE: number;
-        protected SAMPLE_RATE: number;
+        protected bufferSize: number;
+        protected lastSample: Array<number>;
         protected emptyBuffer: Float32Array;
 
         protected m_buffer: Array<Array<Float32Array>>;
@@ -44,10 +46,9 @@
         protected processAllBinded: Function;
 
         constructor() {
-            this.SAMPLE_RATE = msgr.SAMPLE_RATE;
-            this.BUFFER_SIZE = msgr.BUFFER_SIZE;
-            msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.BUFFER_SIZE * MSequencer.MULTIPLE);
-            var sLen: number = this.BUFFER_SIZE * MSequencer.MULTIPLE;
+            this.bufferSize = Math.round(msgr.audioBufferSize * MSequencer.SAMPLE_RATE / msgr.audioSampleRate);
+            msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.bufferSize * MSequencer.MULTIPLE);
+            var sLen: number = this.bufferSize * MSequencer.MULTIPLE;
             MChannel.boot(sLen);
             MOscillator.boot();
             MEnvelope.boot();
@@ -59,7 +60,7 @@
                 [new Float32Array(sLen), new Float32Array(sLen)],
                 [new Float32Array(sLen), new Float32Array(sLen)]
             ];
-            this.m_maxProcTime = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0 * 0.8;
+            this.m_maxProcTime = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0 * 0.8;
             //this.m_lastTime = 0;
             this.processAllBinded = this.processAll.bind(this);
             msgr.onrequestbuffer = this.onSampleData.bind(this);
@@ -72,7 +73,7 @@
         
         play(): void {
             if (this.m_status === /*MSequencer.STATUS_PAUSE*/1) {
-                var bufMSec: number = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                var bufMSec: number = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0;
                 this.m_status = /*MSequencer.STATUS_PLAY*/3;
                 msgr.playSound();
                 this.startProcTimer();
@@ -83,6 +84,7 @@
                 for (var i: number = 0; i < this.m_trackArr.length; i++) {
                     this.m_trackArr[i].seekTop();
                 }
+                this.lastSample = [0.0, 0.0];
                 this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
                 this.processStart();
             }
@@ -158,7 +160,7 @@
         // 実際のバッファ書き込み
         private processAll(): void {
             var buffer: Array<Float32Array> = this.m_buffer[1 - this.m_playSide],
-                bufSize: number = this.BUFFER_SIZE,
+                bufSize: number = this.bufferSize,
                 sLen: number = bufSize * MSequencer.MULTIPLE,
                 bLen: number = bufSize * 2,
                 nLen: number = this.m_trackArr.length,
@@ -230,7 +232,7 @@
         private onSampleData(e: any): void {
             this.m_lastTime = MSequencer.getTimer();
             if (this.m_status < /*MSequencer.STATUS_PLAY*/3) return;
-            if (this.m_globalSample / this.SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
+            if (this.m_globalSample / MSequencer.SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
                 this.stop();
                 msgr.complete();
                 return;
@@ -256,14 +258,38 @@
                 }
             }
             
-            var bufSize = this.BUFFER_SIZE;
-            var sendBuf: Array<Float32Array> = e.retBuf || [new Float32Array(bufSize), new Float32Array(bufSize)];
+            var bufSize: number = this.bufferSize;
+            var audioBufSize: number = msgr.audioBufferSize;
+            var rateRatio: number = audioBufSize / bufSize;
+            var sendBuf: Array<Float32Array> = e.retBuf || [new Float32Array(audioBufSize), new Float32Array(audioBufSize)];
             var base: number = bufSize * this.m_playSize;
-            sendBuf[0].set(this.m_buffer[this.m_playSide][0].subarray(base, base + bufSize));
-            sendBuf[1].set(this.m_buffer[this.m_playSide][1].subarray(base, base + bufSize));
+            [0, 1].forEach(ch => {
+                var samples: Float32Array = this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize);
+                if (bufSize === audioBufSize) {
+                    sendBuf[ch].set(samples);
+                } else {
+                    this.convertRate(samples, sendBuf[ch], rateRatio, this.lastSample[ch]);
+                    this.lastSample[ch] = samples[samples.length - 1];
+                }
+            });
             msgr.sendBuffer(sendBuf);
+
             this.m_playSize++;
             this.m_globalSample += bufSize;
+        }
+
+        private convertRate(samplesIn: Float32Array, samplesOut: Float32Array, ratio: number, last: number): void {
+            var xa: number = (samplesOut.length - 1) / ratio % 1;
+            last = last == null ? 0.0 : last;
+            for (var i: number = 0; i < samplesOut.length; i++) {
+                var x: number = i / ratio - xa;
+                // 線形補間
+                var x0: number = Math.floor(x);
+                var x1: number = Math.ceil(x);
+                var y0: number = x0 < 0.0 ? last : samplesIn[x0]
+                var y1: number = samplesIn[x1];
+                samplesOut[i] = x0 === x1 ? y0 : y0 + (y1 - y0) * (x - x0);
+            }
         }
 
         createPipes(num: number): void {
@@ -294,9 +320,9 @@
             if (this.m_status === /*MSequencer.STATUS_STOP*/0) {
                 return 0.0;
             } else {
-                var globalMSec = this.m_globalSample / this.SAMPLE_RATE * 1000.0,
+                var globalMSec = this.m_globalSample / MSequencer.SAMPLE_RATE * 1000.0,
                     elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0,
-                    bufMSec = this.BUFFER_SIZE / this.SAMPLE_RATE * 1000.0;
+                    bufMSec = this.bufferSize / MSequencer.SAMPLE_RATE * 1000.0;
                 this.m_maxNowMSec = Math.max(this.m_maxNowMSec, globalMSec + Math.min(elapsed, bufMSec));
                 return this.m_maxNowMSec
             }

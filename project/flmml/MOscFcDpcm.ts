@@ -44,7 +44,7 @@ module flmml {
         static boot(): void {
             if (this.s_init) return;
 
-            this.FC_DPCM_NEXT = msgr.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
+            this.FC_DPCM_NEXT = MSequencer.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
 
             this.s_table = new Array<Array<number>>(this.MAX_WAVE);
             this.s_intVol = new Array<number>(this.MAX_WAVE);
