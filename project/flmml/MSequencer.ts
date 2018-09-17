@@ -46,7 +46,7 @@
         protected processAllBinded: Function;
 
         constructor() {
-            this.bufferSize = Math.floor(msgr.audioBufferSize * MSequencer.SAMPLE_RATE / msgr.audioSampleRate);
+            this.bufferSize = Math.round(msgr.audioBufferSize * MSequencer.SAMPLE_RATE / msgr.audioSampleRate);
             msgr.emptyBuffer = this.emptyBuffer = new Float32Array(this.bufferSize * MSequencer.MULTIPLE);
             var sLen: number = this.bufferSize * MSequencer.MULTIPLE;
             MChannel.boot(sLen);
