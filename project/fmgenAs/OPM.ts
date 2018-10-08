@@ -24,7 +24,7 @@ module fmgenAs {
         private amd: number;
         private lfo_count_: number;
         private lfo_count_diff_: number;
-        private lfo_step_: number;
+        private lfo_step_: number = 0;
         private lfo_count_prev_: number;
         private lfowaveform: number;
         private rateratio: number;
