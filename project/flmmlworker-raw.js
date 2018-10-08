@@ -5297,6 +5297,7 @@ var fmgenAs;
         function OPM() {
             _super.call(this);
             this.amplevel = 16384;
+            this.lfo_step_ = 0;
             this.kc = new Array(8);
             this.kf = new Array(8);
             this.pan = new Array(8);
