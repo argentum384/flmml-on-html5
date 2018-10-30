@@ -1,4 +1,4 @@
-﻿/*! FlMMLonHTML5 v1.1.1 | (c) 2018, carborane3 | BSD-3-Clause | https://github.com/carborane3/FlMMLonHTML5 */
+﻿/*! FlMMLonHTML5 v1.1.2 | (c) 2018, carborane3 | BSD-3-Clause | https://github.com/carborane3/FlMMLonHTML5 */
 
 "use strict";
 
@@ -270,15 +270,16 @@ var FlMMLonHTML5 = function () {
     var AudioCtx = window.AudioContext || window.webkitAudioContext;
     FlMMLonHTML5.audioCtx = new AudioCtx();
 
-    // iOS Safari対策
+    // iOS/Chrome向けWeb Audioアンロック処理
     document.addEventListener("DOMContentLoaded", function () {
-        document.addEventListener("click", function onClick(e) {
+        window.addEventListener("click", function onClick(e) {
             var audioCtx = FlMMLonHTML5.audioCtx;
             var bufSrcDmy = audioCtx.createBufferSource();
             bufSrcDmy.connect(audioCtx.destination);
             bufSrcDmy.start(0);
-            document.removeEventListener("click", onClick);
-        });
+            audioCtx.resume();
+            window.removeEventListener("click", onClick);
+        }, true);
     });
     
     return FlMMLonHTML5;
