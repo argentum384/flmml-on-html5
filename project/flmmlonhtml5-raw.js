@@ -278,7 +278,7 @@ var FlMMLonHTML5 = function () {
             bufSrcDmy.connect(audioCtx.destination);
             bufSrcDmy.start(0);
             audioCtx.resume();
-            document.removeEventListener("click", onClick);
+            window.removeEventListener("click", onClick);
         }, true);
     });
     
