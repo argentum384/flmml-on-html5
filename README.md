@@ -59,9 +59,10 @@ HTMLファイルの`<head>`タグ内に
     * Safari
     * iOS Safari
     * Microsoft Edge
+    * Android Browser (Android 5.x 以降)
 * 非対応確認済み
     * Internet Explorer
-    * Android Browser
+    * Android Browser (Android 4.x 以前)
     * Opera Mini
 
 ## For Developers
@@ -74,4 +75,4 @@ HTMLファイルの`<head>`タグ内に
 圧縮用のバッチファイル`compress.bat`を同梱しています。
 
 ## 謝辞
-[FlMML](https://flmml.codeplex.com/)作者のおー氏と、CodeRepos/CodePlexにコミットし新機能追加や不具合修正をされてきた方々など、FlMMLの発展に関わってきたすべての方々に感謝します。
+[FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめ、FlMMLに新機能追加や不具合修正をされてきたコミッターの皆様や、FlMML on HTML5の不具合を報告頂いた方々といった、FlMML / FlMML on HTML5の発展に関わるすべての方々に感謝します。
