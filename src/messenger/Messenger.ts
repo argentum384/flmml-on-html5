@@ -15,7 +15,6 @@ module messenger {
         static readonly COM_SYNCINFO : number =  9; // Main->Worker->Main
         static readonly COM_PLAYSOUND: number = 10; // Worker->Main
         static readonly COM_STOPSOUND: number = 11; // Worker->Main->Worker
-        static readonly COM_DEBUG    : number = 12; // Worker->Main
 
         mml: MML;
         tIDInfo: number;
@@ -140,10 +139,6 @@ module messenger {
             } else {
                 clearInterval(this.tIDInfo);
             }
-        }
-
-        debug(str: string = ""): void {
-            postMessage({ type: Messenger.COM_DEBUG, str: str });
         }
     }
 }

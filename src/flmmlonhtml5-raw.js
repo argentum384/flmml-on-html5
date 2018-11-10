@@ -3,22 +3,7 @@
 "use strict";
 
 var FlMMLonHTML5 = function () {
-    var divDebug;
-
-    function debug(str) {
-        if (!divDebug) {
-            divDebug = document.createElement("div");
-            document.body.appendChild(divDebug);
-        }
-        var div = document.createElement("div");
-        div.appendChild(document.createTextNode(str));
-        divDebug.appendChild(div);
-        
-        var divs = divDebug.getElementsByTagName("div");
-        if (divs.length > 10) divDebug.removeChild(divDebug.firstChild);
-    }
-
-    function extend (target, object) {
+    function extend(target, object) {
         for (var name in object) {
             target[name] = object[name];
         }
@@ -64,8 +49,7 @@ var FlMMLonHTML5 = function () {
         COM_COMPLETE :  8, // Worker->Main
         COM_SYNCINFO :  9, // Main->Worker->Main
         COM_PLAYSOUND: 10, // Worker->Main
-        COM_STOPSOUND: 11, // Worker->Main->Worker
-        COM_DEBUG    : 12  // Worker->Main
+        COM_STOPSOUND: 11  // Worker->Main->Worker
     });
     FlMMLonHTML5.emptyBuffer = new Float32Array(FlMMLonHTML5.BUFFER_SIZE);
 
@@ -106,8 +90,6 @@ var FlMMLonHTML5 = function () {
                     this.stopSound(data.isFlushBuf);
                     this.worker.postMessage({ type: FlMMLonHTML5.COM_STOPSOUND });
                     break;
-                case FlMMLonHTML5.COM_DEBUG:
-                    debug(data.str);
             }
         },
 
