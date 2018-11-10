@@ -3,20 +3,19 @@
 module messenger {
     import MML = flmml.MML;
 
-    var COM_BOOT      =  1, // Main->Worker
-        COM_PLAY      =  2, // Main->Worker
-        COM_STOP      =  3, // Main->Worker
-        COM_PAUSE     =  4, // Main->Worker
-        COM_BUFFER    =  5, // Main->Worker->Main
-        COM_COMPCOMP  =  6, // Worker->Main
-        COM_BUFRING   =  7, // Worker->Main
-        COM_COMPLETE  =  8, // Worker->Main
-        COM_SYNCINFO  =  9, // Main->Worker->Main
-        COM_PLAYSOUND = 10, // Worker->Main
-        COM_STOPSOUND = 11, // Worker->Main->Worker
-        COM_DEBUG     = 12; // Worker->Main
-
     export class Messenger {
+        static readonly COM_BOOT     : number =  1; // Main->Worker
+        static readonly COM_PLAY     : number =  2; // Main->Worker
+        static readonly COM_STOP     : number =  3; // Main->Worker
+        static readonly COM_PAUSE    : number =  4; // Main->Worker
+        static readonly COM_BUFFER   : number =  5; // Main->Worker->Main
+        static readonly COM_COMPCOMP : number =  6; // Worker->Main
+        static readonly COM_BUFRING  : number =  7; // Worker->Main
+        static readonly COM_COMPLETE : number =  8; // Worker->Main
+        static readonly COM_SYNCINFO : number =  9; // Main->Worker->Main
+        static readonly COM_PLAYSOUND: number = 10; // Worker->Main
+        static readonly COM_STOPSOUND: number = 11; // Worker->Main->Worker
+
         mml: MML;
         tIDInfo: number;
         infoInterval: number;
@@ -41,28 +40,28 @@ module messenger {
                 type: number = data.type,
                 mml: MML = this.mml;
 
-            //console.log("Worker received " + type);
+            // console.log("Worker received " + Object.keys(Messenger).filter(k => k.indexOf("COM_") === 0 && Messenger[k] === type));
             switch (type) {
-                case COM_BOOT:
+                case Messenger.COM_BOOT:
                     this.audioSampleRate = data.sampleRate;
                     this.audioBufferSize = data.bufferSize;
                     this.mml = new MML();
                     break;
-                case COM_PLAY:
+                case Messenger.COM_PLAY:
                     mml.play(data.mml);
                     break;
-                case COM_STOP:
+                case Messenger.COM_STOP:
                     mml.stop();
                     this.syncInfo();
                     break;
-                case COM_PAUSE:
+                case Messenger.COM_PAUSE:
                     mml.pause();
                     this.syncInfo();
                     break;
-                case COM_BUFFER:
+                case Messenger.COM_BUFFER:
                     this.onrequestbuffer && this.onrequestbuffer(data);
                     break;
-                case COM_SYNCINFO:
+                case Messenger.COM_SYNCINFO:
                     if (typeof data.interval === "number") {
                         this.infoInterval = data.interval;
                         clearInterval(this.tIDInfo);
@@ -73,21 +72,21 @@ module messenger {
                         this.syncInfo();
                     }
                     break;
-                case COM_STOPSOUND:
+                case Messenger.COM_STOPSOUND:
                     this.onstopsound && this.onstopsound();
                     break;
             }
         }
 
         buffering(progress: number): void {
-            postMessage({ type: COM_BUFRING, progress: progress });
+            postMessage({ type: Messenger.COM_BUFRING, progress: progress });
         }
 
         compileComplete(): void {
             var mml: MML = this.mml;
 
             postMessage({
-                type: COM_COMPCOMP,
+                type: Messenger.COM_COMPCOMP,
                 info: {
                     totalMSec: mml.getTotalMSec(),
                     totalTimeStr: mml.getTotalTimeStr(),
@@ -101,20 +100,20 @@ module messenger {
         }
 
         playSound(): void {
-            postMessage({ type: COM_PLAYSOUND });
+            postMessage({ type: Messenger.COM_PLAYSOUND });
             this.syncInfo();
         }
 
         stopSound(isFlushBuf: boolean = false): void {
-            postMessage({ type: COM_STOPSOUND, isFlushBuf: isFlushBuf });
+            postMessage({ type: Messenger.COM_STOPSOUND, isFlushBuf: isFlushBuf });
         }
 
         sendBuffer(buffer: Array<Float32Array>): void {
-            postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+            postMessage({ type: Messenger.COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
         }
 
         complete(): void {
-            postMessage({ type: COM_COMPLETE });
+            postMessage({ type: Messenger.COM_COMPLETE });
             this.syncInfo();
         }
 
@@ -123,7 +122,7 @@ module messenger {
 
             this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
             postMessage({
-                type: COM_SYNCINFO,
+                type: Messenger.COM_SYNCINFO,
                 info: {
                     _isPlaying: mml.isPlaying(),
                     _isPaused: mml.isPaused(),
@@ -140,10 +139,6 @@ module messenger {
             } else {
                 clearInterval(this.tIDInfo);
             }
-        }
-
-        debug(str: string = ""): void {
-            postMessage({ type: COM_DEBUG, str: str });
         }
     }
 }

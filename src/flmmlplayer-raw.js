@@ -1,13 +1,15 @@
 ﻿"use strict";
 
 var FlMMLPlayer = function (window, document) {
-    var MMLST_ARG = 1,
-        MMLST_WAIT = 2,
-        MMLST_LOADING = 3,
-        MMLST_SUCCEED = 4,
-        MMLST_FAILED = 5,
+    var staticProps = {
+        MMLST_ARG    : 1,
+        MMLST_WAIT   : 2,
+        MMLST_LOADING: 3,
+        MMLST_SUCCEED: 4,
+        MMLST_FAILED : 5,
 
-        players = [];
+        players: []
+    };
 
     function extend(target, object) {
         for (var name in object) {
@@ -66,7 +68,7 @@ var FlMMLPlayer = function (window, document) {
     }
 
     function FlMMLPlayer(options) {
-        var no = this.no = players.length;
+        var no = this.no = FlMMLPlayer.players.length;
 
         var hue = this.hue = options.hue == null ? 200 : options.hue;
         this.volume = options.volume == null ? 100.0 : options.volume;
@@ -75,10 +77,10 @@ var FlMMLPlayer = function (window, document) {
 
         if (options.mmlURL && options.mmlURL !== "") {
             this.mmlURL = options.mmlURL;
-            this.mmlStatus = MMLST_WAIT;
+            this.mmlStatus = FlMMLPlayer.MMLST_WAIT;
         } else {
             this.mml = options.mml;
-            this.mmlStatus = MMLST_ARG;
+            this.mmlStatus = FlMMLPlayer.MMLST_ARG;
         }
 
         var svg = this.svg = createSVGElem("svg");
@@ -239,9 +241,13 @@ svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
         this.isChangingVol = false;
         this.hasReplacedFonts = false;
 
-        players.push(this);
+        FlMMLPlayer.players.push(this);
     }
+
+    // static
+    extend(FlMMLPlayer, staticProps);
     
+    // not static
     extend(FlMMLPlayer.prototype, {
         setMasterVolume: function (volume) {
             var tVol;
@@ -329,14 +335,14 @@ svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
                     show(this.gStop);
                     hide(this.gStopD);
                     this.mml = this.xhr.responseText;
-                    this.mmlStatus = MMLST_SUCCEED;
+                    this.mmlStatus = FlMMLPlayer.MMLST_SUCCEED;
                     this.flmml.play(this.mml);
                     clearTimeout(this.tIDDispVol);
                 } else {
                     this.changeStatus("Failure.", 232);
                     this.flmml.release();
                     this.flmml = null;
-                    this.mmlStatus = MMLST_FAILED;
+                    this.mmlStatus = FlMMLPlayer.MMLST_FAILED;
                 }
             }
         },
@@ -475,16 +481,16 @@ svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
 
             hide(gPlay, gPause, gStop, gStopD);
 
-            if (this.mmlStatus === MMLST_ARG) {
+            if (this.mmlStatus === FlMMLPlayer.MMLST_ARG) {
                 this.changeStatus("Compiling...", 347);
                 show(gStop);
                 flmml.play(this.mml);
-            } else if (this.mmlStatus === MMLST_WAIT) {
+            } else if (this.mmlStatus === FlMMLPlayer.MMLST_WAIT) {
                 var xhr = this.xhr = new XMLHttpRequest();
                 addEL(xhr, "readystatechange", this.onReadyStateChange.bind(this));
                 xhr.open("GET", this.mmlURL);
                 xhr.send(null);
-                this.mmlStatus = MMLST_LOADING;
+                this.mmlStatus = FlMMLPlayer.MMLST_LOADING;
                 this.changeStatus("Loading...", 289);
                 show(gStopD);
             }
@@ -627,8 +633,8 @@ svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
 
     FlMMLPlayer.onActiveFonts = function () {
         FlMMLPlayer.hasLoadedFonts = true;
-        for (var i = players.length; i--;) {
-            players[i].replaceFonts.call(players[i]);
+        for (var i = FlMMLPlayer.players.length; i--;) {
+            FlMMLPlayer.players[i].replaceFonts.call(FlMMLPlayer.players[i]);
         }
     };
     FlMMLPlayer.hasLoadedFonts = false;
