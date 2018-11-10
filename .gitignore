@@ -1,9 +1,2 @@
-,*
-
-[Bb]in/
-[Oo]bj/
-
-*.suo
-*.user
-
 Thumbs.db
+.DS_Store
