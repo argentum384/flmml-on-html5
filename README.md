@@ -59,20 +59,46 @@ HTMLファイルの`<head>`タグ内に
     * Safari
     * iOS Safari
     * Microsoft Edge
-    * Android Browser (Android 5.x 以降)
+    * Android Browser \(Android 5.x 以降\)
 * 非対応確認済み
     * Internet Explorer
-    * Android Browser (Android 4.x 以前)
+    * Android Browser \(Android 4.x 以前\)
     * Opera Mini
 
 ## For Developers
-シーケンサ本体, プレイヤーUIの詳細な仕様は[wiki](https://github.com/carborane3/FlMMLonHTML5/wiki)をご覧になって下さい。
+シーケンサ本体, プレイヤーUIの詳細な仕様は[wiki](https://github.com/carborane3/FlMMLonHTML5/wiki)をご覧下さい。  
 
-プロジェクト形式はVisual Studio for WebのTypeScriptを使用したWeb アプリケーションです。  
-\.tsファイルをコンパイルして全て結合したのが`flmmlworker-raw.js`になります。  
-`flmmlonhtml5-raw.js`, `flmmlplayer-raw.js`はそれらとは別に記述したJavaScriptファイルです。  
-これら3つのファイルをそれぞれ[UglifyJS](https://github.com/mishoo/UglifyJS2)で圧縮したのが`flmmlworker.js`, `flmmlonhtml5.js`, `flmmlplayer.js`です。  
-圧縮用のバッチファイル`compress.bat`を同梱しています。
+### 開発環境構築
+Windows 10で構築していますがMac, Linuxでも同じ手順で構築できると思われます\(未確認\)。  
+
+以下2つのコンポーネント
+* [Visual Studio Code](https://code.visualstudio.com/)
+* [Node.js](https://nodejs.org/)
+
+をインストールした後、シェルで以下コマンドを実行し`tsc`と`uglifyjs`をインストールします。
+```
+npm install -g typescript
+npm install -g uglify-js
+```
+あとはVisual Studio Codeを起動し`/src/`ディレクトリを開けば準備完了です。  
+`tasks.json` に2つのタスク  
+* `compile`: TypeScriptのコンパイルのみ
+* `compileAndMinify`: TypeScriptのコンパイル + jsファイル圧縮
+
+を用意しています。
+
+### 各js \/ tsファイルの自動生成
+
+| ファイル | 自動生成 | 備考 |
+| - | :-: | - |
+| `*.ts` | × |  |
+| `/src/flmmlonhtml5-raw.js` | × |  |
+| `/src/flmmlworker-raw.js` | ○ | TypeScriptコンパイルで生成 |
+| `/src/flmmlplayer-raw.js` | × |  |
+| `/flmmlonhtml5.js` | ○ | `/src/flmmlonhtml5-raw.js`をminify |
+| `/flmmlworker.js` | ○ | `/src/flmmlworker-raw.js`をminify |
+| `/flmmlplayer.js` | ○ | `/src/flmmlplayer-raw.js`をminify |
+
 
 ## 謝辞
-[FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめ、FlMMLに新機能追加や不具合修正をされてきたコミッターの皆様や、FlMML on HTML5の不具合を報告頂いた方々といった、FlMML / FlMML on HTML5の発展に関わるすべての方々に感謝します。
+[FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめ、FlMMLに新機能追加や不具合修正をされてきたコミッターの皆様や、FlMML on HTML5の不具合を報告頂いた方々といった、FlMML \/ FlMML on HTML5の発展に関わるすべての方々に感謝します。

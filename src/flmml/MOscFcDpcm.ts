@@ -13,12 +13,13 @@ module flmml {
         static FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
         static FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
         static FC_DPCM_NEXT: number;
-        protected m_readCount: number; //次の波形生成までのカウント値
-        protected m_address: number;   //読み込み中のアドレス位置
-        protected m_bit: number;       //読み込み中のビット位置
-        protected m_wav: number;       //現在のボリューム
-        protected m_length: number;    //残り読み込み長
-        protected m_ofs: number;       //前回のオフセット
+        protected m_readCount: number = 0; //次の波形生成までのカウント値
+        protected m_address: number = 0;   //読み込み中のアドレス位置
+        protected m_bit: number = 0;       //読み込み中のビット位置
+        protected m_wav: number = 0;       //現在のボリューム
+        protected m_length: number = 0;    //残り読み込み長
+        protected m_ofs: number = 0;       //前回のオフセット
+
         protected static s_init: number;
         protected static s_table: Array<Array<number>>;
         protected static s_intVol: Array<number>; //波形初期位置
@@ -30,14 +31,8 @@ module flmml {
         ];
 
         constructor() {
-            MOscFcDpcm.boot();
-            this.m_readCount = 0;
-            this.m_address = 0;
-            this.m_bit = 0;
-            this.m_wav = 0;
-            this.m_length = 0;
-            this.m_ofs = 0;
             super();
+            MOscFcDpcm.boot();
             this.setWaveNo(0);
         }
 

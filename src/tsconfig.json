@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "module": "amd",
+        "sourceMap": true,
+        "outFile": "./flmmlworker-raw.js",
+        "lib": [
+            "es5",
+            "webworker"
+        ],
+        "newLine": "lf",
+        "removeComments": true
+    }
+}

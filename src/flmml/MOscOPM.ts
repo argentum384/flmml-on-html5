@@ -22,12 +22,12 @@ module flmml {
         static TYPE_OPM: number = 0;
         static TYPE_OPN: number = 1;
 
-        private m_fm: OPM;
-        private m_oneSample: Float32Array; // 固定長
+        private m_fm: OPM = new OPM();
+        private m_oneSample: Float32Array = new Float32Array(1); // 固定長
         private m_opMask: number;
-        private m_velocity: number;
-        private m_al: number;
-        private m_tl: Array<number>; // 固定長
+        private m_velocity: number = 127;
+        private m_al: number = 0;
+        private m_tl: Array<number> = new Array<number>(4);; // 固定長
 
         private static s_init: number = 0;
         private static s_table: Array<Array<number>> = new Array<Array<number>>(MOscOPM.MAX_WAVE);
@@ -94,11 +94,6 @@ module flmml {
         ];
 
         constructor() {
-            this.m_fm = new OPM();
-            this.m_oneSample = new Float32Array(1);
-            this.m_velocity = 127;
-            this.m_al = 0;
-            this.m_tl = new Array<number>(4);
             super();
             MOscOPM.boot();
             this.m_fm.Init(MOscOPM.OPM_CLOCK, MSequencer.SAMPLE_RATE);
@@ -314,19 +309,21 @@ module flmml {
             }
             super.setFrequency(frequency);
 
-            // 指示周波数からMIDIノート番号(≠FlMMLノート番号)を逆算する（まったくもって無駄・・）
-            var n: number = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
-            var note: number = n / 100 | 0;
-            var cent: number = n % 100;
+            if (this.m_fm) {
+                // 指示周波数からMIDIノート番号(≠FlMMLノート番号)を逆算する（まったくもって無駄・・）
+                var n: number = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
+                var note: number = n / 100 | 0;
+                var cent: number = n % 100;
 
-            // key flaction
-            var kf: number = 64.0 * cent / 100.0 + 0.5 | 0;
-            // key code
-            //                   ------ octave ------   -------- note ---------
-            var kc: number = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
+                // key flaction
+                var kf: number = 64.0 * cent / 100.0 + 0.5 | 0;
+                // key code
+                //                   ------ octave ------   -------- note ---------
+                var kc: number = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
 
-            this.m_fm.SetReg(0x30, kf << 2);
-            this.m_fm.SetReg(0x28, kc);
+                this.m_fm.SetReg(0x30, kf << 2);
+                this.m_fm.SetReg(0x28, kc);
+            }
         }
 
         getNextSample(): number {

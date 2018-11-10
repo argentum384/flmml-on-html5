@@ -1,4 +1,16 @@
-/// <reference path="IChannel.ts" />
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    }
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var flmml;
 (function (flmml) {
     var MChannel = (function () {
@@ -1178,7 +1190,7 @@ var flmml;
         MChannel.s_frequencyMap = new Array(128 * MChannel.PITCH_RESOLUTION);
         MChannel.s_lfoDelta = 245;
         return MChannel;
-    })();
+    }());
     flmml.MChannel = MChannel;
 })(flmml || (flmml = {}));
 var flmml;
@@ -1397,7 +1409,7 @@ var flmml;
         MEnvelope.s_init = 0;
         MEnvelope.s_volumeMap = new Array(3);
         return MEnvelope;
-    })();
+    }());
     flmml.MEnvelope = MEnvelope;
 })(flmml || (flmml = {}));
 var flmml;
@@ -1407,7 +1419,7 @@ var flmml;
             this.next = null;
         }
         return MEnvelopePoint;
-    })();
+    }());
     flmml.MEnvelopePoint = MEnvelopePoint;
 })(flmml || (flmml = {}));
 var flmml;
@@ -1517,7 +1529,7 @@ var flmml;
         MEvent.prototype.getVoiceCount = function () { return this.m_data0; };
         MEvent.prototype.getHwLfoData = function () { return this.m_data0; };
         return MEvent;
-    })();
+    }());
     flmml.MEvent = MEvent;
 })(flmml || (flmml = {}));
 var flmml;
@@ -1709,7 +1721,7 @@ var flmml;
             this.m_b4 = b4;
         };
         return MFilter;
-    })();
+    }());
     flmml.MFilter = MFilter;
 })(flmml || (flmml = {}));
 var flmml;
@@ -1911,7 +1923,7 @@ var flmml;
         MFormant.VOWEL_O = 3;
         MFormant.VOWEL_U = 4;
         return MFormant;
-    })();
+    }());
     flmml.MFormant = MFormant;
 })(flmml || (flmml = {}));
 var flmml;
@@ -3369,7 +3381,7 @@ var flmml;
         MML.MAX_SYNCSOURCE = 3;
         MML.MAX_POLYVOICE = 64;
         return MML;
-    })();
+    }());
     flmml.MML = MML;
 })(flmml || (flmml = {}));
 var flmml;
@@ -3633,10 +3645,9 @@ var flmml;
         MSequencer.SAMPLE_RATE = 44100;
         MSequencer.MULTIPLE = 32;
         return MSequencer;
-    })();
+    }());
     flmml.MSequencer = MSequencer;
 })(flmml || (flmml = {}));
-/// <reference path="MSequencer.ts" />
 var flmml;
 (function (flmml) {
     var MOscMod = (function () {
@@ -3681,30 +3692,24 @@ var flmml;
         MOscMod.PHASE_HLF = MOscMod.TABLE_LEN << (MOscMod.PHASE_SFT - 1);
         MOscMod.PHASE_MSK = MOscMod.PHASE_LEN - 1;
         return MOscMod;
-    })();
+    }());
     flmml.MOscMod = MOscMod;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var flmml;
 (function (flmml) {
     var MOscFcDpcm = (function (_super) {
         __extends(MOscFcDpcm, _super);
         function MOscFcDpcm() {
+            var _this = _super.call(this) || this;
+            _this.m_readCount = 0;
+            _this.m_address = 0;
+            _this.m_bit = 0;
+            _this.m_wav = 0;
+            _this.m_length = 0;
+            _this.m_ofs = 0;
             MOscFcDpcm.boot();
-            this.m_readCount = 0;
-            this.m_address = 0;
-            this.m_bit = 0;
-            this.m_wav = 0;
-            this.m_length = 0;
-            this.m_ofs = 0;
-            _super.call(this);
-            this.setWaveNo(0);
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscFcDpcm.boot = function () {
             if (this.s_init)
@@ -3958,21 +3963,22 @@ var flmml;
             428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54,
         ];
         return MOscFcDpcm;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscFcDpcm = MOscFcDpcm;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscFcNoise = (function (_super) {
         __extends(MOscFcNoise, _super);
         function MOscFcNoise() {
+            var _this = this;
             MOscFcNoise.boot();
-            _super.call(this);
-            this.setLongMode();
-            this.m_fcr = 0x8000;
-            this.m_val = this.getValue();
-            this.setNoiseFreq(0);
+            _this = _super.call(this) || this;
+            _this.setLongMode();
+            _this.m_fcr = 0x8000;
+            _this.m_val = _this.getValue();
+            _this.setNoiseFreq(0);
+            return _this;
         }
         MOscFcNoise.prototype.getValue = function () {
             this.m_fcr >>= 1;
@@ -4068,18 +4074,19 @@ var flmml;
             0x004, 0x008, 0x010, 0x020, 0x040, 0x060, 0x080, 0x0a0, 0x0ca, 0x0fe, 0x17c, 0x1fc, 0x2fa, 0x3f8, 0x7f2, 0xfe4
         ];
         return MOscFcNoise;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscFcNoise = MOscFcNoise;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscFcTri = (function (_super) {
         __extends(MOscFcTri, _super);
         function MOscFcTri() {
+            var _this = this;
             MOscFcTri.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscFcTri.boot = function () {
             if (this.s_init)
@@ -4139,19 +4146,20 @@ var flmml;
         MOscFcTri.MAX_WAVE = 2;
         MOscFcTri.s_init = 0;
         return MOscFcTri;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscFcTri = MOscFcTri;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscGbLNoise = (function (_super) {
         __extends(MOscGbLNoise, _super);
         function MOscGbLNoise() {
+            var _this = this;
             MOscGbLNoise.boot();
-            _super.call(this);
-            this.m_sum = 0;
-            this.m_skip = 0;
+            _this = _super.call(this) || this;
+            _this.m_sum = 0;
+            _this.m_skip = 0;
+            return _this;
         }
         MOscGbLNoise.boot = function () {
             if (this.s_init)
@@ -4241,19 +4249,20 @@ var flmml;
             0x020000, 0x028000, 0x030000, 0x038000, 0x040000, 0x050000, 0x060000, 0x070000
         ];
         return MOscGbLNoise;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscGbLNoise = MOscGbLNoise;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscGbSNoise = (function (_super) {
         __extends(MOscGbSNoise, _super);
         function MOscGbSNoise() {
+            var _this = this;
             MOscGbSNoise.boot();
-            _super.call(this);
-            this.m_sum = 0;
-            this.m_skip = 0;
+            _this = _super.call(this) || this;
+            _this.m_sum = 0;
+            _this.m_skip = 0;
+            return _this;
         }
         MOscGbSNoise.boot = function () {
             if (this.s_init)
@@ -4343,18 +4352,19 @@ var flmml;
             0x020000, 0x028000, 0x030000, 0x038000, 0x040000, 0x050000, 0x060000, 0x070000
         ];
         return MOscGbSNoise;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscGbSNoise = MOscGbSNoise;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscGbWave = (function (_super) {
         __extends(MOscGbWave, _super);
         function MOscGbWave() {
+            var _this = this;
             MOscGbWave.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscGbWave.boot = function () {
             if (this.s_init)
@@ -4426,124 +4436,22 @@ var flmml;
         MOscGbWave.GB_WAVE_TABLE_LEN = (1 << 5);
         MOscGbWave.s_init = 0;
         return MOscGbWave;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscGbWave = MOscGbWave;
 })(flmml || (flmml = {}));
-var flmml;
-(function (flmml) {
-    var MOscillator = (function () {
-        function MOscillator() {
-            MOscillator.boot();
-            this.m_osc = new Array(MOscillator.MAX);
-            this.m_osc[MOscillator.SINE] = new flmml.MOscSine();
-            this.m_osc[MOscillator.SAW] = new flmml.MOscSaw();
-            this.m_osc[MOscillator.TRIANGLE] = new flmml.MOscTriangle();
-            this.m_osc[MOscillator.PULSE] = new flmml.MOscPulse();
-            this.m_osc[MOscillator.NOISE] = new flmml.MOscNoise();
-            this.m_osc[MOscillator.FC_PULSE] = new flmml.MOscPulse();
-            this.m_osc[MOscillator.FC_TRI] = new flmml.MOscFcTri();
-            this.m_osc[MOscillator.FC_NOISE] = new flmml.MOscFcNoise();
-            this.m_osc[MOscillator.FC_S_NOISE] = null;
-            this.m_osc[MOscillator.FC_DPCM] = new flmml.MOscFcDpcm();
-            this.m_osc[MOscillator.GB_WAVE] = new flmml.MOscGbWave();
-            this.m_osc[MOscillator.GB_NOISE] = new flmml.MOscGbLNoise();
-            this.m_osc[MOscillator.GB_S_NOISE] = new flmml.MOscGbSNoise();
-            this.m_osc[MOscillator.WAVE] = new flmml.MOscWave();
-            this.m_osc[MOscillator.OPM] = new flmml.MOscOPM();
-            this.setForm(MOscillator.PULSE);
-            this.setNoiseToPulse();
-        }
-        MOscillator.prototype.asLFO = function () {
-            if (this.m_osc[MOscillator.NOISE])
-                this.m_osc[MOscillator.NOISE].disableResetPhase();
-        };
-        MOscillator.boot = function () {
-            if (this.s_init)
-                return;
-            flmml.MOscSine.boot();
-            flmml.MOscSaw.boot();
-            flmml.MOscTriangle.boot();
-            flmml.MOscPulse.boot();
-            flmml.MOscNoise.boot();
-            flmml.MOscFcTri.boot();
-            flmml.MOscFcNoise.boot();
-            flmml.MOscFcDpcm.boot();
-            flmml.MOscGbWave.boot();
-            flmml.MOscGbLNoise.boot();
-            flmml.MOscGbSNoise.boot();
-            flmml.MOscWave.boot();
-            flmml.MOscOPM.boot();
-            this.s_init = 1;
-        };
-        MOscillator.prototype.setForm = function (form) {
-            var modNoise;
-            var modFcNoise;
-            if (form >= MOscillator.MAX)
-                form = MOscillator.MAX - 1;
-            this.m_form = form;
-            switch (form) {
-                case MOscillator.NOISE:
-                    modNoise = this.m_osc[MOscillator.NOISE];
-                    modNoise.restoreFreq();
-                    break;
-                case MOscillator.FC_NOISE:
-                    modFcNoise = this.getMod(MOscillator.FC_NOISE);
-                    modFcNoise.setLongMode();
-                    break;
-                case MOscillator.FC_S_NOISE:
-                    modFcNoise = this.getMod(MOscillator.FC_S_NOISE);
-                    modFcNoise.setShortMode();
-                    break;
-            }
-            return this.getMod(form);
-        };
-        MOscillator.prototype.getForm = function () {
-            return this.m_form;
-        };
-        MOscillator.prototype.getCurrent = function () {
-            return this.getMod(this.m_form);
-        };
-        MOscillator.prototype.getMod = function (form) {
-            return (form !== MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
-        };
-        MOscillator.prototype.setNoiseToPulse = function () {
-            var modPulse = this.getMod(MOscillator.PULSE);
-            var modNoise = this.getMod(MOscillator.NOISE);
-            modPulse.setNoise(modNoise);
-        };
-        MOscillator.SINE = 0;
-        MOscillator.SAW = 1;
-        MOscillator.TRIANGLE = 2;
-        MOscillator.PULSE = 3;
-        MOscillator.NOISE = 4;
-        MOscillator.FC_PULSE = 5;
-        MOscillator.FC_TRI = 6;
-        MOscillator.FC_NOISE = 7;
-        MOscillator.FC_S_NOISE = 8;
-        MOscillator.FC_DPCM = 9;
-        MOscillator.GB_WAVE = 10;
-        MOscillator.GB_NOISE = 11;
-        MOscillator.GB_S_NOISE = 12;
-        MOscillator.WAVE = 13;
-        MOscillator.OPM = 14;
-        MOscillator.MAX = 15;
-        MOscillator.s_init = 0;
-        return MOscillator;
-    })();
-    flmml.MOscillator = MOscillator;
-})(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscNoise = (function (_super) {
         __extends(MOscNoise, _super);
         function MOscNoise() {
+            var _this = this;
             MOscNoise.boot();
-            _super.call(this);
-            this.setNoiseFreq(1.0);
-            this.m_phase = 0;
-            this.m_counter = 0;
-            this.m_resetPhase = true;
+            _this = _super.call(this) || this;
+            _this.setNoiseFreq(1.0);
+            _this.m_phase = 0;
+            _this.m_counter = 0;
+            _this.m_resetPhase = true;
+            return _this;
         }
         MOscNoise.prototype.disableResetPhase = function () {
             this.m_resetPhase = false;
@@ -4604,7 +4512,7 @@ var flmml;
         MOscNoise.s_init = 0;
         MOscNoise.s_table = new Array(MOscNoise.TABLE_LEN);
         return MOscNoise;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscNoise = MOscNoise;
 })(flmml || (flmml = {}));
 var fmgenAs;
@@ -4675,7 +4583,7 @@ var fmgenAs;
         };
         Timer.prototype.TimerA = function () { };
         return Timer;
-    })();
+    }());
     fmgenAs.Timer = Timer;
 })(fmgenAs || (fmgenAs = {}));
 var fmgenAs;
@@ -4701,15 +4609,9 @@ var fmgenAs;
             return a;
         };
         return JaggArray;
-    })();
+    }());
     fmgenAs.JaggArray = JaggArray;
 })(fmgenAs || (fmgenAs = {}));
-// ---------------------------------------------------------------------------
-//  FM Sound Generator - Core Unit
-//  Copyright (C) cisc 1998, 2003.
-//  Copyright (C) 2011 ALOE. All rights reserved.
-// ---------------------------------------------------------------------------
-/// <reference path="JaggArray.ts" />
 var fmgenAs;
 (function (fmgenAs) {
     var Operator = (function () {
@@ -5280,44 +5182,38 @@ var fmgenAs;
         })();
         Operator.IS2EC_SHIFT = ((20 + 9) - 13);
         return Operator;
-    })();
+    }());
     fmgenAs.Operator = Operator;
 })(fmgenAs || (fmgenAs = {}));
-// ---------------------------------------------------------------------------
-//  FM Sound Generator - Core Unit
-//  Copyright (C) cisc 1998, 2003.
-//  Copyright (C) 2011 ALOE. All rights reserved.
-// ---------------------------------------------------------------------------
-/// <reference path="Timer.ts" />
-/// <reference path="Operator.ts" />
 var fmgenAs;
 (function (fmgenAs) {
     var OPM = (function (_super) {
         __extends(OPM, _super);
         function OPM() {
-            _super.call(this);
-            this.amplevel = 16384;
-            this.lfo_step_ = 0;
-            this.kc = new Array(8);
-            this.kf = new Array(8);
-            this.pan = new Array(8);
-            this.chip = new fmgenAs.Chip();
-            this.buf = new Array(4);
-            this.ch = [
+            var _this = _super.call(this) || this;
+            _this.amplevel = 16384;
+            _this.lfo_step_ = 0;
+            _this.kc = new Array(8);
+            _this.kf = new Array(8);
+            _this.pan = new Array(8);
+            _this.chip = new fmgenAs.Chip();
+            _this.buf = new Array(4);
+            _this.ch = [
                 new fmgenAs.Channel4(), new fmgenAs.Channel4(),
                 new fmgenAs.Channel4(), new fmgenAs.Channel4(),
                 new fmgenAs.Channel4(), new fmgenAs.Channel4(),
                 new fmgenAs.Channel4(), new fmgenAs.Channel4()
             ];
-            this.lfo_count_ = 0;
-            this.lfo_count_prev_ = ~0;
+            _this.lfo_count_ = 0;
+            _this.lfo_count_prev_ = ~0;
             OPM.BuildLFOTable();
             for (var i = 0; i < 8; i++) {
-                this.ch[i].SetChip(this.chip);
-                this.ch[i].SetType(fmgenAs.OpType.typeM);
+                _this.ch[i].SetChip(_this.chip);
+                _this.ch[i].SetType(fmgenAs.OpType.typeM);
             }
-            this.ix = this.ch[0].ix;
-            this.ox = this.ch[0].ox;
+            _this.ix = _this.ch[0].ix;
+            _this.ox = _this.ch[0].ox;
+            return _this;
         }
         OPM.BuildLFOTable = function () {
             if (this.s_init)
@@ -5892,30 +5788,30 @@ var fmgenAs;
         OPM.sinetable = fmgenAs.Operator.sinetable;
         OPM.cltable = fmgenAs.Operator.cltable;
         return OPM;
-    })(fmgenAs.Timer);
+    }(fmgenAs.Timer));
     fmgenAs.OPM = OPM;
 })(fmgenAs || (fmgenAs = {}));
-/// <reference path="MOscMod.ts" />
-/// <reference path="../fmgenAs/OPM.ts" />
 var flmml;
 (function (flmml) {
     var OPM = fmgenAs.OPM;
     var MOscOPM = (function (_super) {
         __extends(MOscOPM, _super);
         function MOscOPM() {
-            this.m_fm = new OPM();
-            this.m_oneSample = new Float32Array(1);
-            this.m_velocity = 127;
-            this.m_al = 0;
-            this.m_tl = new Array(4);
-            _super.call(this);
+            var _this = _super.call(this) || this;
+            _this.m_fm = new OPM();
+            _this.m_oneSample = new Float32Array(1);
+            _this.m_velocity = 127;
+            _this.m_al = 0;
+            _this.m_tl = new Array(4);
             MOscOPM.boot();
-            this.m_fm.Init(MOscOPM.OPM_CLOCK, flmml.MSequencer.SAMPLE_RATE);
-            this.m_fm.Reset();
-            this.m_fm.SetVolume(MOscOPM.s_comGain);
-            this.setOpMask(15);
-            this.setWaveNo(0);
+            _this.m_fm.Init(MOscOPM.OPM_CLOCK, flmml.MSequencer.SAMPLE_RATE);
+            _this.m_fm.Reset();
+            _this.m_fm.SetVolume(MOscOPM.s_comGain);
+            _this.setOpMask(15);
+            _this.setWaveNo(0);
+            return _this;
         }
+        ;
         MOscOPM.boot = function () {
             if (this.s_init !== 0)
                 return;
@@ -6096,13 +5992,15 @@ var flmml;
                 return;
             }
             _super.prototype.setFrequency.call(this, frequency);
-            var n = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
-            var note = n / 100 | 0;
-            var cent = n % 100;
-            var kf = 64.0 * cent / 100.0 + 0.5 | 0;
-            var kc = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
-            this.m_fm.SetReg(0x30, kf << 2);
-            this.m_fm.SetReg(0x28, kc);
+            if (this.m_fm) {
+                var n = 1200.0 * Math.log(frequency / 440.0) * Math.LOG2E + 5700.0 + MOscOPM.OPM_RATIO + 0.5 | 0;
+                var note = n / 100 | 0;
+                var cent = n % 100;
+                var kf = 64.0 * cent / 100.0 + 0.5 | 0;
+                var kc = (((note - 1) / 12) << 4) | MOscOPM.kctable[(note + 1200) % 12];
+                this.m_fm.SetReg(0x30, kf << 2);
+                this.m_fm.SetReg(0x28, kc);
+            }
         };
         MOscOPM.prototype.getNextSample = function () {
             this.m_fm.Mix(this.m_oneSample, 0, 1);
@@ -6167,19 +6065,20 @@ var flmml;
             0, 0
         ];
         return MOscOPM;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscOPM = MOscOPM;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscPulse = (function (_super) {
         __extends(MOscPulse, _super);
         function MOscPulse() {
+            var _this = this;
             MOscPulse.boot();
-            _super.call(this);
-            this.setPWM(0.5);
-            this.setMIX(0);
+            _this = _super.call(this) || this;
+            _this.setPWM(0.5);
+            _this.setMIX(0);
+            return _this;
         }
         MOscPulse.boot = function () {
         };
@@ -6256,18 +6155,19 @@ var flmml;
             this.m_modNoise = noise;
         };
         return MOscPulse;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscPulse = MOscPulse;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscSaw = (function (_super) {
         __extends(MOscSaw, _super);
         function MOscSaw() {
+            var _this = this;
             MOscSaw.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscSaw.boot = function () {
             if (this.s_init)
@@ -6328,18 +6228,19 @@ var flmml;
         MOscSaw.MAX_WAVE = 2;
         MOscSaw.s_init = 0;
         return MOscSaw;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscSaw = MOscSaw;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscSine = (function (_super) {
         __extends(MOscSine, _super);
         function MOscSine() {
+            var _this = this;
             MOscSine.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         ;
         MOscSine.boot = function () {
@@ -6409,18 +6310,19 @@ var flmml;
         MOscSine.s_init = 0;
         MOscSine.s_table = new Array(MOscSine.MAX_WAVE);
         return MOscSine;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscSine = MOscSine;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscTriangle = (function (_super) {
         __extends(MOscTriangle, _super);
         function MOscTriangle() {
+            var _this = this;
             MOscTriangle.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscTriangle.boot = function () {
             if (this.s_init)
@@ -6481,18 +6383,19 @@ var flmml;
         MOscTriangle.MAX_WAVE = 2;
         MOscTriangle.s_init = 0;
         return MOscTriangle;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscTriangle = MOscTriangle;
 })(flmml || (flmml = {}));
-/// <reference path="MOscMod.ts" />
 var flmml;
 (function (flmml) {
     var MOscWave = (function (_super) {
         __extends(MOscWave, _super);
         function MOscWave() {
+            var _this = this;
             MOscWave.boot();
-            _super.call(this);
-            this.setWaveNo(0);
+            _this = _super.call(this) || this;
+            _this.setWaveNo(0);
+            return _this;
         }
         MOscWave.boot = function () {
             if (this.s_init)
@@ -6577,10 +6480,112 @@ var flmml;
         MOscWave.MAX_LENGTH = 2048;
         MOscWave.s_init = 0;
         return MOscWave;
-    })(flmml.MOscMod);
+    }(flmml.MOscMod));
     flmml.MOscWave = MOscWave;
 })(flmml || (flmml = {}));
-/// <reference path="IChannel.ts" />
+var flmml;
+(function (flmml) {
+    var MOscillator = (function () {
+        function MOscillator() {
+            MOscillator.boot();
+            this.m_osc = new Array(MOscillator.MAX);
+            this.m_osc[MOscillator.SINE] = new flmml.MOscSine();
+            this.m_osc[MOscillator.SAW] = new flmml.MOscSaw();
+            this.m_osc[MOscillator.TRIANGLE] = new flmml.MOscTriangle();
+            this.m_osc[MOscillator.PULSE] = new flmml.MOscPulse();
+            this.m_osc[MOscillator.NOISE] = new flmml.MOscNoise();
+            this.m_osc[MOscillator.FC_PULSE] = new flmml.MOscPulse();
+            this.m_osc[MOscillator.FC_TRI] = new flmml.MOscFcTri();
+            this.m_osc[MOscillator.FC_NOISE] = new flmml.MOscFcNoise();
+            this.m_osc[MOscillator.FC_S_NOISE] = null;
+            this.m_osc[MOscillator.FC_DPCM] = new flmml.MOscFcDpcm();
+            this.m_osc[MOscillator.GB_WAVE] = new flmml.MOscGbWave();
+            this.m_osc[MOscillator.GB_NOISE] = new flmml.MOscGbLNoise();
+            this.m_osc[MOscillator.GB_S_NOISE] = new flmml.MOscGbSNoise();
+            this.m_osc[MOscillator.WAVE] = new flmml.MOscWave();
+            this.m_osc[MOscillator.OPM] = new flmml.MOscOPM();
+            this.setForm(MOscillator.PULSE);
+            this.setNoiseToPulse();
+        }
+        MOscillator.prototype.asLFO = function () {
+            if (this.m_osc[MOscillator.NOISE])
+                this.m_osc[MOscillator.NOISE].disableResetPhase();
+        };
+        MOscillator.boot = function () {
+            if (this.s_init)
+                return;
+            flmml.MOscSine.boot();
+            flmml.MOscSaw.boot();
+            flmml.MOscTriangle.boot();
+            flmml.MOscPulse.boot();
+            flmml.MOscNoise.boot();
+            flmml.MOscFcTri.boot();
+            flmml.MOscFcNoise.boot();
+            flmml.MOscFcDpcm.boot();
+            flmml.MOscGbWave.boot();
+            flmml.MOscGbLNoise.boot();
+            flmml.MOscGbSNoise.boot();
+            flmml.MOscWave.boot();
+            flmml.MOscOPM.boot();
+            this.s_init = 1;
+        };
+        MOscillator.prototype.setForm = function (form) {
+            var modNoise;
+            var modFcNoise;
+            if (form >= MOscillator.MAX)
+                form = MOscillator.MAX - 1;
+            this.m_form = form;
+            switch (form) {
+                case MOscillator.NOISE:
+                    modNoise = this.m_osc[MOscillator.NOISE];
+                    modNoise.restoreFreq();
+                    break;
+                case MOscillator.FC_NOISE:
+                    modFcNoise = this.getMod(MOscillator.FC_NOISE);
+                    modFcNoise.setLongMode();
+                    break;
+                case MOscillator.FC_S_NOISE:
+                    modFcNoise = this.getMod(MOscillator.FC_S_NOISE);
+                    modFcNoise.setShortMode();
+                    break;
+            }
+            return this.getMod(form);
+        };
+        MOscillator.prototype.getForm = function () {
+            return this.m_form;
+        };
+        MOscillator.prototype.getCurrent = function () {
+            return this.getMod(this.m_form);
+        };
+        MOscillator.prototype.getMod = function (form) {
+            return (form !== MOscillator.FC_S_NOISE) ? this.m_osc[form] : this.m_osc[MOscillator.FC_NOISE];
+        };
+        MOscillator.prototype.setNoiseToPulse = function () {
+            var modPulse = this.getMod(MOscillator.PULSE);
+            var modNoise = this.getMod(MOscillator.NOISE);
+            modPulse.setNoise(modNoise);
+        };
+        MOscillator.SINE = 0;
+        MOscillator.SAW = 1;
+        MOscillator.TRIANGLE = 2;
+        MOscillator.PULSE = 3;
+        MOscillator.NOISE = 4;
+        MOscillator.FC_PULSE = 5;
+        MOscillator.FC_TRI = 6;
+        MOscillator.FC_NOISE = 7;
+        MOscillator.FC_S_NOISE = 8;
+        MOscillator.FC_DPCM = 9;
+        MOscillator.GB_WAVE = 10;
+        MOscillator.GB_NOISE = 11;
+        MOscillator.GB_S_NOISE = 12;
+        MOscillator.WAVE = 13;
+        MOscillator.OPM = 14;
+        MOscillator.MAX = 15;
+        MOscillator.s_init = 0;
+        return MOscillator;
+    }());
+    flmml.MOscillator = MOscillator;
+})(flmml || (flmml = {}));
 var flmml;
 (function (flmml) {
     var MPolyChannel = (function () {
@@ -6795,10 +6800,9 @@ var flmml;
             }
         };
         return MPolyChannel;
-    })();
+    }());
     flmml.MPolyChannel = MPolyChannel;
 })(flmml || (flmml = {}));
-// 定数化したので未使用
 var flmml;
 (function (flmml) {
     var MTrack = (function () {
@@ -7349,7 +7353,7 @@ var flmml;
         MTrack.FIRST_TRACK = 1;
         MTrack.DEFAULT_BPM = 120;
         return MTrack;
-    })();
+    }());
     flmml.MTrack = MTrack;
 })(flmml || (flmml = {}));
 var flmml;
@@ -7381,16 +7385,9 @@ var flmml;
             "マクロ名に使用できない文字が含まれています。'%s'"
         ];
         return MWarning;
-    })();
+    }());
     flmml.MWarning = MWarning;
 })(flmml || (flmml = {}));
-// ---------------------------------------------------------------------------
-//  FM Sound Generator - Core Unit
-//  Copyright (C) cisc 1998, 2003.
-//  Copyright (C) 2011 ALOE. All rights reserved.
-// ---------------------------------------------------------------------------
-/// <reference path="Operator.ts" />
-/// <reference path="JaggArray.ts" />
 var fmgenAs;
 (function (fmgenAs) {
     var Channel4 = (function () {
@@ -7674,15 +7671,9 @@ var fmgenAs;
             return pmtable;
         })();
         return Channel4;
-    })();
+    }());
     fmgenAs.Channel4 = Channel4;
 })(fmgenAs || (fmgenAs = {}));
-// ---------------------------------------------------------------------------
-//  FM Sound Generator - Core Unit
-//  Copyright (C) cisc 1998, 2003.
-//  Copyright (C) 2011 ALOE. All rights reserved.
-// ---------------------------------------------------------------------------
-/// <reference path="JaggArray.ts" />
 var fmgenAs;
 (function (fmgenAs) {
     var dt2lv = [
@@ -7740,7 +7731,7 @@ var fmgenAs;
             }
         };
         return Chip;
-    })();
+    }());
     fmgenAs.Chip = Chip;
 })(fmgenAs || (fmgenAs = {}));
 var fmgenAs;
@@ -7755,10 +7746,9 @@ var fmgenAs;
         EGPhase.release = 4;
         EGPhase.off = 5;
         return EGPhase;
-    })();
+    }());
     fmgenAs.EGPhase = EGPhase;
 })(fmgenAs || (fmgenAs = {}));
-// 定数化したので未使用
 var fmgenAs;
 (function (fmgenAs) {
     var OpType = (function () {
@@ -7767,10 +7757,9 @@ var fmgenAs;
         OpType.typeN = 0;
         OpType.typeM = 1;
         return OpType;
-    })();
+    }());
     fmgenAs.OpType = OpType;
 })(fmgenAs || (fmgenAs = {}));
-/// <reference path="../flmml/MML.ts" />
 var messenger;
 (function (messenger) {
     var MML = flmml.MML;
@@ -7881,7 +7870,8 @@ var messenger;
             postMessage({ type: COM_DEBUG, str: str });
         };
         return Messenger;
-    })();
+    }());
     messenger.Messenger = Messenger;
 })(messenger || (messenger = {}));
 var msgr = new messenger.Messenger();
+//# sourceMappingURL=flmmlworker-raw.js.map
