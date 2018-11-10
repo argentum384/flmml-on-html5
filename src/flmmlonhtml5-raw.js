@@ -3,6 +3,23 @@
 "use strict";
 
 var FlMMLonHTML5 = function () {
+    var staticProps = {
+        BUFFER_SIZE: 8192,
+
+        COM_BOOT     :  1, // Main->Worker
+        COM_PLAY     :  2, // Main->Worker
+        COM_STOP     :  3, // Main->Worker
+        COM_PAUSE    :  4, // Main->Worker
+        COM_BUFFER   :  5, // Main->Worker->Main
+        COM_COMPCOMP :  6, // Worker->Main
+        COM_BUFRING  :  7, // Worker->Main
+        COM_COMPLETE :  8, // Worker->Main
+        COM_SYNCINFO :  9, // Main->Worker->Main
+        COM_PLAYSOUND: 10, // Worker->Main
+        COM_STOPSOUND: 11  // Worker->Main->Worker
+    };
+    staticProps.emptyBuffer = new Float32Array(staticProps.BUFFER_SIZE);
+
     function extend(target, object) {
         for (var name in object) {
             target[name] = object[name];
@@ -36,22 +53,7 @@ var FlMMLonHTML5 = function () {
     }
 
     // static
-    extend(FlMMLonHTML5, {
-        BUFFER_SIZE: 8192,
-
-        COM_BOOT     :  1, // Main->Worker
-        COM_PLAY     :  2, // Main->Worker
-        COM_STOP     :  3, // Main->Worker
-        COM_PAUSE    :  4, // Main->Worker
-        COM_BUFFER   :  5, // Main->Worker->Main
-        COM_COMPCOMP :  6, // Worker->Main
-        COM_BUFRING  :  7, // Worker->Main
-        COM_COMPLETE :  8, // Worker->Main
-        COM_SYNCINFO :  9, // Main->Worker->Main
-        COM_PLAYSOUND: 10, // Worker->Main
-        COM_STOPSOUND: 11  // Worker->Main->Worker
-    });
-    FlMMLonHTML5.emptyBuffer = new Float32Array(FlMMLonHTML5.BUFFER_SIZE);
+    extend(FlMMLonHTML5, staticProps);
 
     // not static
     extend(FlMMLonHTML5.prototype, {

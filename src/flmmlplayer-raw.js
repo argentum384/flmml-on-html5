@@ -1,6 +1,16 @@
 ﻿"use strict";
 
 var FlMMLPlayer = function (window, document) {
+    var staticProps = {
+        MMLST_ARG    : 1,
+        MMLST_WAIT   : 2,
+        MMLST_LOADING: 3,
+        MMLST_SUCCEED: 4,
+        MMLST_FAILED : 5,
+
+        players: []
+    };
+
     function extend(target, object) {
         for (var name in object) {
             target[name] = object[name];
@@ -235,15 +245,7 @@ svg#flmmlplayer" + no + " text{text-anchor:middle;pointer-events:none}\
     }
 
     // static
-    extend(FlMMLPlayer, {
-        MMLST_ARG    : 1,
-        MMLST_WAIT   : 2,
-        MMLST_LOADING: 3,
-        MMLST_SUCCEED: 4,
-        MMLST_FAILED : 5,
-
-        players: []
-    });
+    extend(FlMMLPlayer, staticProps);
     
     // not static
     extend(FlMMLPlayer.prototype, {
