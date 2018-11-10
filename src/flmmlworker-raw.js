@@ -3714,7 +3714,6 @@ var flmml;
         MOscFcDpcm.boot = function () {
             if (this.s_init)
                 return;
-            this.FC_DPCM_NEXT = flmml.MSequencer.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
             this.s_table = new Array(this.MAX_WAVE);
             this.s_intVol = new Array(this.MAX_WAVE);
             this.s_loopFg = new Array(this.MAX_WAVE);
@@ -3959,6 +3958,7 @@ var flmml;
         MOscFcDpcm.FC_DPCM_PHASE_SFT = 2;
         MOscFcDpcm.FC_DPCM_MAX_LEN = 0xff1;
         MOscFcDpcm.FC_DPCM_TABLE_MAX_LEN = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
+        MOscFcDpcm.FC_DPCM_NEXT = flmml.MSequencer.SAMPLE_RATE << MOscFcDpcm.FC_DPCM_PHASE_SFT;
         MOscFcDpcm.s_interval = [
             428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54,
         ];
@@ -3980,6 +3980,7 @@ var flmml;
             _this.setNoiseFreq(0);
             return _this;
         }
+        ;
         MOscFcNoise.prototype.getValue = function () {
             this.m_fcr >>= 1;
             this.m_fcr |= ((this.m_fcr ^ (this.m_fcr >> this.m_snz)) & 1) << 15;
@@ -4001,7 +4002,6 @@ var flmml;
             }
         };
         MOscFcNoise.boot = function () {
-            MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / flmml.MSequencer.SAMPLE_RATE | 0;
         };
         MOscFcNoise.prototype.getNextSample = function () {
             var val = this.m_val;
@@ -4070,6 +4070,7 @@ var flmml;
         };
         MOscFcNoise.FC_NOISE_PHASE_SFT = 10;
         MOscFcNoise.FC_NOISE_PHASE_SEC = (1789773 << MOscFcNoise.FC_NOISE_PHASE_SFT) | 0;
+        MOscFcNoise.FC_NOISE_PHASE_DLT = MOscFcNoise.FC_NOISE_PHASE_SEC / flmml.MSequencer.SAMPLE_RATE | 0;
         MOscFcNoise.s_interval = [
             0x004, 0x008, 0x010, 0x020, 0x040, 0x060, 0x080, 0x0a0, 0x0ca, 0x0fe, 0x17c, 0x1fc, 0x2fa, 0x3f8, 0x7f2, 0xfe4
         ];
@@ -7763,7 +7764,6 @@ var fmgenAs;
 var messenger;
 (function (messenger) {
     var MML = flmml.MML;
-    var COM_BOOT = 1, COM_PLAY = 2, COM_STOP = 3, COM_PAUSE = 4, COM_BUFFER = 5, COM_COMPCOMP = 6, COM_BUFRING = 7, COM_COMPLETE = 8, COM_SYNCINFO = 9, COM_PLAYSOUND = 10, COM_STOPSOUND = 11, COM_DEBUG = 12;
     var Messenger = (function () {
         function Messenger() {
             this.onstopsound = null;
@@ -7774,26 +7774,26 @@ var messenger;
         Messenger.prototype.onMessage = function (e) {
             var data = e.data, type = data.type, mml = this.mml;
             switch (type) {
-                case COM_BOOT:
+                case Messenger.COM_BOOT:
                     this.audioSampleRate = data.sampleRate;
                     this.audioBufferSize = data.bufferSize;
                     this.mml = new MML();
                     break;
-                case COM_PLAY:
+                case Messenger.COM_PLAY:
                     mml.play(data.mml);
                     break;
-                case COM_STOP:
+                case Messenger.COM_STOP:
                     mml.stop();
                     this.syncInfo();
                     break;
-                case COM_PAUSE:
+                case Messenger.COM_PAUSE:
                     mml.pause();
                     this.syncInfo();
                     break;
-                case COM_BUFFER:
+                case Messenger.COM_BUFFER:
                     this.onrequestbuffer && this.onrequestbuffer(data);
                     break;
-                case COM_SYNCINFO:
+                case Messenger.COM_SYNCINFO:
                     if (typeof data.interval === "number") {
                         this.infoInterval = data.interval;
                         clearInterval(this.tIDInfo);
@@ -7805,18 +7805,18 @@ var messenger;
                         this.syncInfo();
                     }
                     break;
-                case COM_STOPSOUND:
+                case Messenger.COM_STOPSOUND:
                     this.onstopsound && this.onstopsound();
                     break;
             }
         };
         Messenger.prototype.buffering = function (progress) {
-            postMessage({ type: COM_BUFRING, progress: progress });
+            postMessage({ type: Messenger.COM_BUFRING, progress: progress });
         };
         Messenger.prototype.compileComplete = function () {
             var mml = this.mml;
             postMessage({
-                type: COM_COMPCOMP,
+                type: Messenger.COM_COMPCOMP,
                 info: {
                     totalMSec: mml.getTotalMSec(),
                     totalTimeStr: mml.getTotalTimeStr(),
@@ -7829,25 +7829,25 @@ var messenger;
             });
         };
         Messenger.prototype.playSound = function () {
-            postMessage({ type: COM_PLAYSOUND });
+            postMessage({ type: Messenger.COM_PLAYSOUND });
             this.syncInfo();
         };
         Messenger.prototype.stopSound = function (isFlushBuf) {
             if (isFlushBuf === void 0) { isFlushBuf = false; }
-            postMessage({ type: COM_STOPSOUND, isFlushBuf: isFlushBuf });
+            postMessage({ type: Messenger.COM_STOPSOUND, isFlushBuf: isFlushBuf });
         };
         Messenger.prototype.sendBuffer = function (buffer) {
-            postMessage({ type: COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+            postMessage({ type: Messenger.COM_BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
         };
         Messenger.prototype.complete = function () {
-            postMessage({ type: COM_COMPLETE });
+            postMessage({ type: Messenger.COM_COMPLETE });
             this.syncInfo();
         };
         Messenger.prototype.syncInfo = function () {
             var mml = this.mml;
             this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
             postMessage({
-                type: COM_SYNCINFO,
+                type: Messenger.COM_SYNCINFO,
                 info: {
                     _isPlaying: mml.isPlaying(),
                     _isPaused: mml.isPaused(),
@@ -7865,10 +7865,17 @@ var messenger;
                 clearInterval(this.tIDInfo);
             }
         };
-        Messenger.prototype.debug = function (str) {
-            if (str === void 0) { str = ""; }
-            postMessage({ type: COM_DEBUG, str: str });
-        };
+        Messenger.COM_BOOT = 1;
+        Messenger.COM_PLAY = 2;
+        Messenger.COM_STOP = 3;
+        Messenger.COM_PAUSE = 4;
+        Messenger.COM_BUFFER = 5;
+        Messenger.COM_COMPCOMP = 6;
+        Messenger.COM_BUFRING = 7;
+        Messenger.COM_COMPLETE = 8;
+        Messenger.COM_SYNCINFO = 9;
+        Messenger.COM_PLAYSOUND = 10;
+        Messenger.COM_STOPSOUND = 11;
         return Messenger;
     }());
     messenger.Messenger = Messenger;
