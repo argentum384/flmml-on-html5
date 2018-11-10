@@ -2,17 +2,12 @@
 
 module flmml {
     export class MChannel implements IChannel {
-        // 戻すときは正規表現使用の置換で
-        // /\*MChannel\.LFO_TARGET_(.*)\*/[0-9]*
-        //  ↓
-        // MChannel.LFO_TARGET_$1
-        //
-        //private static LFO_TARGET_PITCH: number = 0;
-        //private static LFO_TARGET_AMPLITUDE: number = 1;
-        //private static LFO_TARGET_CUTOFF: number = 2;
-        //private static LFO_TARGET_PWM: number = 3;
-        //private static LFO_TARGET_FM: number = 4;
-        //private static LFO_TARGET_PANPOT: number = 5;
+        //private static readonly LFO_TARGET_PITCH: number = 0;
+        //private static readonly LFO_TARGET_AMPLITUDE: number = 1;
+        //private static readonly LFO_TARGET_CUTOFF: number = 2;
+        //private static readonly LFO_TARGET_PWM: number = 3;
+        //private static readonly LFO_TARGET_FM: number = 4;
+        //private static readonly LFO_TARGET_PANPOT: number = 5;
 
         private static emptyBuffer: Float32Array;
 
@@ -62,7 +57,7 @@ module flmml {
         private m_slaveVoice: boolean; // 従属ボイスか？
         private m_voiceid: number;     // ボイスID
 
-        static PITCH_RESOLUTION: number = 100;
+        static readonly PITCH_RESOLUTION: number = 100;
         protected static s_init: number = 0;
         protected static s_frequencyMap: Array<number> = new Array<number>(128 * MChannel.PITCH_RESOLUTION);
         protected static s_frequencyLen: number;

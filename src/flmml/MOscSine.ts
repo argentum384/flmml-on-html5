@@ -2,7 +2,7 @@
 
 module flmml {
     export class MOscSine extends MOscMod {
-        static MAX_WAVE: number = 3;
+        static readonly MAX_WAVE: number = 3;
         protected m_waveNo: number;
         protected static s_init: number = 0;
         protected static s_table: Array<Array<number>> = new Array<Array<number>>(MOscSine.MAX_WAVE);;

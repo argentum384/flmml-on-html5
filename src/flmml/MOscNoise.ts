@@ -2,9 +2,9 @@
 
 module flmml {
     export class MOscNoise extends MOscMod {
-        static TABLE_MSK: number = MOscNoise.TABLE_LEN - 1;
-        static NOISE_PHASE_SFT: number = 30;
-        static NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;0
+        static readonly TABLE_MSK: number = MOscNoise.TABLE_LEN - 1;
+        static readonly NOISE_PHASE_SFT: number = 30;
+        static readonly NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;0
         protected m_noiseFreq: number;
         protected m_counter: number;
         protected m_resetPhase: boolean;

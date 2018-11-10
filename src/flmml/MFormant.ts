@@ -5,11 +5,11 @@
      Thanks to his great works!
     */
     export class MFormant {
-        static VOWEL_A: number = 0;
-        static VOWEL_E: number = 1;
-        static VOWEL_I: number = 2;
-        static VOWEL_O: number = 3;
-        static VOWEL_U: number = 4;
+        static readonly VOWEL_A: number = 0;
+        static readonly VOWEL_E: number = 1;
+        static readonly VOWEL_I: number = 2;
+        static readonly VOWEL_O: number = 3;
+        static readonly VOWEL_U: number = 4;
 
         // ca = filter coefficients of 'a'
         private m_ca0: number = 0.00000811044;

@@ -1,21 +1,21 @@
 ﻿module flmml {
     export class MOscillator {
-        static SINE: number = 0;
-        static SAW: number = 1;
-        static TRIANGLE: number = 2;
-        static PULSE: number = 3;
-        static NOISE: number = 4;
-        static FC_PULSE: number = 5;
-        static FC_TRI: number = 6;
-        static FC_NOISE: number = 7;
-        static FC_S_NOISE: number = 8;
-        static FC_DPCM: number = 9;
-        static GB_WAVE: number = 10;
-        static GB_NOISE: number = 11;
-        static GB_S_NOISE: number = 12;
-        static WAVE: number = 13;
-        static OPM: number = 14;
-        static MAX: number = 15;
+        static readonly SINE: number = 0;
+        static readonly SAW: number = 1;
+        static readonly TRIANGLE: number = 2;
+        static readonly PULSE: number = 3;
+        static readonly NOISE: number = 4;
+        static readonly FC_PULSE: number = 5;
+        static readonly FC_TRI: number = 6;
+        static readonly FC_NOISE: number = 7;
+        static readonly FC_S_NOISE: number = 8;
+        static readonly FC_DPCM: number = 9;
+        static readonly GB_WAVE: number = 10;
+        static readonly GB_NOISE: number = 11;
+        static readonly GB_S_NOISE: number = 12;
+        static readonly WAVE: number = 13;
+        static readonly OPM: number = 14;
+        static readonly MAX: number = 15;
         protected m_osc: Array<MOscMod>;
         protected m_form: number;
         protected static s_init: number = 0;

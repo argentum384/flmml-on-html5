@@ -7,12 +7,12 @@ module flmml {
        09/11/05：波形データ格納処理で、データが32bitごとに1bit抜けていたのを修正
      */
     export class MOscFcDpcm extends MOscMod {
-        static MAX_WAVE: number = 16;
-        static FC_CPU_CYCLE: number = 1789773;
-        static FC_DPCM_PHASE_SFT: number = 2;
-        static FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
-        static FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
-        static FC_DPCM_NEXT: number;
+        static readonly MAX_WAVE: number = 16;
+        static readonly FC_CPU_CYCLE: number = 1789773;
+        static readonly FC_DPCM_PHASE_SFT: number = 2;
+        static readonly FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
+        static readonly FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
+        static readonly FC_DPCM_NEXT: number = MSequencer.SAMPLE_RATE << MOscFcDpcm.FC_DPCM_PHASE_SFT;
         protected m_readCount: number = 0; //次の波形生成までのカウント値
         protected m_address: number = 0;   //読み込み中のアドレス位置
         protected m_bit: number = 0;       //読み込み中のビット位置
@@ -26,7 +26,7 @@ module flmml {
         protected static s_loopFg: Array<number>; //ループフラグ
         protected static s_length: Array<number>; //再生レングス
         protected m_waveNo: number;
-        protected static s_interval: Array<number> = [ //音程
+        protected static readonly s_interval: Array<number> = [ //音程
             428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54,
         ];
 
@@ -38,9 +38,6 @@ module flmml {
 
         static boot(): void {
             if (this.s_init) return;
-
-            this.FC_DPCM_NEXT = MSequencer.SAMPLE_RATE << this.FC_DPCM_PHASE_SFT;
-
             this.s_table = new Array<Array<number>>(this.MAX_WAVE);
             this.s_intVol = new Array<number>(this.MAX_WAVE);
             this.s_loopFg = new Array<number>(this.MAX_WAVE);

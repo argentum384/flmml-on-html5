@@ -1,25 +1,20 @@
 ﻿module flmml {
     // Web Audio + Web Worker利用につき大幅改定
     export class MSequencer {
-        static SAMPLE_RATE: number = 44100;
+        static readonly SAMPLE_RATE: number = 44100;
 
-        protected static MULTIPLE: number = 32;
+        protected static readonly MULTIPLE: number = 32;
         
-        // 戻すときは正規表現使用の置換で
-        // /\*MSequencer\.(STATUS_|STEP_)(.*)\*/[0-9]*
-        //  ↓
-        // MSequencer.$1$2
-        //
-        //protected static STATUS_STOP:      number = 0;
-        //protected static STATUS_PAUSE:     number = 1;
-        //protected static STATUS_BUFFERING: number = 2;
-        //protected static STATUS_PLAY:      number = 3;
-        //protected static STATUS_LAST:      number = 4;
-        //protected static STEP_NONE:     number = 0;
-        //protected static STEP_PRE:      number = 1;
-        //protected static STEP_TRACK:    number = 2;
-        //protected static STEP_POST:     number = 3;
-        //protected static STEP_COMPLETE: number = 4;
+        //protected static readonly STATUS_STOP:      number = 0;
+        //protected static readonly STATUS_PAUSE:     number = 1;
+        //protected static readonly STATUS_BUFFERING: number = 2;
+        //protected static readonly STATUS_PLAY:      number = 3;
+        //protected static readonly STATUS_LAST:      number = 4;
+        //protected static readonly STEP_NONE:     number = 0;
+        //protected static readonly STEP_PRE:      number = 1;
+        //protected static readonly STEP_TRACK:    number = 2;
+        //protected static readonly STEP_POST:     number = 3;
+        //protected static readonly STEP_COMPLETE: number = 4;
 
         protected bufferSize: number;
         protected lastSample: Array<number>;

@@ -61,7 +61,7 @@ module fmgenAs {
         private param_changed_: boolean;        // パラメータが更新された
         private mute_: boolean;
 
-        private static notetable: Array<number>/*[128]*/ = [
+        private static readonly notetable: Array<number>/*[128]*/ = [
              0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  3,  3,  3,  3,  3,  3, 
              4,  4,  4,  4,  4,  4,  4,  5,  6,  7,  7,  7,  7,  7,  7,  7, 
              8,  8,  8,  8,  8,  8,  8,  9, 10, 11, 11, 11, 11, 11, 11, 11,
@@ -72,7 +72,7 @@ module fmgenAs {
             28, 28, 28, 28, 28, 28, 28, 29, 30, 31, 31, 31, 31, 31, 31, 31
         ];
 
-        private static dttable: Array<number>/*[256]*/ = [
+        private static readonly dttable: Array<number>/*[256]*/ = [
               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
               0,   0,   0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   4,   4,   4,   4,  
@@ -91,7 +91,7 @@ module fmgenAs {
             -16, -16, -18, -20, -22, -24, -26, -28, -32, -34, -38, -40, -44, -44, -44, -44
         ];
 
-        static decaytable1: Array<Array<number>>/*[64][8]*/ = [
+        static readonly decaytable1: Array<Array<number>>/*[64][8]*/ = [
             [ 0,  0,  0,  0,  0,  0,  0,  0], [ 0,  0,  0,  0,  0,  0,  0,  0], 
             [ 1,  1,  1,  1,  1,  1,  1,  1], [ 1,  1,  1,  1,  1,  1,  1,  1], 
             [ 1,  1,  1,  1,  1,  1,  1,  1], [ 1,  1,  1,  1,  1,  1,  1,  1], 
@@ -126,11 +126,11 @@ module fmgenAs {
             [16, 16, 16, 16, 16, 16, 16, 16], [16, 16, 16, 16, 16, 16, 16, 16]
         ];
 
-        private static decaytable2: Array<number>/*[16]*/ = [
+        private static readonly decaytable2: Array<number>/*[16]*/ = [
             1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2047, 2047, 2047, 2047, 2047
         ];
 
-        static attacktable: Array<Array<number>>/*[64][8]*/ = [
+        static readonly attacktable: Array<Array<number>>/*[64][8]*/ = [
             [-1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1], 
             [ 4,  4,  4,  4,  4,  4,  4,  4], [ 4,  4,  4,  4,  4,  4,  4,  4], 
             [ 4,  4,  4,  4,  4,  4,  4,  4], [ 4,  4,  4,  4,  4,  4,  4,  4], 
@@ -165,7 +165,7 @@ module fmgenAs {
             [ 0,  0,  0,  0,  0,  0,  0,  0], [ 0,  0,  0,  0,  0,  0,  0,  0]
         ];
 
-        private static ssgenvtable: Array<Array<Array<Array<number>>>>/*[8][2][3][2]*/ = [
+        private static readonly ssgenvtable: Array<Array<Array<Array<number>>>>/*[8][2][3][2]*/ = [
             [[[1,  1], [1,  1], [1,  1]],  // 08 
              [[0,  1], [1,  1], [1,  1]]], // 08 56~
             [[[0,  1], [2,  0], [2,  0]],  // 09
@@ -185,7 +185,7 @@ module fmgenAs {
         ];
         
         // サインテーブルの作成
-        static sinetable: Array<number> = (() => {
+        static readonly sinetable: Array<number> = (() => {
             var sinetable: Array<number> = [];
             var log2: number = Math.log(2.0);
             for (var i = 0; i < /*FM.FM_OPSINENTS*/1024 / 2; i++) {
@@ -199,7 +199,7 @@ module fmgenAs {
         })();
         
         // 対数テーブルの作成
-        static cltable: Array<number> = (() => {
+        static readonly cltable: Array<number> = (() => {
             var cltable: Array<number> = [];
             var i: number, j: number;
             for (i = 0, j = 0; i < 256; i++) {
@@ -215,7 +215,7 @@ module fmgenAs {
             return cltable;
         })();
 
-        static amtable: Array<Array<Array<number>>> = (() => {
+        static readonly amtable: Array<Array<Array<number>>> = (() => {
             var amtable: Array<Array<Array<number>>> = JaggArray.I3(2, 8, /*FM.FM_LFOENTS*/256);
             var i: number, j: number;
             var amt: Array<Array<number>> = [

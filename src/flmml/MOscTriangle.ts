@@ -2,7 +2,7 @@
 
 module flmml {
     export class MOscTriangle extends MOscMod {
-        static MAX_WAVE: number = 2;
+        static readonly MAX_WAVE: number = 2;
         protected static s_init: number = 0;
         protected static s_table: Array<Array<number>>;
         protected m_waveNo: number;

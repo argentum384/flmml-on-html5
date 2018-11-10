@@ -2,11 +2,11 @@
 
 module flmml {
     export class MOscMod {
-        static TABLE_LEN: number = 1 << 16;
-        static PHASE_SFT: number = 14;
-        static PHASE_LEN: number = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
-        static PHASE_HLF: number = MOscMod.TABLE_LEN << (MOscMod.PHASE_SFT - 1);
-        static PHASE_MSK: number = MOscMod.PHASE_LEN - 1;
+        static readonly TABLE_LEN: number = 1 << 16;
+        static readonly PHASE_SFT: number = 14;
+        static readonly PHASE_LEN: number = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
+        static readonly PHASE_HLF: number = MOscMod.TABLE_LEN << (MOscMod.PHASE_SFT - 1);
+        static readonly PHASE_MSK: number = MOscMod.PHASE_LEN - 1;
 
         protected m_frequency: number;
         protected m_freqShift: number;

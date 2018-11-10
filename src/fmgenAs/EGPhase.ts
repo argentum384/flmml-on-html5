@@ -4,11 +4,11 @@
      * @author ALOE
      */
     export class EGPhase {
-        static next: number = 0;
-        static attack: number = 1;
-        static decay: number = 2;
-        static sustain: number = 3;
-        static release: number = 4;
-        static off: number = 5;
+        static readonly next: number = 0;
+        static readonly attack: number = 1;
+        static readonly decay: number = 2;
+        static readonly sustain: number = 3;
+        static readonly release: number = 4;
+        static readonly off: number = 5;
     }
 }

@@ -13,7 +13,7 @@ module fmgenAs {
      * @author ALOE
      */
     export class OPM extends Timer {
-        //private static OPM_LFOENTS: number = 512;
+        //private static readonly OPM_LFOENTS: number = 512;
 
         private fmvolume: number;
         private amplevel: number = /*FM.FM_VOLENTS*/16384;
@@ -40,27 +40,27 @@ module fmgenAs {
 
         private static s_init: boolean = false;
 
-        private static amtable: Array<Array<number>> = JaggArray.I2(4, /*OPM.OPM_LFOENTS*/512);
-        private static pmtable: Array<Array<number>> = JaggArray.I2(4, /*OPM.OPM_LFOENTS*/512);
+        private static readonly amtable: Array<Array<number>> = JaggArray.I2(4, /*OPM.OPM_LFOENTS*/512);
+        private static readonly pmtable: Array<Array<number>> = JaggArray.I2(4, /*OPM.OPM_LFOENTS*/512);
         
         // Channel4から移植
         private buf: Array<number> = new Array<number>(4);
         private ix: Array<number>;
         private ox: Array<number>; // Channel4ここまで  
         
-        private static sltable: Array<number> = [
+        private static readonly sltable: Array<number> = [
             0, 4, 8, 12, 16, 20, 24, 28,
             32, 36, 40, 44, 48, 52, 56, 124,
         ];
 
-        private static slottable: Array<number> = [
+        private static readonly slottable: Array<number> = [
             0, 2, 1, 3
         ];
 
-        static decaytable1: Array<Array<number>> = Operator.decaytable1;
-        static attacktable: Array<Array<number>> = Operator.attacktable;
-        static sinetable: Array<number> = Operator.sinetable;
-        static cltable: Array<number> = Operator.cltable;
+        static readonly decaytable1: Array<Array<number>> = Operator.decaytable1;
+        static readonly attacktable: Array<Array<number>> = Operator.attacktable;
+        static readonly sinetable: Array<number> = Operator.sinetable;
+        static readonly cltable: Array<number> = Operator.cltable;
 
         private ch: Array<Channel4> = [
             new Channel4(), new Channel4(),

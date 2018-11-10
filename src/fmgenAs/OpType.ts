@@ -4,7 +4,7 @@
      * @author ALOE
      */
     export class OpType {
-        static typeN: number = 0;
-        static typeM: number = 1;
+        static readonly typeN: number = 0;
+        static readonly typeM: number = 1;
     }
 }

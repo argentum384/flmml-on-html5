@@ -1,15 +1,15 @@
 ﻿module flmml {
     export class MWarning {
-        static UNKNOWN_COMMAND: number = 0;
-        static UNCLOSED_REPEAT: number = 1;
-        static UNOPENED_COMMENT: number = 2;
-        static UNCLOSED_COMMENT: number = 3;
-        static RECURSIVE_MACRO: number = 4;
-        static UNCLOSED_ARGQUOTE: number = 5;
-        static UNCLOSED_GROUPNOTES: number = 6;
-        static UNOPENED_GROUPNOTES: number = 7;
-        static INVALID_MACRO_NAME: number = 8;
-        static s_string: Array<string> = [
+        static readonly UNKNOWN_COMMAND: number = 0;
+        static readonly UNCLOSED_REPEAT: number = 1;
+        static readonly UNOPENED_COMMENT: number = 2;
+        static readonly UNCLOSED_COMMENT: number = 3;
+        static readonly RECURSIVE_MACRO: number = 4;
+        static readonly UNCLOSED_ARGQUOTE: number = 5;
+        static readonly UNCLOSED_GROUPNOTES: number = 6;
+        static readonly UNOPENED_GROUPNOTES: number = 7;
+        static readonly INVALID_MACRO_NAME: number = 8;
+        static readonly s_string: Array<string> = [
             "対応していないコマンド '%s' があります。",
             "終わりが見つからない繰り返しがあります。",
             "始まりが見つからないコメントがあります。",

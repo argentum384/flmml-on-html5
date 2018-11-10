@@ -1,8 +1,8 @@
 ﻿module flmml {
     export class MML {
-        protected static MAX_PIPE: number = 3;
-        protected static MAX_SYNCSOURCE: number = 3;
-        protected static MAX_POLYVOICE: number = 64;
+        protected static readonly MAX_PIPE: number = 3;
+        protected static readonly MAX_SYNCSOURCE: number = 3;
+        protected static readonly MAX_POLYVOICE: number = 64;
 
         protected m_sequencer: MSequencer;
         protected m_tracks: Array<MTrack>;

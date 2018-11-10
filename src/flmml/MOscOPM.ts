@@ -10,17 +10,17 @@ module flmml {
       */
     export class MOscOPM extends MOscMod {
         // 音色メモリ数
-        static MAX_WAVE: number = 128;
+        static readonly MAX_WAVE: number = 128;
         // 動作周波数 (Hz)
-        static OPM_CLOCK: number = 3580000; // 4000000;
+        static readonly OPM_CLOCK: number = 3580000; // 4000000;
         // 3.58MHz(基本)：動作周波数比 (cent)
-        static OPM_RATIO: number = 0; //-192.048495012562; // 1200.0*Math.Log(3580000.0/OPM_CLOCK)/Math.Log(2.0); 
+        static readonly OPM_RATIO: number = 0; //-192.048495012562; // 1200.0*Math.Log(3580000.0/OPM_CLOCK)/Math.Log(2.0); 
         // パラメータ長
-        static TIMB_SZ_M: number = 55; // #OPM
-        static TIMB_SZ_N: number = 51; // #OPN
+        static readonly TIMB_SZ_M: number = 55; // #OPM
+        static readonly TIMB_SZ_N: number = 51; // #OPN
         // パラメータタイプ
-        static TYPE_OPM: number = 0;
-        static TYPE_OPN: number = 1;
+        static readonly TYPE_OPM: number = 0;
+        static readonly TYPE_OPN: number = 1;
 
         private m_fm: OPM = new OPM();
         private m_oneSample: Float32Array = new Float32Array(1); // 固定長
@@ -34,18 +34,18 @@ module flmml {
         private static s_comGain: number = 14.25;
         
         // YM2151 アプリケーションマニュアル Fig.2.4より
-        private static kctable: Array<number> = [
+        private static readonly kctable: Array<number> = [
         //  C    C#   D    D#   E    F    F#   G    G#   A    A#   B  
             0xE, 0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9, 0xA, 0xC, 0xD, // 3.58MHz         
         ];
             
         // スロットのアドレス
-        private static slottable: Array<number> = [
+        private static readonly slottable: Array<number> = [
             0, 2, 1, 3
         ];
             
         // キャリアとなるOP
-        private static carrierop: Array<number> = [
+        private static readonly carrierop: Array<number> = [
         //   c2     m2     c1     m1
             0x40,                     // AL 0
             0x40,                     // AL 1
@@ -57,7 +57,7 @@ module flmml {
             0x40 | 0x20 | 0x10 | 0x08 // AL 7
         ];
      
-        private static defTimbre: Array<number> = [
+        private static readonly defTimbre: Array<number> = [
         //  AL FB
             4, 5,
         //  AR  DR  SR RR SL  TL  KS ML D1 D2 AM　
@@ -75,7 +75,7 @@ module flmml {
             0, 0
         ];
      
-        private static zeroTimbre: Array<number> = [
+        private static readonly zeroTimbre: Array<number> = [
         //  AL FB */
             0, 0,
         //  AR DR SR RR SL TL KS ML D1 D2 AM

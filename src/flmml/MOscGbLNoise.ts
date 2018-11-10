@@ -5,13 +5,13 @@ module flmml {
        Special thanks to OffGao.
     */
     export class MOscGbLNoise extends MOscMod {
-        static GB_NOISE_PHASE_SFT: number = 12;
-        static GB_NOISE_PHASE_DLT: number = 1 << MOscGbLNoise.GB_NOISE_PHASE_SFT;
-        static GB_NOISE_TABLE_LEN: number = 32767;
-        static GB_NOISE_TABLE_MOD: number = (MOscGbLNoise.GB_NOISE_TABLE_LEN << MOscGbLNoise.GB_NOISE_PHASE_SFT) - 1;
+        static readonly GB_NOISE_PHASE_SFT: number = 12;
+        static readonly GB_NOISE_PHASE_DLT: number = 1 << MOscGbLNoise.GB_NOISE_PHASE_SFT;
+        static readonly GB_NOISE_TABLE_LEN: number = 32767;
+        static readonly GB_NOISE_TABLE_MOD: number = (MOscGbLNoise.GB_NOISE_TABLE_LEN << MOscGbLNoise.GB_NOISE_PHASE_SFT) - 1;
         protected static s_init: number = 0;
         protected static s_table: Array<number> = new Array<number>(MOscGbLNoise.GB_NOISE_TABLE_LEN);
-        protected static s_interval: Array<number> = [
+        protected static readonly s_interval: Array<number> = [
             0x000002, 0x000004, 0x000008, 0x00000c, 0x000010, 0x000014, 0x000018, 0x00001c,
             0x000020, 0x000028, 0x000030, 0x000038, 0x000040, 0x000050, 0x000060, 0x000070,
             0x000080, 0x0000a0, 0x0000c0, 0x0000e0, 0x000100, 0x000140, 0x000180, 0x0001c0,

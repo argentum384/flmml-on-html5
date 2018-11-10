@@ -1,8 +1,8 @@
 ﻿module flmml {
     export class MTrack {
-        static TEMPO_TRACK: number = 0;
-        static FIRST_TRACK: number = 1;
-        static DEFAULT_BPM: number = 120;
+        static readonly TEMPO_TRACK: number = 0;
+        static readonly FIRST_TRACK: number = 1;
+        static readonly DEFAULT_BPM: number = 120;
         private m_bpm: number;          // beat per minute
         private m_spt: number;          // samples per tick
         private m_ch: IChannel;         // channel (instrument)

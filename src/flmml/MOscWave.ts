@@ -2,8 +2,8 @@
 
 module flmml {
     export class MOscWave extends MOscMod {
-        static MAX_WAVE: number = 32;
-        static MAX_LENGTH: number = 2048;
+        static readonly MAX_WAVE: number = 32;
+        static readonly MAX_LENGTH: number = 2048;
         protected static s_init: number = 0;
         protected static s_table: Array<Array<number>>;
         protected static s_length: Array<number>;

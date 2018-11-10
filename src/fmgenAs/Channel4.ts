@@ -28,11 +28,11 @@ module fmgenAs {
             new Operator()
         ];
 
-        private static fbtable: Array<number> = [
+        private static readonly fbtable: Array<number> = [
             31, 7, 6, 5, 4, 3, 2, 1
         ];
 
-        private static kftable: Array<number> = [
+        private static readonly kftable: Array<number> = [
             65536, 65595, 65654, 65713, 65773, 65832, 65891, 65951,
             66010, 66070, 66130, 66189, 66249, 66309, 66369, 66429,
             66489, 66549, 66609, 66669, 66729, 66789, 66850, 66910,
@@ -43,19 +43,19 @@ module fmgenAs {
             68933, 68995, 69057, 69120, 69182, 69245, 69307, 69370
         ];
 
-        private static kctable: Array<number> = [
+        private static readonly kctable: Array<number> = [
             5197, 5506, 5833, 6180, 6180, 6547, 6937, 7349,
             7349, 7786, 8249, 8740, 8740, 9259, 9810, 10394
         ];
 
-        private static iotable: Array<Array<number>> = [
+        private static readonly iotable: Array<Array<number>> = [
             [0, 1, 1, 2, 2, 3], [1, 0, 0, 1, 1, 2],
             [1, 1, 1, 0, 0, 2], [0, 1, 2, 1, 1, 2],
             [0, 1, 2, 2, 2, 1], [0, 1, 0, 1, 0, 1],
             [0, 1, 2, 1, 2, 1], [1, 0, 1, 0, 1, 0]
         ];
 
-        static pmtable: Array<Array<Array<number>>> = (() => {
+        static readonly pmtable: Array<Array<Array<number>>> = (() => {
             var pmtable: Array<Array<Array<number>>> = JaggArray.I3(2, 8, /*FM.FM_LFOENTS*/256);
             var i: number, j: number;
             var pms: Array<Array<number>> = [
