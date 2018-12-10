@@ -1,7 +1,7 @@
 # FlMML on HTML5
 
 [![Join the chat at https://gitter.im/argentum384/flmml-on-html5](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/argentum384/flmml-on-html5?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
-The transplant of [FlMML](https://flmml.codeplex.com/), MML player which runs on Flash Player, to HTML5\.
+The porting of [FlMML](https://flmml.codeplex.com/), MML player which runs on Flash Player, to HTML5\.
 
 ---
 Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境上に移植したものです。  
