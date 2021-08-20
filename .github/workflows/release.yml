@@ -1,0 +1,63 @@
+name: Release
+on:
+  push:
+    tags:
+      - v2.*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org
+      - name: Run yarn install
+        run: yarn install
+      - name: Build
+        run: yarn build
+      - name: Publish to npm Package Registry
+        run: |
+          yarn publish ${{
+            (contains(github.ref, 'alpha') &&
+              '--tag alpha'
+            ) || (contains(github.ref, 'beta') &&
+              '--tag beta'
+            ) ||
+              ''
+          }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+      - name: Upload flmml-on-html5.js as Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/flmml-on-html5.js
+          asset_name: flmml-on-html5.js
+          asset_content_type: application/javascript
+      - name: Upload flmml-on-html5.worker.js as Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/flmml-on-html5.worker.js
+          asset_name: flmml-on-html5.worker.js
+          asset_content_type: application/javascript

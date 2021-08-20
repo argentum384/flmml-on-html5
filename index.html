@@ -39,8 +39,7 @@
             width: 120px;
         }
     </style>
-    <script src="flmmlonhtml5.js"></script>
-    <script src="flmmlplayer.js"></script>
+    <script src="./dist/flmml-on-html5.js"></script>
     <script>
         "use strict";
 
@@ -90,7 +89,7 @@
             }
 
             document.addEventListener("DOMContentLoaded", function () {
-                flmml = new FlMMLonHTML5();
+                flmml = new FlMML("./dist/flmml-on-html5.worker.js");
 
                 L("play", "click", function () {
                     flmml.play(E("mml").value);
@@ -116,35 +115,6 @@
         <input type="range" id="volume" min="0" max="127" step="1" value="100"><span id="display">Volume: 100</span><br>
         <textarea id="warnings" rows="5" readonly>(Warnings)</textarea>
     </div>
-    Player demo:
-    <div class="group">
-        Default<br>
-        <script type="text/javascript">
-            var flmmlPlayer = new FlMMLPlayer({
-                mml: "L8 O5CDEFGAB<C"
-            });
-        </script><br>
-        height: &quot;2em&quot;, hue: 80<br>
-        <script type="text/javascript">
-            new FlMMLPlayer({
-                mml: "L8 O5CDEFGAB<C",
-                height: "2em",
-                hue: 80,
-                volume: 90
-            });
-        </script><br>
-        height: &quot;40px&quot;, hue: 320, logVolume: true<br>
-        <script type="text/javascript">
-            new FlMMLPlayer({
-                mml: "L8 O5CDEFGAB<C",
-                height: "40px",
-                hue: 320,
-                volume: 115,
-                logVolume: true
-            });
-        </script>
-    </div>
-
     <h2>Link</h2>
     <ul>
         <li><a href="https://github.com/argentum384/flmml-on-html5">Source</a></li>
