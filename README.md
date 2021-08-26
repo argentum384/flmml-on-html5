@@ -1,15 +1,17 @@
 # FlMML on HTML5
 
-[![Join the chat at https://gitter.im/argentum384/flmml-on-html5](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/argentum384/flmml-on-html5?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
+[![npm version](https://badge.fury.io/js/flmml-on-html5.svg)](https://badge.fury.io/js/flmml-on-html5)
+[![Join the chat at https://gitter.im/argentum384/flmml-on-html5](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/argentum384/flmml-on-html5?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The porting of [FlMML](https://flmml.codeplex.com/), MML player which runs on Flash Player, to HTML5\.
 
 ---
-Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境上に移植したものです。  
-SVGを使用したプレイヤーUIも付属しています。  
-![screenshot.gif](http://argentum384.github.io/flmml-on-html5/screenshot.gif "Screen Shot")  
+Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境上に移植したものです。
 
 デモはこちら  
-[Demo page](http://argentum384.github.io/flmml-on-html5/)
+[Demo page](https://argentum384.github.io/flmml-on-html5-demo/)
+
+**※v1.x 系で付属していたプレイヤーUIは v2.0.0 で削除されました**
 
 ## 対応ブラウザ
 * 動作確認済み
@@ -26,77 +28,65 @@ SVGを使用したプレイヤーUIも付属しています。
     * Android Browser \(Android 4.x 以前\)
     * Opera Mini
 
-## Webページに貼り付ける
-ここではMMLが記述されたファイルを`mml.txt`として話を進めます。  
-HTMLファイルと同じディレクトリに
+## 使い方
+シーケンサの詳細な仕様は[wiki](https://github.com/argentum384/flmml-on-html5/wiki)をご覧下さい。  
+
+### js ファイルを直接読み込む
+1. [Releases](https://github.com/argentum384/flmml-on-html5/releases) から `flmml-on-html5.js` , `flmml-on-html5.worker.js` のそれぞれをダウンロード
+1. `flmml-on-html5.js` のみ `<script>` タグで読み込む
+1. `new FlMML()` の引数に `flmml-on-html5.worker.js` のパスを指定
+
+例:  
+ディレクトリ構成
 ```
-flmmlonhtml5.js
-flmmlworker.js
-flmmlplayer.js
-mml.txt
+somedir
+├js
+│├flmml-on-html5.js
+│└flmml-on-html5.worker.js
+└index.html
 ```
-のように、3つのスクリプトとMMLが記述されたファイル\(拡張子は何でも可\)を置きます。  
-HTMLファイルの`<head>`タグ内に
+index.html
 ```html
-...
-<head>
-    ...
-    <script type="text/javascript" src="flmmlonhtml5.js"></script>
-    <script type="text/javascript" src="flmmlplayer.js"></script>
-    ...
-</head>
+<script src="./js/flmml-on-html5.js"></script>
+<script>
+    window.onclick = () => {
+        const flmml = new FlMML("./js/flmml-on-html5.worker.js");
+        flmml.play("L8 O5CDEFGAB<C");
+    }
+</script>
+```
+
+### npm パッケージをインストール
+1. インストール  
+   npm の場合:  
+   ```
+   npm i -D flmml-on-html5
+   ```
+   yarn の場合:  
+   ```
+   yarn add -D flmml-on-html5
+   ```
+1. インストール後 `./node_modules/flmml-on-html5/dist/flmml-on-html5.worker.js` をお好みの場所にコピー
+1. `new FlMML()` の引数にコピーした `flmml-on-html5.worker.js` のパスを指定
+
+例:
+```js
+import { FlMML } from "flmml-on-html5";
+
+const flmml = new FlMML(someWorkerPath);
 ...
 ```
-の__2行__\(`flmmlworker.js`は読み込まない\)を加え、プレイヤーを配置したいところに以下のように記述します。
-```html
-...
-<body>
-    ...
-    <script type="text/javascript">
-        new FlMMLPlayer({ mmlURL: "mml.txt" });
-    </script>
-    ...
-</body>
-...
-```
-これでプレイヤーが貼り付けられます。  
-プレイヤーは1つのページに何個でも貼り付けることができます。  
-そのほか、[オプション](https://github.com/argentum384/flmml-on-html5/wiki/flmmlplayer#options)を指定することでプレイヤーの大きさや色合いを変えたりできます。
+
 
 ## For Developers
-シーケンサ本体, プレイヤーUIの詳細な仕様は[wiki](https://github.com/argentum384/flmml-on-html5/wiki)をご覧下さい。  
 
 ### 開発環境構築
-Windows 10で構築していますがMac, Linuxでも同じ手順で構築できると思われます\(未確認\)。  
-
-以下2つのコンポーネント
-* [Visual Studio Code](https://code.visualstudio.com/)
-* [Node.js](https://nodejs.org/)
-
-をインストールした後、シェルで以下コマンドを実行し`tsc`と`uglifyjs`をインストールします。
+- Node.js, yarn 導入済の環境で
+- `git clone` 後リポジトリのルートディレクトリに移動し
 ```
-npm install -g typescript
-npm install -g uglify-js
+yarn install
+yarn start
 ```
-あとはVisual Studio Codeを起動し`/src/`ディレクトリを開けば準備完了です。  
-`tasks.json` に2つのタスク  
-* `compile`: TypeScriptのコンパイルのみ
-* `compileAndMinify`: TypeScriptのコンパイル + jsファイル圧縮
-
-を用意しています。
-
-### 各js \/ tsファイルの自動生成
-
-| ファイル | 自動生成 | 備考 |
-| - | :-: | - |
-| `*.ts` | × |  |
-| `/src/flmmlonhtml5-raw.js` | × |  |
-| `/src/flmmlworker-raw.js` | ○ | TypeScriptコンパイルで生成 |
-| `/src/flmmlplayer-raw.js` | × |  |
-| `/flmmlonhtml5.js` | ○ | `/src/flmmlonhtml5-raw.js`をminify |
-| `/flmmlworker.js` | ○ | `/src/flmmlworker-raw.js`をminify |
-| `/flmmlplayer.js` | ○ | `/src/flmmlplayer-raw.js`をminify |
-
 
 ## 謝辞
-[FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめ、FlMMLに新機能追加や不具合修正をされてきたコミッターの皆様や、FlMML on HTML5の不具合を報告頂いた方々といった、FlMML \/ FlMML on HTML5の発展に関わるすべての方々に感謝します。
+[FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめとしたFlMMLのコミッターの皆様、ならびに FlMML on HTML5 の不具合を報告頂いたユーザーの皆様、そのほか FlMML \/ FlMML on HTML5 の発展に関わるすべての方々に感謝します。

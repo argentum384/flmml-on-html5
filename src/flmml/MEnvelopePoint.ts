@@ -1,7 +1,5 @@
-﻿module flmml {
-    export class MEnvelopePoint {
-        time: number;
-        level: number;
-        next: MEnvelopePoint = null;
-    }
+﻿export class MEnvelopePoint {
+    time: number;
+    level: number;
+    next: MEnvelopePoint = null;
 }

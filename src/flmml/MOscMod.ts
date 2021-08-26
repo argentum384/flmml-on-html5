@@ -1,62 +1,60 @@
-﻿/// <reference path="MSequencer.ts" />
+﻿import { MSequencer } from "./MSequencer";
 
-module flmml {
-    export class MOscMod {
-        static readonly TABLE_LEN: number = 1 << 16;
-        static readonly PHASE_SFT: number = 14;
-        static readonly PHASE_LEN: number = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
-        static readonly PHASE_HLF: number = MOscMod.TABLE_LEN << (MOscMod.PHASE_SFT - 1);
-        static readonly PHASE_MSK: number = MOscMod.PHASE_LEN - 1;
+export class MOscMod {
+    static readonly TABLE_LEN: number = 1 << 16;
+    static readonly PHASE_SFT: number = 14;
+    static readonly PHASE_LEN: number = MOscMod.TABLE_LEN << MOscMod.PHASE_SFT;
+    static readonly PHASE_HLF: number = MOscMod.TABLE_LEN << (MOscMod.PHASE_SFT - 1);
+    static readonly PHASE_MSK: number = MOscMod.PHASE_LEN - 1;
 
-        protected m_frequency: number;
-        protected m_freqShift: number;
-        protected m_phase: number;
+    protected m_frequency: number;
+    protected m_freqShift: number;
+    protected m_phase: number;
 
-        constructor() {
-            this.resetPhase();
-            this.setFrequency(440.0);
-        }
+    constructor() {
+        this.resetPhase();
+        this.setFrequency(440.0);
+    }
 
-        resetPhase(): void {
-            this.m_phase = 0;
-        }
+    resetPhase(): void {
+        this.m_phase = 0;
+    }
 
-        addPhase(time: number): void {
-            this.m_phase = (this.m_phase + this.m_freqShift * time) & MOscMod.PHASE_MSK;
-        }
+    addPhase(time: number): void {
+        this.m_phase = (this.m_phase + this.m_freqShift * time) & MOscMod.PHASE_MSK;
+    }
 
-        getNextSample(): number {
-            return 0;
-        }
+    getNextSample(): number {
+        return 0;
+    }
 
-        getNextSampleOfs(ofs: number): number {
-            return 0;
-        }
+    getNextSampleOfs(ofs: number): number {
+        return 0;
+    }
 
-        getSamples(samples: Float32Array, start: number, end: number): void {
-        }
+    getSamples(samples: Float32Array, start: number, end: number): void {
+    }
 
-        getSamplesWithSyncIn(samples: Float32Array, syncin: Array<boolean>, start: number, end: number): void {
-            this.getSamples(samples, start, end);
-        }
+    getSamplesWithSyncIn(samples: Float32Array, syncin: Array<boolean>, start: number, end: number): void {
+        this.getSamples(samples, start, end);
+    }
 
-        getSamplesWithSyncOut(samples: Float32Array, syncout: Array<boolean>, start: number, end: number): void {
-            this.getSamples(samples, start, end);
-        }
+    getSamplesWithSyncOut(samples: Float32Array, syncout: Array<boolean>, start: number, end: number): void {
+        this.getSamples(samples, start, end);
+    }
 
-        getFrequency(): number {
-            return this.m_frequency;
-        }
+    getFrequency(): number {
+        return this.m_frequency;
+    }
 
-        setFrequency(frequency: number): void {
-            this.m_frequency = frequency;
-            this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MSequencer.SAMPLE_RATE) | 0;
-        }
+    setFrequency(frequency: number): void {
+        this.m_frequency = frequency;
+        this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MSequencer.SAMPLE_RATE) | 0;
+    }
 
-        setWaveNo(waveNo: number): void {
-        }
+    setWaveNo(waveNo: number): void {
+    }
 
-        setNoteNo(noteNo: number): void {
-        }
+    setNoteNo(noteNo: number): void {
     }
 }
