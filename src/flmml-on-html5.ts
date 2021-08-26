@@ -73,7 +73,7 @@ export class FlMML {
             options = { workerURL: options };
         }
         options.workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
-        options.bufferSize = options.bufferSize > 0 ?
+        options.bufferSize = options.bufferSize >= 128 ?
             options.bufferSize - options.bufferSize % 128
         :
             FlMML.DEFAULT_BUFFER_SIZE
