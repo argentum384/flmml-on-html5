@@ -89,7 +89,7 @@
             }
 
             document.addEventListener("DOMContentLoaded", function () {
-                flmml = new FlMML("./dist/flmml-on-html5.worker.js");
+                flmml = new FlMML({ workerURL: "./dist/flmml-on-html5.worker.js" });
 
                 L("play", "click", function () {
                     flmml.play(E("mml").value);
@@ -106,7 +106,7 @@
     </script>
 </head>
 <body>
-    <h1>FlMML on HTML5 Demo</h1>
+    <h1>FlMML on HTML5 D</h1>
     Sequencer demo:
     <div class="group">
         <textarea id="mml" rows="12">L8 O5CDEFGAB&lt;C</textarea><br>

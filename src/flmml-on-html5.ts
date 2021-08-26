@@ -1,7 +1,13 @@
 import { MsgTypes } from "./messenger/MsgTypes";
 
+type FlMMLOptions = {
+    workerURL?: string,
+    bufferSize?: number,
+    infoInterval?: number
+};
+
 export class FlMML {
-    private static readonly BUFFER_SIZE = 8192;
+    private static readonly DEFAULT_BUFFER_SIZE = 8192;
     private static readonly DEFAULT_INFO_INTERVAL = 125;
     private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
 
@@ -9,6 +15,7 @@ export class FlMML {
 
     private worker: Worker;
     private buffer: AudioBuffer;
+    private bufferSize: number;
     private bufferReady: boolean;
     private onAudioProcessBinded: any;
     private emptyBuffer: Float32Array;
@@ -60,25 +67,42 @@ export class FlMML {
         }
     }
 
-    constructor(workerURL: string = FlMML.DEFAULT_WORKER_URL) {
-        const worker = this.worker = new Worker(workerURL);
+    constructor(options: FlMMLOptions | string = FlMML.DEFAULT_WORKER_URL) {
+        // 引数が文字列の場合 workerURL のみ指定されたものとみなす
+        if (typeof options === "string") {
+            options = { workerURL: options };
+        }
+        options.workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
+        options.bufferSize = options.bufferSize > 0 ?
+            options.bufferSize - options.bufferSize % 128
+        :
+            FlMML.DEFAULT_BUFFER_SIZE
+        ;
+        options.infoInterval = options.infoInterval >= 0 ?
+            options.infoInterval
+        :
+            FlMML.DEFAULT_INFO_INTERVAL
+        ;
+
+        const worker = this.worker = new Worker(options.workerURL);
         worker.addEventListener("message", this.onMessage.bind(this));
 
         this.onAudioProcessBinded = this.onAudioProcess.bind(this);
         this.warnings = "";
         this.totalTimeStr = "00:00";
+        this.bufferSize = options.bufferSize;
         this.bufferReady = false;
         this.volume = 100.0;
-        this.emptyBuffer = new Float32Array(FlMML.BUFFER_SIZE);
+        this.emptyBuffer = new Float32Array(options.bufferSize);
 
         this.events = {};
         
         worker.postMessage({
             type: MsgTypes.BOOT,
             sampleRate: FlMML.audioCtx.sampleRate,
-            bufferSize: FlMML.BUFFER_SIZE
+            bufferSize: this.bufferSize
         });
-        this.setInfoInterval(FlMML.DEFAULT_INFO_INTERVAL);
+        this.setInfoInterval(options.infoInterval);
     }
 
     private onMessage(e: any) {
@@ -137,7 +161,7 @@ export class FlMML {
         gain.gain.value = this.volume / 127.0;
         gain.connect(audioCtx.destination);
 
-        this.scrProc = audioCtx.createScriptProcessor(FlMML.BUFFER_SIZE, 1, 2);
+        this.scrProc = audioCtx.createScriptProcessor(this.bufferSize, 1, 2);
         this.scrProc.addEventListener("audioprocess", this.onAudioProcessBinded);
         this.scrProc.connect(this.gain);
 
