@@ -1,3 +1,6 @@
+export const SEQUENCER_SAMPLE_RATE = 44100;
+export const AUDIO_BUFFER_SIZE = 8192;
+
 export const MsgTypes = {
     BOOT     :  1, // Main->Worker
     PLAY     :  2, // Main->Worker

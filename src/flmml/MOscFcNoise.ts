@@ -1,5 +1,5 @@
-﻿import { MOscMod } from "./MOscMod";
-import { MSequencer } from "./MSequencer";
+﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+import { MOscMod } from "./MOscMod";
 
 /**
    Special thanks to OffGao.
@@ -7,7 +7,7 @@ import { MSequencer } from "./MSequencer";
 export class MOscFcNoise extends MOscMod {
     static readonly FC_NOISE_PHASE_SFT: number = 10;
     static readonly FC_NOISE_PHASE_SEC: number = (1789773 << MOscFcNoise.FC_NOISE_PHASE_SFT) | 0;
-    static readonly FC_NOISE_PHASE_DLT: number = MOscFcNoise.FC_NOISE_PHASE_SEC / MSequencer.SAMPLE_RATE | 0;;
+    static readonly FC_NOISE_PHASE_DLT: number = MOscFcNoise.FC_NOISE_PHASE_SEC / SEQUENCER_SAMPLE_RATE | 0;
     protected static readonly s_interval: Array<number> = [
         0x004, 0x008, 0x010, 0x020, 0x040, 0x060, 0x080, 0x0a0, 0x0ca, 0x0fe, 0x17c, 0x1fc, 0x2fa, 0x3f8, 0x7f2, 0xfe4
     ];

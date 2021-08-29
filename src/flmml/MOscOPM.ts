@@ -1,6 +1,6 @@
-﻿import { MOscMod } from "./MOscMod";
+﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+import { MOscMod } from "./MOscMod";
 import { OPM } from "../fmgenAs/OPM";
-import { MSequencer } from "./MSequencer";
 
 /**
  * FM音源ドライバ MOscOPM for AS3
@@ -94,7 +94,7 @@ export class MOscOPM extends MOscMod {
     constructor() {
         super();
         MOscOPM.boot();
-        this.m_fm.Init(MOscOPM.OPM_CLOCK, MSequencer.SAMPLE_RATE);
+        this.m_fm.Init(MOscOPM.OPM_CLOCK, SEQUENCER_SAMPLE_RATE);
         this.m_fm.Reset();
         this.m_fm.SetVolume(MOscOPM.s_comGain);
         this.setOpMask(15);

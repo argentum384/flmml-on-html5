@@ -1,7 +1,6 @@
-import { MsgTypes } from "./messenger/MsgTypes";
+import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
 
 export class FlMML {
-    private static readonly BUFFER_SIZE = 8192;
     private static readonly DEFAULT_INFO_INTERVAL = 125;
     private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
 
@@ -11,7 +10,6 @@ export class FlMML {
     private buffer: AudioBuffer;
     private bufferReady: boolean;
     private onAudioProcessBinded: any;
-    private emptyBuffer: Float32Array;
     private events: { [key: string]: Function[] };
     private volume: number;
     private gain: GainNode;
@@ -69,19 +67,17 @@ export class FlMML {
         this.totalTimeStr = "00:00";
         this.bufferReady = false;
         this.volume = 100.0;
-        this.emptyBuffer = new Float32Array(FlMML.BUFFER_SIZE);
 
         this.events = {};
         
         worker.postMessage({
             type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate,
-            bufferSize: FlMML.BUFFER_SIZE
+            sampleRate: FlMML.audioCtx.sampleRate
         });
         this.setInfoInterval(FlMML.DEFAULT_INFO_INTERVAL);
     }
 
-    private onMessage(e: any) {
+    private onMessage(e: MessageEvent<any>) {
         const data = e.data;
         const type = data.type;
 
@@ -137,7 +133,7 @@ export class FlMML {
         gain.gain.value = this.volume / 127.0;
         gain.connect(audioCtx.destination);
 
-        this.scrProc = audioCtx.createScriptProcessor(FlMML.BUFFER_SIZE, 1, 2);
+        this.scrProc = audioCtx.createScriptProcessor(AUDIO_BUFFER_SIZE, 1, 2);
         this.scrProc.addEventListener("audioprocess", this.onAudioProcessBinded);
         this.scrProc.connect(this.gain);
 
@@ -166,8 +162,8 @@ export class FlMML {
             this.bufferReady = false;
             this.worker.postMessage({ type: MsgTypes.BUFFER, retBuf: this.buffer }, [this.buffer[0].buffer, this.buffer[1].buffer]);
         } else {
-            outBuf.getChannelData(0).set(this.emptyBuffer);
-            outBuf.getChannelData(1).set(this.emptyBuffer);
+            outBuf.getChannelData(0).fill(0.0);
+            outBuf.getChannelData(1).fill(0.0);
             this.worker.postMessage({ type: MsgTypes.BUFFER, retBuf: null });
         }
     }
