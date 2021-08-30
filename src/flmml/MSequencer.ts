@@ -24,6 +24,7 @@ export class MSequencer {
 
     protected worker: FlMMLWorker;
     protected bufferSize: number;
+    protected bufferId: number;
     protected lastSample: Array<number>;
 
     protected m_buffer: Array<Array<Float32Array>>;
@@ -91,6 +92,7 @@ export class MSequencer {
         }
         this.m_lastTime = 0;
         this.m_waitPause = false;
+        this.bufferId = 1;
         if (this.worker.infoInterval > 0) {
             this.worker.restartInfoTimer();
         }
@@ -98,7 +100,7 @@ export class MSequencer {
 
     stop(): void {
         clearTimeout(this.m_procTimer);
-        this.worker.stopSound(true);
+        this.worker.stopSound();
         this.m_status = /*MSequencer.STATUS_STOP*/0;
         this.m_lastTime = 0;
         this.m_maxNowMSec = 0;
@@ -162,7 +164,7 @@ export class MSequencer {
         var buffer: Array<Float32Array> = this.m_buffer[1 - this.m_playSide],
             bufSize: number = this.bufferSize,
             sLen: number = bufSize * MSequencer.MULTIPLE,
-            bLen: number = bufSize * 2,
+            bLen: number = Math.min(bufSize * 4, sLen),
             nLen: number = this.m_trackArr.length;
 
         switch (this.m_step) {
@@ -227,7 +229,10 @@ export class MSequencer {
         }
     }
 
-    private onSampleData(e: any): void {
+    private onSampleData(e: MessageEvent<any>): void {
+        const data = e.data;
+        if (data.bufferId !== this.bufferId) return;
+
         this.m_lastTime = MSequencer.getTimer();
         if (this.m_status < /*MSequencer.STATUS_PLAY*/3) return;
         if (this.m_globalSample / SEQUENCER_SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
@@ -258,7 +263,7 @@ export class MSequencer {
         
         var bufSize: number = this.bufferSize;
         var rateRatio: number = AUDIO_BUFFER_SIZE / bufSize;
-        var sendBuf: Array<Float32Array> = e.retBuf || [new Float32Array(AUDIO_BUFFER_SIZE), new Float32Array(AUDIO_BUFFER_SIZE)];
+        var sendBuf: Array<Float32Array> = data.retBuf || [new Float32Array(AUDIO_BUFFER_SIZE), new Float32Array(AUDIO_BUFFER_SIZE)];
         var base: number = bufSize * this.m_playSize;
         [0, 1].forEach(ch => {
             var samples: Float32Array = this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize);
@@ -270,6 +275,7 @@ export class MSequencer {
             }
         });
         this.worker.sendBuffer(sendBuf);
+        this.bufferId++;
 
         this.m_playSize++;
         this.m_globalSample += bufSize;
