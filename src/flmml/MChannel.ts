@@ -1,4 +1,5 @@
-﻿import { IChannel } from "./IChannel";
+﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+import { IChannel } from "./IChannel";
 import { MEnvelope } from "./MEnvelope";
 import { MFilter } from "./MFilter";
 import { MFormant } from "./MFormant";
@@ -7,7 +8,6 @@ import { MOscillator } from "./MOscillator";
 import { MOscNoise } from "./MOscNoise";
 import { MOscOPM } from "./MOscOPM";
 import { MOscPulse } from "./MOscPulse";
-import { MSequencer } from "./MSequencer";
 
 export class MChannel implements IChannel {
     //private static readonly LFO_TARGET_PITCH: number = 0;
@@ -16,8 +16,6 @@ export class MChannel implements IChannel {
     //private static readonly LFO_TARGET_PWM: number = 3;
     //private static readonly LFO_TARGET_FM: number = 4;
     //private static readonly LFO_TARGET_PANPOT: number = 5;
-
-    private static emptyBuffer: Float32Array;
 
     private m_noteNo: number;
     private m_detune: number;
@@ -120,7 +118,6 @@ export class MChannel implements IChannel {
     static boot(numSamples: number): void {
         if (!this.s_init) {
             var i: number;
-            this.emptyBuffer = msgr.emptyBuffer;
             this.s_frequencyLen = this.s_frequencyMap.length;
             for (i = 0; i < this.s_frequencyLen; i++) {
                 this.s_frequencyMap[i] = 440.0 * Math.pow(2.0, (i - 69 * this.PITCH_RESOLUTION) / (12.0 * this.PITCH_RESOLUTION));
@@ -356,7 +353,7 @@ export class MChannel implements IChannel {
         this.m_osc2Connect = (depth === 0) ? 0 : 1;
         this.m_oscMod2.setFrequency(freq);
         this.m_oscMod2.resetPhase();
-        (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / MSequencer.SAMPLE_RATE);
+        (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / SEQUENCER_SAMPLE_RATE);
     }
 
     setLFODLTM(delay: number, time: number): void {
@@ -492,13 +489,13 @@ export class MChannel implements IChannel {
 
     clearOutPipe(max: number, start: number, delta: number): void {
         if (this.m_outMode === 1) {
-            MChannel.s_pipeArr[this.m_outPipe].set(MChannel.emptyBuffer.subarray(0, delta), start);
+            MChannel.s_pipeArr[this.m_outPipe].fill(0.0, start, start + delta);
         }
     }
 
     protected getNextCutoff(): number {
         var cut: number = this.m_lpfFrq + this.m_lpfAmt * this.m_envelope2.getNextAmplitudeLinear();
-        cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (MSequencer.SAMPLE_RATE * 440.0));
+        cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
         if (cut < (1.0 / 127.0)) cut = 0.0;
         return cut;
     }
@@ -641,7 +638,7 @@ export class MChannel implements IChannel {
         tmpFlag = playing;
         playing = playing || this.m_formant.checkToSilence();
         if (playing !== tmpFlag) {
-            trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
+            trackBuffer.fill(0.0, start, start + delta);
         }
         if (playing) {
             this.m_formant.run(trackBuffer, start, end);
@@ -651,7 +648,7 @@ export class MChannel implements IChannel {
         tmpFlag = playing;
         playing = playing || this.m_filter.checkToSilence();
         if (playing !== tmpFlag) {
-            trackBuffer.set(MChannel.emptyBuffer.subarray(0, delta), start);
+            trackBuffer.fill(0.0, start, start + delta);
         }
         if (playing) {
             if (this.m_lfoTarget === /*MChannel.LFO_TARGET_CUTOFF*/2 && this.m_osc2Connect !== 0) { // with Filter LFO
@@ -734,7 +731,7 @@ export class MChannel implements IChannel {
         } else if (this.m_outMode === 1) {
             pipe = MChannel.s_pipeArr[this.m_outPipe];
             if (this.m_slaveVoice === false) {
-                pipe.set(MChannel.emptyBuffer.subarray(0, delta), start);
+                pipe.fill(0.0, start, start + delta);
             }
         }
     }

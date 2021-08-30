@@ -779,7 +779,7 @@ export class OPM extends Timer {
         // @LinearDrive: add start [2011/12/04]
         else {
             //全てのオペレータがEGPhase.offの場合、無音をレンダリング
-            buffer.set(msgr.emptyBuffer.subarray(0, nsamples), start);
+            buffer.fill(0.0, start, nsamples);
         }
         // @LinearDrive: add end
     }

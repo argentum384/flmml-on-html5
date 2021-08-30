@@ -1,5 +1,5 @@
-﻿import { MEnvelopePoint } from "./MEnvelopePoint";
-import { MSequencer } from "./MSequencer";
+﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+import { MEnvelopePoint } from "./MEnvelopePoint";
 
 export class MEnvelope {
     private m_envelopePoint: MEnvelopePoint;
@@ -54,7 +54,7 @@ export class MEnvelope {
     }
 
     setRelease(release: number): void {
-        this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * MSequencer.SAMPLE_RATE;
+        this.m_releaseTime = ((release > 0) ? release : (1.0 / 127.0)) * SEQUENCER_SAMPLE_RATE;
         // 現在のボリュームなどを設定
         if (this.m_playing && !this.m_releasing) {
             this.m_counter = this.m_timeInSamples;
@@ -74,7 +74,7 @@ export class MEnvelope {
 
     addPoint(time: number, level: number): void {
         var point: MEnvelopePoint = new MEnvelopePoint();
-        point.time = time * MSequencer.SAMPLE_RATE;
+        point.time = time * SEQUENCER_SAMPLE_RATE;
         point.level = level;
         this.m_envelopeLastPoint.next = point;
         this.m_envelopeLastPoint = point;

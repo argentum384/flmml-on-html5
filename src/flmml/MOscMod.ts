@@ -1,4 +1,4 @@
-﻿import { MSequencer } from "./MSequencer";
+﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
 
 export class MOscMod {
     static readonly TABLE_LEN: number = 1 << 16;
@@ -49,7 +49,7 @@ export class MOscMod {
 
     setFrequency(frequency: number): void {
         this.m_frequency = frequency;
-        this.m_freqShift = frequency * (MOscMod.PHASE_LEN / MSequencer.SAMPLE_RATE) | 0;
+        this.m_freqShift = frequency * (MOscMod.PHASE_LEN / SEQUENCER_SAMPLE_RATE) | 0;
     }
 
     setWaveNo(waveNo: number): void {
