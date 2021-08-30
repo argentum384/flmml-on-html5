@@ -11,10 +11,17 @@
     "license": "BSD-3-Clause",
     "private": false,
     "scripts": {
-        "start": "webpack serve --open --config webpack.dev.js",
-        "build": "webpack --config webpack.prod.js"
+        "gen-worklet-script": "node ./bin/generate_worklet_script.js",
+        "start-alone": "webpack serve --open --config webpack.dev.js",
+        "build-alone": "webpack --config webpack.prod.js",
+        "clean": "rimraf ./dist",
+        "start": "run-s gen-worklet-script start-alone",
+        "build": "run-s \"gen-worklet-script --prod\" clean build-alone"
     },
     "devDependencies": {
+        "npm-run-all": "^4.1.5",
+        "rimraf": "^3.0.2",
+        "terser": "^5.7.2",
         "ts-loader": "^9.2.5",
         "typescript": "^4.3.5",
         "webpack": "^5.50.0",

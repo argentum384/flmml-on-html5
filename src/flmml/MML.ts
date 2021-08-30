@@ -1286,7 +1286,7 @@ export class MML {
         }
         // 音声が停止するのを待つ
         this.worker.onstopsound = this.play2.bind(this, str);
-        this.worker.stopSound(true);
+        this.worker.stopSound();
     }
 
     private play2(str: string): void {

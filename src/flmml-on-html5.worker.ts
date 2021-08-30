@@ -8,10 +8,11 @@ export class FlMMLWorker {
     audioSampleRate: number;
     infoInterval: number;
     lastInfoTime: number;
+    workletPort: MessagePort;
     onInfoTimerBinded: Function;
 
     onstopsound: Function = null;
-    onrequestbuffer: Function = null;
+    onrequestbuffer: (e: MessageEvent<any>) => void = null;
 
     constructor() {
         this.onInfoTimerBinded = this.onInfoTimer.bind(this);
@@ -40,9 +41,6 @@ export class FlMMLWorker {
                 mml.pause();
                 this.syncInfo();
                 break;
-            case MsgTypes.BUFFER:
-                this.onrequestbuffer && this.onrequestbuffer(data);
-                break;
             case MsgTypes.SYNCINFO:
                 if (typeof data.interval === "number") {
                     this.infoInterval = data.interval;
@@ -53,6 +51,11 @@ export class FlMMLWorker {
                 } else {
                     this.syncInfo();
                 }
+                break;
+            case MsgTypes.PLAYSOUND:
+                this.workletPort = data.workletPort;
+                this.workletPort.addEventListener("message", this.onrequestbuffer);
+                this.workletPort.start();
                 break;
             case MsgTypes.STOPSOUND:
                 this.onstopsound && this.onstopsound();
@@ -86,12 +89,16 @@ export class FlMMLWorker {
         this.syncInfo();
     }
 
-    stopSound(flushBuf: boolean = false): void {
-        postMessage({ type: MsgTypes.STOPSOUND, flushBuf: flushBuf });
+    stopSound(): void {
+        if (this.workletPort) {
+            this.workletPort.removeEventListener("message", this.onrequestbuffer);
+            this.workletPort.postMessage({ release: true });
+        }
+        postMessage({ type: MsgTypes.STOPSOUND });
     }
 
     sendBuffer(buffer: Array<Float32Array>): void {
-        postMessage({ type: MsgTypes.BUFFER, buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+        this.workletPort.postMessage({ buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
     }
 
     complete(): void {

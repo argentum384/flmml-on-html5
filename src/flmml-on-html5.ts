@@ -1,4 +1,5 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 export class FlMML {
     private static readonly DEFAULT_INFO_INTERVAL = 125;
@@ -7,14 +8,10 @@ export class FlMML {
     private static audioCtx: AudioContext;
 
     private worker: Worker;
-    private buffer: AudioBuffer;
-    private bufferReady: boolean;
-    private onAudioProcessBinded: any;
     private events: { [key: string]: Function[] };
     private volume: number;
     private gain: GainNode;
-    private scrProc: ScriptProcessorNode;
-    private oscDmy: OscillatorNode;
+    private workletNode: AudioWorkletNode;
     
     private totalMSec: number;
     private totalTimeStr: string;
@@ -56,16 +53,24 @@ export class FlMML {
         } else {
             document.addEventListener("DOMContentLoaded", FlMML.unlockWebAudio, false);
         }
+
+        // AudioWorklet モジュール追加
+        const reader = new FileReader();
+        reader.onload = () => {
+            FlMML.audioCtx.audioWorklet.addModule(reader.result as string)
+                .then(result => {
+                    // TODO: addModule() 完了後の処理要るならここに書く, 要らなそうなら消す
+                })
+        }
+        reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
     }
 
     constructor(workerURL: string = FlMML.DEFAULT_WORKER_URL) {
         const worker = this.worker = new Worker(workerURL);
         worker.addEventListener("message", this.onMessage.bind(this));
 
-        this.onAudioProcessBinded = this.onAudioProcess.bind(this);
         this.warnings = "";
         this.totalTimeStr = "00:00";
-        this.bufferReady = false;
         this.volume = 100.0;
 
         this.events = {};
@@ -82,10 +87,6 @@ export class FlMML {
         const type = data.type;
 
         switch (type) {
-            case MsgTypes.BUFFER:
-                this.buffer = data.buffer;
-                this.bufferReady = true;
-                break;
             case MsgTypes.COMPCOMP:
                 this.totalMSec = data.info.totalMSec;
                 this.totalTimeStr = data.info.totalTimeStr;
@@ -118,14 +119,13 @@ export class FlMML {
                 this.playSound();
                 break;
             case MsgTypes.STOPSOUND:
-                this.stopSound(data.flushBuf);
-                this.worker.postMessage({ type: MsgTypes.STOPSOUND });
+                this.stopSound();
                 break;
         }
     }
 
     private playSound() {
-        if (this.gain || this.scrProc || this.oscDmy) return;
+        if (this.gain || this.workletNode) return;
 
         const audioCtx = FlMML.audioCtx;
 
@@ -133,39 +133,21 @@ export class FlMML {
         gain.gain.value = this.volume / 127.0;
         gain.connect(audioCtx.destination);
 
-        this.scrProc = audioCtx.createScriptProcessor(AUDIO_BUFFER_SIZE, 1, 2);
-        this.scrProc.addEventListener("audioprocess", this.onAudioProcessBinded);
-        this.scrProc.connect(this.gain);
+        const workletNode = this.workletNode = new AudioWorkletNode(FlMML.audioCtx, "flmml-worklet-processor", {
+            numberOfInputs: 0,
+            numberOfOutputs: 1,
+            outputChannelCount: [2]
+        });
+        workletNode.connect(gain);
 
-        // iOS Safari対策
-        this.oscDmy = audioCtx.createOscillator();
-        this.oscDmy.connect(this.scrProc);
-        this.oscDmy.start(0);
+        // Transfer MessagePort of AudioWorkletNode
+        this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
     }
 
-    private stopSound(flushBuf: boolean = false) {
-        if (flushBuf) this.bufferReady = false;
-        if (this.gain || this.scrProc || this.oscDmy) {
-            this.scrProc.removeEventListener("audioprocess", this.onAudioProcessBinded);
-            if (this.gain) { this.gain.disconnect(); this.gain = null; }
-            if (this.scrProc) { this.scrProc.disconnect(); this.scrProc = null; }
-            if (this.oscDmy) { this.oscDmy.disconnect(); this.oscDmy = null; }
-        }
-    }
-
-    private onAudioProcess(e: AudioProcessingEvent) {
-        const outBuf = e.outputBuffer;
-
-        if (this.bufferReady) {
-            outBuf.getChannelData(0).set(this.buffer[0]);
-            outBuf.getChannelData(1).set(this.buffer[1]);
-            this.bufferReady = false;
-            this.worker.postMessage({ type: MsgTypes.BUFFER, retBuf: this.buffer }, [this.buffer[0].buffer, this.buffer[1].buffer]);
-        } else {
-            outBuf.getChannelData(0).fill(0.0);
-            outBuf.getChannelData(1).fill(0.0);
-            this.worker.postMessage({ type: MsgTypes.BUFFER, retBuf: null });
-        }
+    private stopSound() {
+        if (this.gain) { this.gain.disconnect(); this.gain = null; }
+        if (this.workletNode) { this.workletNode.disconnect(); this.workletNode = null; }
+        this.worker.postMessage({ type: MsgTypes.STOPSOUND });
     }
 
     private trigger(type: string, args?: {}) {
