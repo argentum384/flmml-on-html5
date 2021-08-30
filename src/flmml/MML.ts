@@ -1,4 +1,5 @@
-﻿import { MOscillator } from "./MOscillator";
+﻿import { FlMMLWorker } from "../flmml-on-html5.worker";
+import { MOscillator } from "./MOscillator";
 import { MOscFcDpcm } from "./MOscFcDpcm";
 import { MOscGbWave } from "./MOscGbWave";
 import { MOscWave } from "./MOscWave";
@@ -13,6 +14,7 @@ export class MML {
     protected static readonly MAX_SYNCSOURCE: number = 3;
     protected static readonly MAX_POLYVOICE: number = 64;
 
+    protected worker: FlMMLWorker;
     protected m_sequencer: MSequencer;
     protected m_tracks: Array<MTrack>;
     protected m_string: string;
@@ -43,8 +45,9 @@ export class MML {
     protected m_metaCoding: string;
     protected m_metaComment: string;
 
-    constructor() {
-        this.m_sequencer = new MSequencer();
+    constructor(worker: FlMMLWorker) {
+        this.worker = worker;
+        this.m_sequencer = new MSequencer(worker);
     }
 
     static isWhitespace(c: string): boolean {
@@ -1282,8 +1285,8 @@ export class MML {
             return;
         }
         // 音声が停止するのを待つ
-        msgr.onstopsound = this.play2.bind(this, str);
-        msgr.stopSound(true);
+        this.worker.onstopsound = this.play2.bind(this, str);
+        this.worker.stopSound(true);
     }
 
     private play2(str: string): void {
@@ -1353,12 +1356,12 @@ export class MML {
         this.m_sequencer.createSyncSources(this.m_maxSyncSource + 1);
 
         // dispatch event
-        msgr.compileComplete();
+        this.worker.compileComplete();
 
         // play start
         this.m_sequencer.play();
 
-        msgr.onstopsound = null;
+        this.worker.onstopsound = null;
     }
 
     stop(): void {
