@@ -1,6 +1,11 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
+type FlMMLOptions = {
+    workerURL?: string,
+    infoInterval?: number
+};
+
 export class FlMML {
     private static readonly DEFAULT_INFO_INTERVAL = 125;
     private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
@@ -65,8 +70,19 @@ export class FlMML {
         reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
     }
 
-    constructor(workerURL: string = FlMML.DEFAULT_WORKER_URL) {
-        const worker = this.worker = new Worker(workerURL);
+    constructor(options: FlMMLOptions | string = FlMML.DEFAULT_WORKER_URL) {
+        // 引数が文字列の場合 workerURL のみ指定されたものとみなす
+        if (typeof options === "string") {
+            options = { workerURL: options };
+        }
+        options.workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
+        options.infoInterval = options.infoInterval >= 0 ?
+            options.infoInterval
+        :
+            FlMML.DEFAULT_INFO_INTERVAL
+        ;
+
+        const worker = this.worker = new Worker(options.workerURL);
         worker.addEventListener("message", this.onMessage.bind(this));
 
         this.warnings = "";
@@ -79,7 +95,7 @@ export class FlMML {
             type: MsgTypes.BOOT,
             sampleRate: FlMML.audioCtx.sampleRate
         });
-        this.setInfoInterval(FlMML.DEFAULT_INFO_INTERVAL);
+        this.setInfoInterval(options.infoInterval);
     }
 
     private onMessage(e: MessageEvent<any>) {
