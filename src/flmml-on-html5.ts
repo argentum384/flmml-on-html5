@@ -1,4 +1,4 @@
-import { MsgTypes } from "./common/Consts";
+import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 type FlMMLOptions = {
