@@ -1,21 +1,18 @@
-import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { MsgTypes } from "./common/Consts";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 type FlMMLOptions = {
     workerURL?: string,
-    bufferSize?: number,
     infoInterval?: number
 };
 
 export class FlMML {
-    private static readonly DEFAULT_BUFFER_SIZE = 8192;
     private static readonly DEFAULT_INFO_INTERVAL = 125;
     private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
 
     private static audioCtx: AudioContext;
 
     private worker: Worker;
-    private bufferSize: number;
     private events: { [key: string]: Function[] };
     private volume: number;
     private gain: GainNode;
@@ -79,11 +76,6 @@ export class FlMML {
             options = { workerURL: options };
         }
         options.workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
-        options.bufferSize = options.bufferSize >= 128 ?
-            options.bufferSize - options.bufferSize % 128
-        :
-            FlMML.DEFAULT_BUFFER_SIZE
-        ;
         options.infoInterval = options.infoInterval >= 0 ?
             options.infoInterval
         :
@@ -95,15 +87,13 @@ export class FlMML {
 
         this.warnings = "";
         this.totalTimeStr = "00:00";
-        this.bufferSize = options.bufferSize;
         this.volume = 100.0;
 
         this.events = {};
         
         worker.postMessage({
             type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate,
-            bufferSize: this.bufferSize
+            sampleRate: FlMML.audioCtx.sampleRate
         });
         this.setInfoInterval(options.infoInterval);
     }
