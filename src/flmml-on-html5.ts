@@ -38,37 +38,47 @@ export class FlMML {
     oncomplete: () => void;
     onsyncinfo: () => void;
 
-    // iOS/Chrome向けWeb Audioアンロック処理
-    private static unlockWebAudio() {
-        window.addEventListener("click", function onClick() {
-            const audioCtx = FlMML.audioCtx;
-            const bufSrcDmy = audioCtx.createBufferSource();
-            bufSrcDmy.connect(audioCtx.destination);
-            bufSrcDmy.start(0);
-            audioCtx.resume();
-            window.removeEventListener("click", onClick, true);
-        }, true);
+    private static initWebAudio() {
+        const players = document.querySelectorAll('.FlMMLPlayer, [id^="piko"]');
+        players.forEach(p => {
+            p.addEventListener("click", function onClick() {
+                if (!FlMML.audioCtx) {
+                    // Web Audioコンテキスト作成
+                    // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
+                    // 必要になったタイミングで生成する
+                    const audioCtx = FlMML.audioCtx = new AudioContext();
+
+                    // iOS/Chrome向けWeb Audioアンロック処理
+                    const bufSrcDmy = audioCtx.createBufferSource();
+                    bufSrcDmy.connect(audioCtx.destination);
+                    bufSrcDmy.start(0);
+                    audioCtx.resume();
+                    bufSrcDmy.stop();
+
+                    // AudioWorklet モジュール追加
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        FlMML.audioCtx.audioWorklet.addModule(reader.result as string)
+                        .then(result => {
+                            // TODO: addModule() 完了後の処理要るならここに書く, 要らなそうなら消す
+                        })
+                    }
+                    reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
+                }
+
+                players.forEach(p2 => {
+                    p2.removeEventListener("click", onClick, true);
+                });
+            }, true);
+        });
     }
 
     static init() {
-        // Web Audioコンテキスト作成
-        FlMML.audioCtx = new AudioContext();
-
         if (document.readyState === "complete") {
-            FlMML.unlockWebAudio();
+            FlMML.initWebAudio();
         } else {
-            document.addEventListener("DOMContentLoaded", FlMML.unlockWebAudio, false);
+            document.addEventListener("DOMContentLoaded", FlMML.initWebAudio);
         }
-
-        // AudioWorklet モジュール追加
-        const reader = new FileReader();
-        reader.onload = () => {
-            FlMML.audioCtx.audioWorklet.addModule(reader.result as string)
-                .then(result => {
-                    // TODO: addModule() 完了後の処理要るならここに書く, 要らなそうなら消す
-                })
-        }
-        reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
     }
 
     constructor(options: FlMMLOptions | string = FlMML.DEFAULT_WORKER_URL) {
@@ -101,7 +111,7 @@ export class FlMML {
         worker.addEventListener("message", this.onMessage.bind(this));
         worker.postMessage({
             type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate
+            sampleRate: FlMML.audioCtx ? FlMML.audioCtx.sampleRate : 48000,
         });
         this.setInfoInterval(infoInterval);
     }
