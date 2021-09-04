@@ -46,7 +46,7 @@ var FlMMLonHTML5 = function () {
         
         worker.postMessage({
             type: FlMMLonHTML5.COM_BOOT,
-            sampleRate: FlMMLonHTML5.audioCtx.sampleRate,
+            sampleRate: (FlMMLonHTML5.audioCtx != null) ? FlMMLonHTML5.audioCtx.sampleRate : 48000,
             bufferSize: FlMMLonHTML5.BUFFER_SIZE
         });
         this.setInfoInterval(125);
@@ -254,19 +254,36 @@ var FlMMLonHTML5 = function () {
     });
 
     // Web Audioコンテキスト作成
-    var AudioCtx = window.AudioContext || window.webkitAudioContext;
-    FlMMLonHTML5.audioCtx = new AudioCtx();
+    // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
+    // 必要になったタイミングで生成する
+    var AudioCtx = null;
+    FlMMLonHTML5.audioCtx = null;
 
     // iOS/Chrome向けWeb Audioアンロック処理
     document.addEventListener("DOMContentLoaded", function () {
-        window.addEventListener("click", function onClick(e) {
-            var audioCtx = FlMMLonHTML5.audioCtx;
-            var bufSrcDmy = audioCtx.createBufferSource();
-            bufSrcDmy.connect(audioCtx.destination);
-            bufSrcDmy.start(0);
-            audioCtx.resume();
-            window.removeEventListener("click", onClick, true);
-        }, true);
+        var audioCtx = null;
+        var bufSrcDmy = null;
+
+        var players = document.querySelectorAll('.FlMMLPlayer, [id^="piko"]');
+        players.forEach(function(p) {
+            p.addEventListener("click", function onClick(e) {
+                if (AudioCtx === null && FlMMLonHTML5.audioCtx === null && audioCtx === null && bufSrcDmy === null) {
+                    AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    FlMMLonHTML5.audioCtx = new AudioCtx();
+                    audioCtx = FlMMLonHTML5.audioCtx;
+                    bufSrcDmy = audioCtx.createBufferSource();
+
+                    bufSrcDmy.connect(audioCtx.destination);
+                    bufSrcDmy.start(0);
+                    audioCtx.resume();
+                    bufSrcDmy.stop();
+                }
+
+                players.forEach(function(p2) {
+                    p2.removeEventListener("click", onClick, true);
+                });
+            }, true);
+        });
     });
     
     return FlMMLonHTML5;
