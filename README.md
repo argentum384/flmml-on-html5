@@ -34,7 +34,8 @@ Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境�
 ### js ファイルを直接読み込む
 1. [Releases](https://github.com/argentum384/flmml-on-html5/releases) から `flmml-on-html5.js` , `flmml-on-html5.worker.js` のそれぞれをダウンロード
 1. `flmml-on-html5.js` のみ `<script>` タグで読み込む
-1. `new FlMML()` の引数に `flmml-on-html5.worker.js` のパスを指定
+1. `new FlMML()` の引数に `flmml-on-html5.worker.js` のパスを指定  
+   ※ `flmml-on-html5.worker.js` をサイトと異なるドメインに配置した場合は `crossOriginWorker` オプションを有効にして下さい。詳細は [wiki](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#constructor) を参照
 
 例:  
 ディレクトリ構成
@@ -50,7 +51,7 @@ index.html
 <script src="./js/flmml-on-html5.js"></script>
 <script>
     window.onclick = () => {
-        const flmml = new FlMML("./js/flmml-on-html5.worker.js");
+        const flmml = new FlMML({ workerURL: "./js/flmml-on-html5.worker.js" });
         flmml.play("L8 O5CDEFGAB<C");
     }
 </script>
@@ -73,7 +74,7 @@ index.html
 ```js
 import { FlMML } from "flmml-on-html5";
 
-const flmml = new FlMML(someWorkerPath);
+const flmml = new FlMML({ workerURL: someWorkerPath });
 ...
 ```
 
