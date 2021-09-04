@@ -3,7 +3,8 @@ import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 type FlMMLOptions = {
     workerURL?: string,
-    infoInterval?: number
+    infoInterval?: number,
+    crossOriginWorker?: boolean
 };
 
 export class FlMML {
@@ -75,27 +76,34 @@ export class FlMML {
         if (typeof options === "string") {
             options = { workerURL: options };
         }
-        options.workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
-        options.infoInterval = options.infoInterval >= 0 ?
+        const workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
+        const infoInterval = options.infoInterval >= 0 ?
             options.infoInterval
         :
             FlMML.DEFAULT_INFO_INTERVAL
         ;
-
-        const worker = this.worker = new Worker(options.workerURL);
-        worker.addEventListener("message", this.onMessage.bind(this));
 
         this.warnings = "";
         this.totalTimeStr = "00:00";
         this.volume = 100.0;
 
         this.events = {};
-        
+
+        const worker = this.worker = new Worker(
+            options.crossOriginWorker ?
+                URL.createObjectURL(new Blob(
+                    [`importScripts("${workerURL}")`],
+                    { type: "application/javascript" }
+                ))
+            :
+                workerURL
+        );
+        worker.addEventListener("message", this.onMessage.bind(this));
         worker.postMessage({
             type: MsgTypes.BOOT,
             sampleRate: FlMML.audioCtx.sampleRate
         });
-        this.setInfoInterval(options.infoInterval);
+        this.setInfoInterval(infoInterval);
     }
 
     private onMessage(e: MessageEvent<any>) {
