@@ -45,24 +45,25 @@ export class FlMML {
     oncomplete: () => void;
     onsyncinfo: () => void;
 
-    private static initWebAudio(playerSelectors: string) {
+    private static initWebAudio(): void {
+        // Web Audioコンテキスト生成
+        // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
+        // 必要になったタイミングで生成する
+        const audioCtx = FlMML.audioCtx = new AudioContext();
+
+        // iOS/Chrome向けWeb Audioアンロック処理
+        const bufSrcDmy = audioCtx.createBufferSource();
+        bufSrcDmy.connect(audioCtx.destination);
+        bufSrcDmy.start(0);
+        audioCtx.resume();
+        bufSrcDmy.stop();
+    }
+
+    private static hookInitWebAudio(playerSelectors: string): void {
         const players = document.querySelectorAll(playerSelectors);
         players.forEach(p => {
             p.addEventListener("click", function onClick() {
-                if (!FlMML.audioCtx) {
-                    // Web Audioコンテキスト生成
-                    // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
-                    // 必要になったタイミングで生成する
-                    const audioCtx = FlMML.audioCtx = new AudioContext();
-
-                    // iOS/Chrome向けWeb Audioアンロック処理
-                    const bufSrcDmy = audioCtx.createBufferSource();
-                    bufSrcDmy.connect(audioCtx.destination);
-                    bufSrcDmy.start(0);
-                    audioCtx.resume();
-                    bufSrcDmy.stop();
-                }
-
+                if (!FlMML.audioCtx) FlMML.initWebAudio();
                 players.forEach(p2 => {
                     p2.removeEventListener("click", onClick, true);
                 });
@@ -72,9 +73,11 @@ export class FlMML {
 
     static init(playerSelectors: string) {
         if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => { FlMML.initWebAudio(playerSelectors); });
+            document.addEventListener("DOMContentLoaded", () => {
+                FlMML.hookInitWebAudio(playerSelectors);
+            });
         } else {
-            FlMML.initWebAudio(playerSelectors);
+            FlMML.hookInitWebAudio(playerSelectors);
         }
     }
 
@@ -205,6 +208,10 @@ export class FlMML {
     }
 
     play(mml: string) {
+        // Web Audio 初期化が間に合わなかった場合の救済措置
+        // ここで初期化すると再生されない場合あり
+        if (!FlMML.audioCtx) FlMML.initWebAudio();
+
         if (!this.booted) {
             this.worker.postMessage({
                 type: MsgTypes.BOOT,
