@@ -89,7 +89,7 @@
             }
 
             document.addEventListener("DOMContentLoaded", function () {
-                FlMML.init(".group");
+                FlMML.prepare(".group");
                 flmml = new FlMML({ workerURL: "./dist/flmml-on-html5.worker.js" });
 
                 L("play", "click", function () {

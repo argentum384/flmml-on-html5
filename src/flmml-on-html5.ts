@@ -2,7 +2,7 @@ import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 // CSS セレクタ文字列を指定した場合対象の DOM 要素クリック時に Web Audio 初期化処理を行う
-// (FlMML.init(playerSelectors) の呼び出しは不要になる)
+// (FlMML.prepare(playerSelectors) の呼び出しは不要になる)
 const PLAYER_SELECTORS: string = null;
 
 type FlMMLOptions = {
@@ -71,7 +71,7 @@ export class FlMML {
         });
     }
 
-    static init(playerSelectors: string) {
+    static prepare(playerSelectors: string) {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
                 FlMML.hookInitWebAudio(playerSelectors);
@@ -325,4 +325,4 @@ export class FlMML {
 export const FlMMLonHTML5 = FlMML;
 
 // スクリプト読み込み時に実行
-if (PLAYER_SELECTORS) FlMML.init(PLAYER_SELECTORS);
+if (PLAYER_SELECTORS) FlMML.prepare(PLAYER_SELECTORS);
