@@ -115,6 +115,7 @@
             }
 
             document.addEventListener("DOMContentLoaded", function () {
+                FlMML.prepare(".group");
                 flmml = new FlMML({
                     workerURL: "./dist/flmml-on-html5.worker.js",
                     lamejsURL: "https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"

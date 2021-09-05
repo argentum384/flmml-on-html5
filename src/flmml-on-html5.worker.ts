@@ -38,22 +38,24 @@ export class FlMMLWorker {
                 data.lamejsURL && self.importScripts(data.lamejsURL);
                 break;
             case MsgTypes.PLAY:
-                mml.play(data.mml);
-                this.audioExport = null;
+                if (mml) {
+                    mml.play(data.mml);
+                    this.audioExport = null;
+                }
                 break;
             case MsgTypes.STOP:
-                mml.stop();
+                mml && mml.stop();
                 this.syncInfo();
                 break;
             case MsgTypes.PAUSE:
-                mml.pause();
+                mml && mml.pause();
                 this.syncInfo();
                 break;
             case MsgTypes.SYNCINFO:
                 if (typeof data.interval === "number") {
                     this.infoInterval = data.interval;
                     clearInterval(this.tIDInfo);
-                    if (this.infoInterval > 0 && this.mml.isPlaying()) {
+                    if (this.infoInterval > 0 && this.mml && this.mml.isPlaying()) {
                         this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
                     }
                 } else {
@@ -143,6 +145,7 @@ export class FlMMLWorker {
 
     syncInfo(): void {
         var mml: MML = this.mml;
+        if (!mml) return;
 
         this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
         postMessage({
