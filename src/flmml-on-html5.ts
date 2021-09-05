@@ -1,9 +1,11 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 type FlMMLOptions = {
     workerURL?: string,
-    infoInterval?: number
+    infoInterval?: number,
+    lamejsURL?: string
 };
 
 export class FlMML {
@@ -31,6 +33,9 @@ export class FlMML {
     private nowMSec: number;
     private nowTimeStr: string;
     private voiceCount: number;
+
+    private audioExportResolve: (data: ArrayBuffer[]) => void;
+    private audioExportReject: (error: any) => void;
 
     oncompilecomplete: () => void;
     onbuffering: (e: any) => void;
@@ -93,7 +98,8 @@ export class FlMML {
         
         worker.postMessage({
             type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate
+            sampleRate: FlMML.audioCtx.sampleRate,
+            lamejsURL: options.lamejsURL
         });
         this.setInfoInterval(options.infoInterval);
     }
@@ -136,6 +142,15 @@ export class FlMML {
                 break;
             case MsgTypes.STOPSOUND:
                 this.stopSound();
+                break;
+            case MsgTypes.EXPORT:
+                if (data.data) {
+                    this.audioExportResolve(data.data);
+                    this.audioExportResolve = null;
+                    this.audioExportReject = null;
+                } else {
+                    this.errorAudioExport(data.errorMsg);
+                }
                 break;
         }
     }
@@ -181,16 +196,54 @@ export class FlMML {
         }
     }
 
+    private exportAudio(mml: string, format: string, options: {} = {}): Promise<ArrayBuffer[]> {
+        return new Promise<ArrayBuffer[]>((resolve, reject) => {
+            if (this.audioExportResolve) {
+                reject(new FlMMLAudioExportError("Another process is already running"))
+                return;
+            }
+            this.worker.postMessage({
+                type: MsgTypes.EXPORT,
+                mml: mml,
+                format: format,
+                ...options
+            });
+            this.audioExportResolve = resolve;
+            this.audioExportReject = reject;
+        });
+    }
+
+    private errorAudioExport(msg: string): void {
+        if (!this.audioExportReject) return;
+        this.audioExportReject(new FlMMLAudioExportError(msg));
+        this.audioExportResolve = null;
+        this.audioExportReject = null;
+    }
+
     play(mml: string) {
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
+        if (this.audioExportResolve) {
+            this.errorAudioExport("Aborted exporting audio file");
+        }
     }
 
     stop() {
         this.worker.postMessage({ type: MsgTypes.STOP });
+        if (this.audioExportResolve) {
+            this.errorAudioExport("Aborted exporting audio file");
+        }
     }
 
     pause() {
         this.worker.postMessage({ type: MsgTypes.PAUSE });
+    }
+
+    exportWav(mml: string): Promise<ArrayBuffer[]> {
+        return this.exportAudio(mml, "wav");
+    }
+
+    exportMp3(mml: string, bitrate?: number): Promise<ArrayBuffer[]> {
+        return this.exportAudio(mml, "mp3", { bitrate: bitrate });
     }
 
     setMasterVolume(volume: number) {

@@ -1279,7 +1279,11 @@ export class MML {
         if (GroupNotesStart >= 0) this.warning(MWarning.UNCLOSED_GROUPNOTES, "");
     }
 
-    play(str: string): void {
+    play(str: string, exportAudio: boolean = false): void {
+        if (exportAudio) {
+            this.play2(str, exportAudio);
+            return;
+        }
         if (this.m_sequencer.isPaused()) {
             this.m_sequencer.play();
             return;
@@ -1289,7 +1293,7 @@ export class MML {
         this.worker.stopSound();
     }
 
-    private play2(str: string): void {
+    private play2(str: string, exportAudio: boolean = false): void {
         this.m_sequencer.disconnectAll();
         this.m_tracks = new Array();
         this.m_tracks[0] = this.createTrack();
@@ -1359,7 +1363,7 @@ export class MML {
         this.worker.compileComplete();
 
         // play start
-        this.m_sequencer.play();
+        this.m_sequencer.play(exportAudio);
 
         this.worker.onstopsound = null;
     }
