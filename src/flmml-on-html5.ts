@@ -18,24 +18,27 @@ export class FlMML {
     private static audioCtx: AudioContext;
 
     private worker: Worker;
-    private events: { [key: string]: Function[] };
-    private volume: number;
+    private booted: boolean = false;
+    private volume: number = 100.0;
+    private events: { [key: string]: Function[] } = {};
+
     private gain: GainNode;
     private workletNode: AudioWorkletNode;
+    private workletModuleLoaded: boolean = false;
     
-    private totalMSec: number;
-    private totalTimeStr: string;
-    private warnings: string;
-    private metaTitle: string;
-    private metaComment: string;
-    private metaArtist: string;
-    private metaCoding: string;
+    private totalMSec: number = 0;
+    private totalTimeStr: string = "00:00";
+    private warnings: string = "";
+    private metaTitle: string = "";
+    private metaComment: string = "";
+    private metaArtist: string = "";
+    private metaCoding: string = "";
 
-    private _isPlaying: boolean;
-    private _isPaused: boolean;
-    private nowMSec: number;
-    private nowTimeStr: string;
-    private voiceCount: number;
+    private _isPlaying: boolean = false;
+    private _isPaused: boolean = false;
+    private nowMSec: number = 0;
+    private nowTimeStr: string = "00:00";
+    private voiceCount: number = 0;
 
     oncompilecomplete: () => void;
     onbuffering: (e: any) => void;
@@ -47,7 +50,7 @@ export class FlMML {
         players.forEach(p => {
             p.addEventListener("click", function onClick() {
                 if (!FlMML.audioCtx) {
-                    // Web Audioコンテキスト作成
+                    // Web Audioコンテキスト生成
                     // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
                     // 必要になったタイミングで生成する
                     const audioCtx = FlMML.audioCtx = new AudioContext();
@@ -58,16 +61,6 @@ export class FlMML {
                     bufSrcDmy.start(0);
                     audioCtx.resume();
                     bufSrcDmy.stop();
-
-                    // AudioWorklet モジュール追加
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        FlMML.audioCtx.audioWorklet.addModule(reader.result as string)
-                        .then(result => {
-                            // TODO: addModule() 完了後の処理要るならここに書く, 要らなそうなら消す
-                        })
-                    }
-                    reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
                 }
 
                 players.forEach(p2 => {
@@ -97,12 +90,6 @@ export class FlMML {
             FlMML.DEFAULT_INFO_INTERVAL
         ;
 
-        this.warnings = "";
-        this.totalTimeStr = "00:00";
-        this.volume = 100.0;
-
-        this.events = {};
-
         const worker = this.worker = new Worker(
             options.crossOriginWorker ?
                 URL.createObjectURL(new Blob(
@@ -113,10 +100,6 @@ export class FlMML {
                 workerURL
         );
         worker.addEventListener("message", this.onMessage.bind(this));
-        worker.postMessage({
-            type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx ? FlMML.audioCtx.sampleRate : 48000,
-        });
         this.setInfoInterval(infoInterval);
     }
 
@@ -171,15 +154,33 @@ export class FlMML {
         gain.gain.value = this.volume / 127.0;
         gain.connect(audioCtx.destination);
 
-        const workletNode = this.workletNode = new AudioWorkletNode(FlMML.audioCtx, "flmml-worklet-processor", {
-            numberOfInputs: 0,
-            numberOfOutputs: 1,
-            outputChannelCount: [2]
-        });
-        workletNode.connect(gain);
+        (async () => {
+            // 初回のみ AudioWorklet にモジュール追加
+            if (!this.workletModuleLoaded) {
+                await new Promise<void>(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        audioCtx.audioWorklet.addModule(e.target.result as string)
+                            .then(resolve)
+                    }
+                    reader.readAsDataURL(
+                        new Blob([FlMMLWorkletScript],
+                        { type: "application/javascript" })
+                    );
+                });
+                this.workletModuleLoaded = true;
+            }
 
-        // Transfer MessagePort of AudioWorkletNode
-        this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
+            const workletNode = this.workletNode = new AudioWorkletNode(audioCtx, "flmml-worklet-processor", {
+                numberOfInputs: 0,
+                numberOfOutputs: 1,
+                outputChannelCount: [2]
+            });
+            workletNode.connect(gain);
+
+            // Transfer MessagePort of AudioWorkletNode
+            this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
+        })();
     }
 
     private stopSound() {
@@ -204,6 +205,13 @@ export class FlMML {
     }
 
     play(mml: string) {
+        if (!this.booted) {
+            this.worker.postMessage({
+                type: MsgTypes.BOOT,
+                sampleRate: FlMML.audioCtx.sampleRate,
+            });
+            this.booted = true;
+        }
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
     }
 
