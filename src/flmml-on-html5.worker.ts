@@ -39,8 +39,8 @@ export class FlMMLWorker {
                 break;
             case MsgTypes.PLAY:
                 if (!mml) break;
-                    mml.play(data.mml);
-                    this.audioExport = null;
+                mml.play(data.mml);
+                this.audioExport = null;
                 break;
             case MsgTypes.STOP:
                 mml && mml.stop();
@@ -77,7 +77,7 @@ export class FlMMLWorker {
                 mml.stop();
                 try {
                     switch (data.format) {
-                        case "wav": this.audioExport = new WavExport(mml.getTotalMSec()); break;
+                        case "wav": this.audioExport = new WavExport(); break;
                         case "mp3": this.audioExport = new Mp3Export(data.bitrate); break;
                     }
                 } catch (ex) {

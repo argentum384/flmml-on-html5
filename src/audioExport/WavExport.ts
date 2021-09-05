@@ -19,54 +19,49 @@ const HEADER = [
     0x64, 0x61, 0x74, 0x61, // 24 - 27: 'data'
     0x00, 0x00, 0x00, 0x00  // 28 - 2B: (サンプルデータサイズ)
 ];
-const HEADER_LEN = HEADER.length;
 
 export class WavExport extends AudioExport {
-    private samples: Float32Array[];
-    private offset: number; // Number of samples
+    private data: ArrayBuffer[] = [];
+    private dataBytes: number = 0;
 
-    constructor(totalMSec: number) {
+    constructor() {
         super();
-        this.offset = 0;
-        this.samples = Array(2).fill(0).map(() => new Float32Array(Math.floor(totalMSec / 1000.0 * SEQUENCER_SAMPLE_RATE)));
     }
 
     process(buffer: Float32Array[]): void {
-        if (this.offset < this.samples[0].length - buffer[0].length) {
-            this.samples.forEach((samplesCh, ch) => {
-                samplesCh.set(buffer[ch], this.offset);
-            });
-            this.offset += buffer[0].length;
+        const aryBuf = new ArrayBuffer(buffer[0].length * BLOCK_ALIGN);
+        const dataView = new DataView(aryBuf);
+        if (BIT_DEPTH === 16) {
+            for (let i = 0; i < buffer[0].length; i++) {
+                dataView.setInt16(i * BLOCK_ALIGN    , Math.floor(AudioExport.crop(buffer[0][i]) * 32767.5), true);
+                dataView.setInt16(i * BLOCK_ALIGN + 2, Math.floor(AudioExport.crop(buffer[1][i]) * 32767.5), true);
+            }
         }
+        // else if (BIT_DEPTH === 8) {
+        //     for (let i = 0; i < buffer[0].length; i++) {
+        //         dataView.setUint8(i * BLOCK_ALIGN    , Math.floor(AudioExport.crop(buffer[0][i]) * 127.5 + 0x80));
+        //         dataView.setUint8(i * BLOCK_ALIGN + 1, Math.floor(AudioExport.crop(buffer[1][i]) * 127.5 + 0x80));
+        //     }
+        // }
+        this.data.push(aryBuf);
+        this.dataBytes += aryBuf.byteLength;
         this.bufferId++;
     }
 
     complete(): ArrayBuffer[] {
-        const samples = this.samples;
-        const aryBuf = new ArrayBuffer(HEADER.length + samples[0].length * BLOCK_ALIGN);
+        // Make header
+        const aryBuf = new ArrayBuffer(HEADER.length);
         const dataView = new DataView(aryBuf);
         for (let i = 0; i < HEADER.length; i++) {
             dataView.setUint8(i, HEADER[i]);
         }
-        dataView.setUint32(0x04, aryBuf.byteLength - 8, true);               // 04 - 07: ファイルサイズ - 8
+        dataView.setUint32(0x04, HEADER.length + this.dataBytes - 8, true);  // 04 - 07: ファイルサイズ - 8
         dataView.setUint32(0x18, SEQUENCER_SAMPLE_RATE, true);               // 18 - 1B: サンプリングレート
         dataView.setUint32(0x1C, SEQUENCER_SAMPLE_RATE * BLOCK_ALIGN, true); // 1C - 1F: データ深度
-        dataView.setUint32(0x28, samples[0].length * BLOCK_ALIGN, true);     // 28 - 2B: サンプルデータサイズ
-        if (BIT_DEPTH === 16) {
-            for (let i = 0; i < samples[0].length; i++) {
-                dataView.setInt16(HEADER_LEN + i * BLOCK_ALIGN    , Math.floor(AudioExport.crop(samples[0][i]) * 32767.5), true);
-                dataView.setInt16(HEADER_LEN + i * BLOCK_ALIGN + 2, Math.floor(AudioExport.crop(samples[1][i]) * 32767.5), true);
-            }
-        }
-        // else if (BIT_DEPTH === 8) {
-        //     for (let i = 0; i < samples[0].length; i++) {
-        //         dataView.setUint8(HEADER_LEN + i * BLOCK_ALIGN    , Math.floor(AudioExport.crop(samples[0][i]) * 127.5 + 0x80));
-        //         dataView.setUint8(HEADER_LEN + i * BLOCK_ALIGN + 1, Math.floor(AudioExport.crop(samples[1][i]) * 127.5 + 0x80));
-        //     }
-        // }
+        dataView.setUint32(0x28, this.dataBytes, true);                      // 28 - 2B: サンプルデータサイズ
 
         self.clearInterval(this.tID);
 
-        return [aryBuf];
+        return [aryBuf, ...this.data];
     }
 }
