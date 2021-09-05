@@ -35,7 +35,7 @@ Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境�
 1. [Releases](https://github.com/argentum384/flmml-on-html5/releases) から `flmml-on-html5.js` , `flmml-on-html5.worker.js` のそれぞれをダウンロード
 1. `flmml-on-html5.js` のみ `<script>` タグで読み込む
 1. **再生開始の契機となるイベント発火の前に**クリックされるボタン/プレイヤー等 DOM 要素の CSS セレクタを `FlMML.prepare(playerSelector)` の引数に指定し実行する  
-   ※実行しなくとも問題ない場合もありますが実行することを推奨します
+   ※実行しなくとも問題ない場合もありますが実行することを推奨します。詳細は [wiki](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#prepare) を参照
 1. `new FlMML()` の引数に `flmml-on-html5.worker.js` のパスを指定  
    ※ `flmml-on-html5.worker.js` をサイトと異なるドメインに配置した場合は `crossOriginWorker` オプションを有効にして下さい。詳細は [wiki](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#constructor) を参照
 
