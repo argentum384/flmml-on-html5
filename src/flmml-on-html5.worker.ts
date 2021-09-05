@@ -38,10 +38,9 @@ export class FlMMLWorker {
                 data.lamejsURL && self.importScripts(data.lamejsURL);
                 break;
             case MsgTypes.PLAY:
-                if (mml) {
+                if (!mml) break;
                     mml.play(data.mml);
                     this.audioExport = null;
-                }
                 break;
             case MsgTypes.STOP:
                 mml && mml.stop();
@@ -71,6 +70,10 @@ export class FlMMLWorker {
                 this.onstopsound && this.onstopsound();
                 break;
             case MsgTypes.EXPORT:
+                if (!mml) {
+                    postMessage({ type: MsgTypes.EXPORT, errorMsg: "Sequencer is not ready"});
+                    break;
+                }
                 mml.stop();
                 try {
                     switch (data.format) {

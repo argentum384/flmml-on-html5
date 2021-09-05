@@ -22,6 +22,7 @@ export class FlMML {
     private worker: Worker;
     private booted: boolean = false;
     private volume: number = 100.0;
+    private lamejsURL: string;
     private events: { [key: string]: Function[] } = {};
 
     private gain: GainNode;
@@ -97,6 +98,7 @@ export class FlMML {
         :
             FlMML.DEFAULT_INFO_INTERVAL
         ;
+        this.lamejsURL = options.lamejsURL;
 
         const worker = this.worker = new Worker(
             options.crossOriginWorker ?
@@ -162,6 +164,15 @@ export class FlMML {
         }
     }
 
+    private boot() {
+        this.worker.postMessage({
+            type: MsgTypes.BOOT,
+            sampleRate: FlMML.audioCtx.sampleRate,
+            lamejsURL: this.lamejsURL
+        });
+        this.booted = true;
+    }
+
     private playSound() {
         if (this.gain || this.workletNode) return;
 
@@ -222,6 +233,9 @@ export class FlMML {
     }
 
     private exportAudio(mml: string, format: string, options: {} = {}): Promise<ArrayBuffer[]> {
+        if (!FlMML.audioCtx) FlMML.initWebAudio();
+        if (!this.booted) this.boot();
+
         return new Promise<ArrayBuffer[]>((resolve, reject) => {
             if (this.audioExportResolve) {
                 reject(new FlMMLAudioExportError("Another process is already running"))
@@ -250,13 +264,7 @@ export class FlMML {
         // ここで初期化すると再生されない場合あり
         if (!FlMML.audioCtx) FlMML.initWebAudio();
 
-        if (!this.booted) {
-            this.worker.postMessage({
-                type: MsgTypes.BOOT,
-                sampleRate: FlMML.audioCtx.sampleRate,
-            });
-            this.booted = true;
-        }
+        if (!this.booted) this.boot();
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
         if (this.audioExportResolve) {
             this.errorAudioExport("Aborted exporting audio file");
