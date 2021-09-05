@@ -34,6 +34,8 @@ Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境�
 ### js ファイルを直接読み込む
 1. [Releases](https://github.com/argentum384/flmml-on-html5/releases) から `flmml-on-html5.js` , `flmml-on-html5.worker.js` のそれぞれをダウンロード
 1. `flmml-on-html5.js` のみ `<script>` タグで読み込む
+1. **再生開始の契機となるイベント発火の前に**クリックされるボタン/プレイヤー等 DOM 要素の CSS セレクタを `FlMML.prepare(playerSelector)` の引数に指定し実行する  
+   ※実行しなくとも問題ない場合もありますが実行することを推奨します。詳細は [wiki](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#prepare) を参照
 1. `new FlMML()` の引数に `flmml-on-html5.worker.js` のパスを指定  
    ※ `flmml-on-html5.worker.js` をサイトと異なるドメインに配置した場合は `crossOriginWorker` オプションを有効にして下さい。詳細は [wiki](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#constructor) を参照
 
@@ -48,13 +50,18 @@ somedir
 ```
 index.html
 ```html
+...
 <script src="./js/flmml-on-html5.js"></script>
 <script>
-    window.onclick = () => {
-        const flmml = new FlMML({ workerURL: "./js/flmml-on-html5.worker.js" });
+    FlMML.prepare("#play");
+    const flmml = new FlMML({ workerURL: "./js/flmml-on-html5.worker.js" });
+    function onClick() {
         flmml.play("L8 O5CDEFGAB<C");
     }
 </script>
+...
+<button id="play" onclick="onClick()">Play</button>
+...
 ```
 
 ### npm パッケージをインストール
@@ -68,13 +75,15 @@ index.html
    yarn add -D flmml-on-html5
    ```
 1. インストール後 `./node_modules/flmml-on-html5/dist/flmml-on-html5.worker.js` をお好みの場所にコピー
+1. **再生開始の契機となるイベント発火の前に**クリックされるボタン/プレイヤー等 DOM 要素の CSS セレクタを `FlMML.prepare(playerSelector)` の引数に指定し実行する  
 1. `new FlMML()` の引数にコピーした `flmml-on-html5.worker.js` のパスを指定
 
 例:
 ```js
 import { FlMML } from "flmml-on-html5";
-
-const flmml = new FlMML({ workerURL: someWorkerPath });
+...
+FlMML.prepare(somePlayerSelectors);
+const flmml = new FlMML({ workerURL: someWorkerURL });
 ...
 ```
 

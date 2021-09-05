@@ -1,6 +1,10 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
+// CSS セレクタ文字列を指定した場合対象の DOM 要素クリック時に Web Audio 初期化処理を行う
+// (FlMML.prepare(playerSelectors) の呼び出しは不要になる)
+const PLAYER_SELECTORS: string = null;
+
 type FlMMLOptions = {
     workerURL?: string,
     infoInterval?: number,
@@ -14,61 +18,67 @@ export class FlMML {
     private static audioCtx: AudioContext;
 
     private worker: Worker;
-    private events: { [key: string]: Function[] };
-    private volume: number;
+    private booted: boolean = false;
+    private volume: number = 100.0;
+    private events: { [key: string]: Function[] } = {};
+
     private gain: GainNode;
     private workletNode: AudioWorkletNode;
+    private workletModuleLoaded: boolean = false;
     
-    private totalMSec: number;
-    private totalTimeStr: string;
-    private warnings: string;
-    private metaTitle: string;
-    private metaComment: string;
-    private metaArtist: string;
-    private metaCoding: string;
+    private totalMSec: number = 0;
+    private totalTimeStr: string = "00:00";
+    private warnings: string = "";
+    private metaTitle: string = "";
+    private metaComment: string = "";
+    private metaArtist: string = "";
+    private metaCoding: string = "";
 
-    private _isPlaying: boolean;
-    private _isPaused: boolean;
-    private nowMSec: number;
-    private nowTimeStr: string;
-    private voiceCount: number;
+    private _isPlaying: boolean = false;
+    private _isPaused: boolean = false;
+    private nowMSec: number = 0;
+    private nowTimeStr: string = "00:00";
+    private voiceCount: number = 0;
 
     oncompilecomplete: () => void;
     onbuffering: (e: any) => void;
     oncomplete: () => void;
     onsyncinfo: () => void;
 
-    // iOS/Chrome向けWeb Audioアンロック処理
-    private static unlockWebAudio() {
-        window.addEventListener("click", function onClick() {
-            const audioCtx = FlMML.audioCtx;
-            const bufSrcDmy = audioCtx.createBufferSource();
-            bufSrcDmy.connect(audioCtx.destination);
-            bufSrcDmy.start(0);
-            audioCtx.resume();
-            window.removeEventListener("click", onClick, true);
-        }, true);
+    private static initWebAudio(): void {
+        // Web Audioコンテキスト生成
+        // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
+        // 必要になったタイミングで生成する
+        const audioCtx = FlMML.audioCtx = new AudioContext();
+
+        // iOS/Chrome向けWeb Audioアンロック処理
+        const bufSrcDmy = audioCtx.createBufferSource();
+        bufSrcDmy.connect(audioCtx.destination);
+        bufSrcDmy.start(0);
+        audioCtx.resume();
+        bufSrcDmy.stop();
     }
 
-    static init() {
-        // Web Audioコンテキスト作成
-        FlMML.audioCtx = new AudioContext();
+    private static hookInitWebAudio(playerSelectors: string): void {
+        const players = document.querySelectorAll(playerSelectors);
+        players.forEach(p => {
+            p.addEventListener("click", function onClick() {
+                if (!FlMML.audioCtx) FlMML.initWebAudio();
+                players.forEach(p2 => {
+                    p2.removeEventListener("click", onClick, true);
+                });
+            }, true);
+        });
+    }
 
-        if (document.readyState === "complete") {
-            FlMML.unlockWebAudio();
+    static prepare(playerSelectors: string) {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                FlMML.hookInitWebAudio(playerSelectors);
+            });
         } else {
-            document.addEventListener("DOMContentLoaded", FlMML.unlockWebAudio, false);
+            FlMML.hookInitWebAudio(playerSelectors);
         }
-
-        // AudioWorklet モジュール追加
-        const reader = new FileReader();
-        reader.onload = () => {
-            FlMML.audioCtx.audioWorklet.addModule(reader.result as string)
-                .then(result => {
-                    // TODO: addModule() 完了後の処理要るならここに書く, 要らなそうなら消す
-                })
-        }
-        reader.readAsDataURL(new Blob([FlMMLWorkletScript], { type: "application/javascript" }));
     }
 
     constructor(options: FlMMLOptions | string = FlMML.DEFAULT_WORKER_URL) {
@@ -83,12 +93,6 @@ export class FlMML {
             FlMML.DEFAULT_INFO_INTERVAL
         ;
 
-        this.warnings = "";
-        this.totalTimeStr = "00:00";
-        this.volume = 100.0;
-
-        this.events = {};
-
         const worker = this.worker = new Worker(
             options.crossOriginWorker ?
                 URL.createObjectURL(new Blob(
@@ -99,10 +103,6 @@ export class FlMML {
                 workerURL
         );
         worker.addEventListener("message", this.onMessage.bind(this));
-        worker.postMessage({
-            type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate
-        });
         this.setInfoInterval(infoInterval);
     }
 
@@ -157,15 +157,33 @@ export class FlMML {
         gain.gain.value = this.volume / 127.0;
         gain.connect(audioCtx.destination);
 
-        const workletNode = this.workletNode = new AudioWorkletNode(FlMML.audioCtx, "flmml-worklet-processor", {
-            numberOfInputs: 0,
-            numberOfOutputs: 1,
-            outputChannelCount: [2]
-        });
-        workletNode.connect(gain);
+        (async () => {
+            // 初回のみ AudioWorklet にモジュール追加
+            if (!this.workletModuleLoaded) {
+                await new Promise<void>(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        audioCtx.audioWorklet.addModule(e.target.result as string)
+                            .then(resolve)
+                    }
+                    reader.readAsDataURL(
+                        new Blob([FlMMLWorkletScript],
+                        { type: "application/javascript" })
+                    );
+                });
+                this.workletModuleLoaded = true;
+            }
 
-        // Transfer MessagePort of AudioWorkletNode
-        this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
+            const workletNode = this.workletNode = new AudioWorkletNode(audioCtx, "flmml-worklet-processor", {
+                numberOfInputs: 0,
+                numberOfOutputs: 1,
+                outputChannelCount: [2]
+            });
+            workletNode.connect(gain);
+
+            // Transfer MessagePort of AudioWorkletNode
+            this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
+        })();
     }
 
     private stopSound() {
@@ -190,6 +208,17 @@ export class FlMML {
     }
 
     play(mml: string) {
+        // Web Audio 初期化が間に合わなかった場合の救済措置
+        // ここで初期化すると再生されない場合あり
+        if (!FlMML.audioCtx) FlMML.initWebAudio();
+
+        if (!this.booted) {
+            this.worker.postMessage({
+                type: MsgTypes.BOOT,
+                sampleRate: FlMML.audioCtx.sampleRate,
+            });
+            this.booted = true;
+        }
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
     }
 
@@ -296,4 +325,4 @@ export class FlMML {
 export const FlMMLonHTML5 = FlMML;
 
 // スクリプト読み込み時に実行
-FlMML.init();
+if (PLAYER_SELECTORS) FlMML.prepare(PLAYER_SELECTORS);
