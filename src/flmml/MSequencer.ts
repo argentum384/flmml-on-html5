@@ -87,6 +87,7 @@ export class MSequencer {
             for (var i: number = 0; i < this.m_trackArr.length; i++) {
                 this.m_trackArr[i].seekTop();
             }
+            this.m_maxNowMSec = 0;
             this.lastSample = [0.0, 0.0];
             this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
             this.isExportingAudio = exportAudio;
