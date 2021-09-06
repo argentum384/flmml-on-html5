@@ -1,17 +1,11 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { FlMMLOptions } from "./common/Types";
 import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 // CSS セレクタ文字列を指定した場合対象の DOM 要素クリック時に Web Audio 初期化処理を行う
 // (FlMML.prepare(playerSelectors) の呼び出しは不要になる)
 const PLAYER_SELECTORS: string = null;
-
-type FlMMLOptions = {
-    workerURL?: string,
-    infoInterval?: number,
-    crossOriginWorker?: boolean,
-    lamejsURL?: string
-};
 
 export class FlMML {
     private static readonly DEFAULT_INFO_INTERVAL = 125;
