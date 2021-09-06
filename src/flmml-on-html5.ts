@@ -131,7 +131,7 @@ export class FlMML {
                 break;
             case MsgTypes.BUFRING:
                 this.onbuffering && this.onbuffering(data);
-                this.trigger("buffering", data);
+                this.trigger("buffering", { progress: data.progress });
                 break;
             case MsgTypes.COMPLETE:
                 this.oncomplete && this.oncomplete();
