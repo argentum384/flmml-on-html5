@@ -191,6 +191,10 @@ export class MSequencer {
                     infoInterval: number = this.worker.infoInterval,
                     infoTime: number = this.worker.lastInfoTime + infoInterval;
                 do {
+                    if (this.m_processTrack >= nLen) {
+                        this.m_step++;
+                        break;
+                    }
                     this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
                     this.m_processOffset += bLen;
                     if (this.m_processOffset >= sLen) {
@@ -199,10 +203,6 @@ export class MSequencer {
                     }
                     if (status === /*MSequencer.STATUS_BUFFERING*/2) {
                         this.worker.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100.0 | 0);
-                    }
-                    if (this.m_processTrack >= nLen) {
-                        this.m_step++;
-                        break;
                     }
                     if (infoInterval > 0 && MSequencer.getTimer() > infoTime) {
                         this.worker.syncInfo();
