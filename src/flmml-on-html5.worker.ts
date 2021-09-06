@@ -1,5 +1,6 @@
 import { MsgTypes } from "./common/Consts";
 import { FlMMLAudioExportError } from "./common/Errors";
+import { SampleDataEvent } from "./common/Types";
 import { AudioExport } from "./audioExport/AudioExport";
 import { WavExport } from "./audioExport/WavExport";
 import { Mp3Export } from "./audioExport/Mp3Export";
@@ -18,7 +19,7 @@ export class FlMMLWorker {
     onInfoTimerBinded: () => void;
 
     onstopsound: () => void;
-    onrequestbuffer: (e: MessageEvent<any>) => void = null;
+    onrequestbuffer: (e: SampleDataEvent) => void;
 
     constructor() {
         this.onInfoTimerBinded = () => { this.onInfoTimer(); };
@@ -63,8 +64,7 @@ export class FlMMLWorker {
                 break;
             case MsgTypes.PLAYSOUND:
                 this.workletPort = data.workletPort;
-                this.workletPort.addEventListener("message", this.onrequestbuffer);
-                this.workletPort.start();
+                this.workletPort.onmessage = e => { this.onrequestbuffer(e.data); };
                 break;
             case MsgTypes.STOPSOUND:
                 this.onstopsound && this.onstopsound();
@@ -128,7 +128,7 @@ export class FlMMLWorker {
 
     stopSound(): void {
         if (this.workletPort) {
-            this.workletPort.removeEventListener("message", this.onrequestbuffer);
+            this.workletPort.onmessage = null;
             this.workletPort.postMessage({ release: true });
         }
         postMessage({ type: MsgTypes.STOPSOUND });

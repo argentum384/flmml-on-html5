@@ -1,8 +1,6 @@
 ﻿import { FlMMLWorker } from "../flmml-on-html5.worker";
-import {
-    SEQUENCER_SAMPLE_RATE,
-    AUDIO_BUFFER_SIZE
-} from "../common/Consts";
+import { SEQUENCER_SAMPLE_RATE, AUDIO_BUFFER_SIZE } from "../common/Consts";
+import { SampleDataEvent } from "../common/Types";
 import { MOscillator } from "./MOscillator";
 import { MChannel } from "./MChannel";
 import { MEnvelope } from "./MEnvelope";
@@ -233,9 +231,8 @@ export class MSequencer {
         }
     }
 
-    private onSampleData(e: MessageEvent<any>): void {
-        const data = e.data;
-        if (data.bufferId !== this.bufferId) return;
+    private onSampleData(e: SampleDataEvent): void {
+        if (e.bufferId !== this.bufferId) return;
 
         this.m_lastTime = MSequencer.getTimer();
         if (this.m_status < /*MSequencer.STATUS_PLAY*/3) return;
@@ -268,7 +265,7 @@ export class MSequencer {
         var bufSize: number = this.bufferSize;
         var rateRatio: number = AUDIO_BUFFER_SIZE / bufSize;
         var sendBuf: Float32Array[] =
-            data.retBuf ||
+            e.retBuf ||
             Array(2).fill(0).map(() => new Float32Array(this.isExportingAudio ? bufSize : AUDIO_BUFFER_SIZE));
         var base: number = bufSize * this.m_playSize;
         [0, 1].forEach(ch => {
