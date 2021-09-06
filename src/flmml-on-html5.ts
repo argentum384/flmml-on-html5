@@ -154,9 +154,7 @@ export class FlMML {
                 break;
             case MsgTypes.EXPORT:
                 if (data.data) {
-                    this.audioExportResolve(data.data);
-                    this.audioExportResolve = null;
-                    this.audioExportReject = null;
+                    this.completeAudioExport(data.data);
                 } else {
                     this.errorAudioExport(data.errorMsg);
                 }
@@ -252,6 +250,13 @@ export class FlMML {
         });
     }
 
+    private completeAudioExport(data: ArrayBuffer[]): void {
+        if (!this.audioExportResolve) return;
+        this.audioExportResolve(data);
+        this.audioExportResolve = null;
+        this.audioExportReject = null;
+    }
+
     private errorAudioExport(msg: string): void {
         if (!this.audioExportReject) return;
         this.audioExportReject(new FlMMLAudioExportError(msg));
@@ -266,16 +271,10 @@ export class FlMML {
 
         if (!this.booted) this.boot();
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
-        if (this.audioExportResolve) {
-            this.errorAudioExport("Aborted exporting audio file");
-        }
     }
 
     stop() {
         this.worker.postMessage({ type: MsgTypes.STOP });
-        if (this.audioExportResolve) {
-            this.errorAudioExport("Aborted exporting audio file");
-        }
     }
 
     pause() {
