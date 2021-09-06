@@ -40,11 +40,12 @@ export class FlMMLWorker {
             case MsgTypes.PLAY:
                 if (!mml) break;
                 mml.play(data.mml);
-                this.audioExport = null;
+                if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.STOP:
                 mml && mml.stop();
                 this.syncInfo();
+                if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.PAUSE:
                 mml && mml.pause();
@@ -94,6 +95,12 @@ export class FlMMLWorker {
         }
     }
 
+    private completeAudioExport(): void {
+        const data = this.audioExport.complete();
+        postMessage({ type: MsgTypes.EXPORT, data: data }, data);
+        this.audioExport = null;
+    }
+
     buffering(progress: number): void {
         postMessage({ type: MsgTypes.BUFRING, progress: progress });
     }
@@ -140,10 +147,7 @@ export class FlMMLWorker {
     complete(): void {
         postMessage({ type: MsgTypes.COMPLETE });
         this.syncInfo();
-        if (this.audioExport) {
-            const data = this.audioExport.complete();
-            postMessage({ type: MsgTypes.EXPORT, data: data }, data);
-        }
+        if (this.audioExport) this.completeAudioExport();
     }
 
     syncInfo(): void {
