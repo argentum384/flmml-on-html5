@@ -74,7 +74,6 @@ export class MSequencer {
     
     play(exportAudio: boolean = false): void {
         if (this.m_status === /*MSequencer.STATUS_PAUSE*/1) {
-            var bufMSec: number = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0;
             this.m_status = /*MSequencer.STATUS_PLAY*/3;
             this.worker.playSound();
             this.startProcTimer();
