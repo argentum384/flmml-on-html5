@@ -374,6 +374,11 @@ export class FlMML {
     }
 }
 
+export {
+    FlMMLOptions,
+    FlMMLAudioExportError
+};
+
 // v1.x 系後方互換
 export const FlMMLonHTML5 = FlMML;
 
