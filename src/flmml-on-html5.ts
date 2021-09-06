@@ -23,7 +23,7 @@ export class FlMML {
     private booted: boolean = false;
     private volume: number = 100.0;
     private lamejsURL: string;
-    private events: { [key: string]: Function[] } = {};
+    private events: { [key: string]: ((...args: any[]) => void)[] } = {};
 
     private gain: GainNode;
     private workletNode: AudioWorkletNode;
@@ -109,7 +109,7 @@ export class FlMML {
             :
                 workerURL
         );
-        worker.addEventListener("message", this.onMessage.bind(this));
+        worker.addEventListener("message", e => { this.onMessage(e); });
         this.setInfoInterval(infoInterval);
     }
 
@@ -350,7 +350,7 @@ export class FlMML {
         this.worker.postMessage({ type: MsgTypes.SYNCINFO, interval: null });
     }
 
-    addEventListener(type: string, listener: Function) {
+    addEventListener(type: string, listener: (...args: any[]) => void) {
         let handlers = this.events[type];
 
         if (!handlers) handlers = this.events[type] = [];
@@ -361,7 +361,7 @@ export class FlMML {
         return true;
     }
 
-    removeEventListener(type: string, listener: Function) {
+    removeEventListener(type: string, listener: (...args: any[]) => void) {
         const handlers = this.events[type];
 
         if (!handlers) return false;

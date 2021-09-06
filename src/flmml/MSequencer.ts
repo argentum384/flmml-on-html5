@@ -46,7 +46,7 @@ export class MSequencer {
     protected m_maxProcTime: number;
     protected m_waitPause: boolean;
 
-    protected processAllBinded: Function;
+    protected processAllBinded: () => void;
 
     constructor(worker: FlMMLWorker) {
         this.worker = worker;
@@ -65,8 +65,8 @@ export class MSequencer {
         ];
         this.m_maxProcTime = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0 * 0.8;
         //this.m_lastTime = 0;
-        this.processAllBinded = this.processAll.bind(this);
-        this.worker.onrequestbuffer = this.onSampleData.bind(this);
+        this.processAllBinded = () => { this.processAll(); };
+        this.worker.onrequestbuffer = e => { this.onSampleData(e); };
         this.stop();
     }
     
@@ -141,7 +141,7 @@ export class MSequencer {
 
     private reqBuffering(): void {
         if (!this.m_buffTimer) {
-            this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this) as Function, 0);
+            this.m_buffTimer = self.setTimeout(() => { this.onBufferingReq(); }, 0);
         }
     }
 
@@ -154,7 +154,7 @@ export class MSequencer {
     private startProcTimer(interval: number = 0): void {
         clearTimeout(this.m_procTimer);
         if (this.m_status === /*MSequencer.STATUS_STOP*/0) return;
-        this.m_procTimer = setTimeout(this.processAllBinded, interval);
+        this.m_procTimer = self.setTimeout(this.processAllBinded, interval);
     }
     
     // バッファ書き込みリクエスト

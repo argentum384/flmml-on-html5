@@ -15,15 +15,14 @@ export class FlMMLWorker {
     infoInterval: number;
     lastInfoTime: number;
     workletPort: MessagePort;
-    onInfoTimerBinded: Function;
+    onInfoTimerBinded: () => void;
 
-    onstopsound: Function = null;
+    onstopsound: () => void;
     onrequestbuffer: (e: MessageEvent<any>) => void = null;
 
     constructor() {
-        this.onInfoTimerBinded = this.onInfoTimer.bind(this);
-
-        addEventListener("message", this.onMessage.bind(this));
+        this.onInfoTimerBinded = () => { this.onInfoTimer(); };
+        addEventListener("message", e => { this.onMessage(e); });
     }
 
     private onMessage(e: MessageEvent<any>) {
@@ -56,7 +55,7 @@ export class FlMMLWorker {
                     this.infoInterval = data.interval;
                     clearInterval(this.tIDInfo);
                     if (this.infoInterval > 0 && this.mml && this.mml.isPlaying()) {
-                        this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
+                        this.tIDInfo = self.setInterval(this.onInfoTimerBinded, this.infoInterval);
                     }
                 } else {
                     this.syncInfo();
@@ -169,7 +168,7 @@ export class FlMMLWorker {
 
     restartInfoTimer(): void {
         clearInterval(this.tIDInfo);
-        this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
+        this.tIDInfo = self.setInterval(this.onInfoTimerBinded, this.infoInterval);
     }
 
     onInfoTimer(): void {

@@ -1289,7 +1289,7 @@ export class MML {
             return;
         }
         // 音声が停止するのを待つ
-        this.worker.onstopsound = this.play2.bind(this, str);
+        this.worker.onstopsound = () => { this.play2(str); };
         this.worker.stopSound();
     }
 
