@@ -71,7 +71,7 @@ export class FlMML {
         });
     }
 
-    static prepare(playerSelectors: string) {
+    static prepare(playerSelectors: string): void {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
                 FlMML.hookInitWebAudio(playerSelectors);
@@ -107,7 +107,7 @@ export class FlMML {
         this.setInfoInterval(infoInterval);
     }
 
-    private onMessage(e: MessageEvent<any>) {
+    private onMessage(e: MessageEvent<any>): void {
         const data = e.data;
         const type = data.type;
 
@@ -156,7 +156,7 @@ export class FlMML {
         }
     }
 
-    private boot() {
+    private boot(): void {
         this.worker.postMessage({
             type: MsgTypes.BOOT,
             sampleRate: FlMML.audioCtx.sampleRate,
@@ -165,7 +165,7 @@ export class FlMML {
         this.booted = true;
     }
 
-    private playSound() {
+    private playSound(): void {
         if (this.gainNode || this.workletNode) return;
 
         const audioCtx = FlMML.audioCtx;
@@ -203,13 +203,13 @@ export class FlMML {
         })();
     }
 
-    private stopSound() {
+    private stopSound(): void {
         if (this.gainNode) { this.gainNode.disconnect(); this.gainNode = null; }
         if (this.workletNode) { this.workletNode.disconnect(); this.workletNode = null; }
         this.worker.postMessage({ type: MsgTypes.STOPSOUND });
     }
 
-    private trigger(type: string, args?: {}) {
+    private trigger(type: string, args?: {}): void {
         const handlers = this.events[type];
         if (!handlers) return;
 
@@ -258,7 +258,7 @@ export class FlMML {
         this.audioExportReject = null;
     }
 
-    play(mml: string) {
+    play(mml: string): void {
         // Web Audio 初期化が間に合わなかった場合の救済措置
         // ここで初期化すると再生されない場合あり
         if (!FlMML.audioCtx) FlMML.initWebAudio();
@@ -267,11 +267,11 @@ export class FlMML {
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
     }
 
-    stop() {
+    stop(): void {
         this.worker.postMessage({ type: MsgTypes.STOP });
     }
 
-    pause() {
+    pause(): void {
         this.worker.postMessage({ type: MsgTypes.PAUSE });
     }
 
@@ -283,68 +283,68 @@ export class FlMML {
         return this.exportAudio(mml, "mp3", { bitrate: bitrate });
     }
 
-    setMasterVolume(volume: number) {
+    setMasterVolume(volume: number): void {
         this.volume = volume;
         if (this.gainNode) this.gainNode.gain.value = this.volume / 127.0;
     }
 
-    isPlaying() {
+    isPlaying(): boolean {
         return this._isPlaying;
     }
 
-    isPaused() {
+    isPaused(): boolean {
         return this._isPaused;
     }
 
-    getWarnings() {
+    getWarnings(): string {
         return this.warnings;
     }
 
-    getTotalMSec() {
+    getTotalMSec(): number {
         return Math.floor(this.totalMSec);
     }
 
-    getTotalTimeStr() {
+    getTotalTimeStr(): string {
         return this.totalTimeStr;
     }
 
-    getNowMSec() {
+    getNowMSec(): number {
         return Math.floor(this.nowMSec);
     }
 
-    getNowTimeStr() {
+    getNowTimeStr(): string {
         return this.nowTimeStr;
     }
 
-    getVoiceCount() {
+    getVoiceCount(): number {
         return this.voiceCount;
     }
 
-    getMetaTitle() {
+    getMetaTitle(): string {
         return this.metaTitle;
     }
 
-    getMetaComment() {
+    getMetaComment(): string {
         return this.metaComment;
     }
 
-    getMetaArtist() {
+    getMetaArtist(): string {
         return this.metaArtist;
     }
 
-    getMetaCoding() {
+    getMetaCoding(): string {
         return this.metaCoding;
     }
 
-    setInfoInterval(interval: number) {
+    setInfoInterval(interval: number): void {
         this.worker.postMessage({ type: MsgTypes.SYNCINFO, interval: interval });
     }
 
-    syncInfo() {
+    syncInfo(): void {
         this.worker.postMessage({ type: MsgTypes.SYNCINFO, interval: null });
     }
 
-    addEventListener(type: string, listener: (...args: any[]) => void) {
+    addEventListener(type: string, listener: (...args: any[]) => void): boolean {
         let handlers = this.events[type];
 
         if (!handlers) handlers = this.events[type] = [];
@@ -355,7 +355,7 @@ export class FlMML {
         return true;
     }
 
-    removeEventListener(type: string, listener: (...args: any[]) => void) {
+    removeEventListener(type: string, listener: (...args: any[]) => void): boolean {
         const handlers = this.events[type];
 
         if (!handlers) return false;
@@ -368,7 +368,7 @@ export class FlMML {
         return false;
     }
 
-    release() {
+    release(): void {
         this.stopSound();
         this.worker.terminate();
     }

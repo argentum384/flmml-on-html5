@@ -26,7 +26,7 @@ export class FlMMLWorker {
         addEventListener("message", e => { this.onMessage(e); });
     }
 
-    private onMessage(e: MessageEvent<any>) {
+    private onMessage(e: MessageEvent<any>): void {
         var data: any = e.data,
             type: number = data.type,
             mml: MML = this.mml;

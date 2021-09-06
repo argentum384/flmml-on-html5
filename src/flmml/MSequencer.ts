@@ -68,7 +68,7 @@ export class MSequencer {
         this.stop();
     }
     
-    static getTimer() {
+    static getTimer(): number {
         return self.performance ? self.performance.now() : new Date().getTime();
     }
     

@@ -19,7 +19,7 @@ export abstract class AudioExport {
         this.onrequestbuffer({ bufferId: this.bufferId });
     }
 
-    beginRequest(onrequestbuffer?: (e: SampleDataEvent) => void) {
+    beginRequest(onrequestbuffer?: (e: SampleDataEvent) => void): void {
         if (onrequestbuffer) this.onrequestbuffer = onrequestbuffer;
         self.clearInterval(this.tID);
         this.tID = self.setInterval(() => { this.onRequest(); }, REQUEST_INTERVAL);
