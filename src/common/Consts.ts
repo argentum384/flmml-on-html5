@@ -16,5 +16,6 @@ export const MsgTypes = {
     COMPLETE :  8, // Worker->Main
     SYNCINFO :  9, // Main->Worker->Main
     PLAYSOUND: 10, // Worker->Main->Worker
-    STOPSOUND: 11  // Worker->Main->Worker
+    STOPSOUND: 11, // Worker->Main->Worker
+    EXPORT   : 12  // Main->Worker->Main
 } as const;

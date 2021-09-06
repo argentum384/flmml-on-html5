@@ -1,8 +1,14 @@
 import { MsgTypes } from "./common/Consts";
+import { FlMMLAudioExportError } from "./common/Errors";
+import { AudioExport } from "./audioExport/AudioExport";
+import { WavExport } from "./audioExport/WavExport";
+import { Mp3Export } from "./audioExport/Mp3Export";
 import { MML } from "./flmml/MML";
 
 export class FlMMLWorker {
     private mml: MML;
+    private audioExport: AudioExport;
+
     private tIDInfo: number;
 
     audioSampleRate: number;
@@ -29,9 +35,12 @@ export class FlMMLWorker {
             case MsgTypes.BOOT:
                 this.audioSampleRate = data.sampleRate;
                 this.mml = new MML(this);
+                data.lamejsURL && self.importScripts(data.lamejsURL);
                 break;
             case MsgTypes.PLAY:
-                mml && mml.play(data.mml);
+                if (!mml) break;
+                mml.play(data.mml);
+                this.audioExport = null;
                 break;
             case MsgTypes.STOP:
                 mml && mml.stop();
@@ -59,6 +68,28 @@ export class FlMMLWorker {
                 break;
             case MsgTypes.STOPSOUND:
                 this.onstopsound && this.onstopsound();
+                break;
+            case MsgTypes.EXPORT:
+                if (!mml) {
+                    postMessage({ type: MsgTypes.EXPORT, errorMsg: "Sequencer is not ready"});
+                    break;
+                }
+                mml.stop();
+                try {
+                    switch (data.format) {
+                        case "wav": this.audioExport = new WavExport(); break;
+                        case "mp3": this.audioExport = new Mp3Export(data.bitrate); break;
+                    }
+                } catch (ex) {
+                    if (ex instanceof FlMMLAudioExportError) {
+                        postMessage({ type: MsgTypes.EXPORT, errorMsg: ex.message });
+                        return;
+                    } else {
+                        throw ex;
+                    }
+                }
+                mml.play(data.mml, true);
+                this.audioExport.beginRequest(this.onrequestbuffer);
                 break;
         }
     }
@@ -98,12 +129,21 @@ export class FlMMLWorker {
     }
 
     sendBuffer(buffer: Array<Float32Array>): void {
-        this.workletPort.postMessage({ buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+        if (this.audioExport) {
+            this.audioExport.process(buffer);
+            this.audioExport.request(buffer);
+        } else {
+            this.workletPort.postMessage({ buffer: buffer }, [buffer[0].buffer, buffer[1].buffer]);
+        }
     }
 
     complete(): void {
         postMessage({ type: MsgTypes.COMPLETE });
         this.syncInfo();
+        if (this.audioExport) {
+            const data = this.audioExport.complete();
+            postMessage({ type: MsgTypes.EXPORT, data: data }, data);
+        }
     }
 
     syncInfo(): void {

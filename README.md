@@ -8,6 +8,8 @@ The porting of [FlMML](https://flmml.codeplex.com/), MML player which runs on Fl
 ---
 Flash上でMMLを演奏する[FlMML](https://flmml.codeplex.com/)をHTML5環境上に移植したものです。
 
+v2.0.0 から[オーディオファイル出力](https://github.com/argentum384/flmml-on-html5/wiki/v2.x#exportwav)にも対応しました。
+
 デモはこちら  
 [Demo page](https://argentum384.github.io/flmml-on-html5-demo/)
 

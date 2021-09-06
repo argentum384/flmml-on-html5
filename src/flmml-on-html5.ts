@@ -1,4 +1,5 @@
 import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 // CSS セレクタ文字列を指定した場合対象の DOM 要素クリック時に Web Audio 初期化処理を行う
@@ -8,7 +9,8 @@ const PLAYER_SELECTORS: string = null;
 type FlMMLOptions = {
     workerURL?: string,
     infoInterval?: number,
-    crossOriginWorker?: boolean
+    crossOriginWorker?: boolean,
+    lamejsURL?: string
 };
 
 export class FlMML {
@@ -20,6 +22,7 @@ export class FlMML {
     private worker: Worker;
     private booted: boolean = false;
     private volume: number = 100.0;
+    private lamejsURL: string;
     private events: { [key: string]: Function[] } = {};
 
     private gain: GainNode;
@@ -39,6 +42,9 @@ export class FlMML {
     private nowMSec: number = 0;
     private nowTimeStr: string = "00:00";
     private voiceCount: number = 0;
+
+    private audioExportResolve: (data: ArrayBuffer[]) => void;
+    private audioExportReject: (error: any) => void;
 
     oncompilecomplete: () => void;
     onbuffering: (e: any) => void;
@@ -92,6 +98,7 @@ export class FlMML {
         :
             FlMML.DEFAULT_INFO_INTERVAL
         ;
+        this.lamejsURL = options.lamejsURL;
 
         const worker = this.worker = new Worker(
             options.crossOriginWorker ?
@@ -145,7 +152,25 @@ export class FlMML {
             case MsgTypes.STOPSOUND:
                 this.stopSound();
                 break;
+            case MsgTypes.EXPORT:
+                if (data.data) {
+                    this.audioExportResolve(data.data);
+                    this.audioExportResolve = null;
+                    this.audioExportReject = null;
+                } else {
+                    this.errorAudioExport(data.errorMsg);
+                }
+                break;
         }
+    }
+
+    private boot() {
+        this.worker.postMessage({
+            type: MsgTypes.BOOT,
+            sampleRate: FlMML.audioCtx.sampleRate,
+            lamejsURL: this.lamejsURL
+        });
+        this.booted = true;
     }
 
     private playSound() {
@@ -207,27 +232,62 @@ export class FlMML {
         }
     }
 
+    private exportAudio(mml: string, format: string, options: {} = {}): Promise<ArrayBuffer[]> {
+        if (!FlMML.audioCtx) FlMML.initWebAudio();
+        if (!this.booted) this.boot();
+
+        return new Promise<ArrayBuffer[]>((resolve, reject) => {
+            if (this.audioExportResolve) {
+                reject(new FlMMLAudioExportError("Another process is already running"))
+                return;
+            }
+            this.worker.postMessage({
+                type: MsgTypes.EXPORT,
+                mml: mml,
+                format: format,
+                ...options
+            });
+            this.audioExportResolve = resolve;
+            this.audioExportReject = reject;
+        });
+    }
+
+    private errorAudioExport(msg: string): void {
+        if (!this.audioExportReject) return;
+        this.audioExportReject(new FlMMLAudioExportError(msg));
+        this.audioExportResolve = null;
+        this.audioExportReject = null;
+    }
+
     play(mml: string) {
         // Web Audio 初期化が間に合わなかった場合の救済措置
         // ここで初期化すると再生されない場合あり
         if (!FlMML.audioCtx) FlMML.initWebAudio();
 
-        if (!this.booted) {
-            this.worker.postMessage({
-                type: MsgTypes.BOOT,
-                sampleRate: FlMML.audioCtx.sampleRate,
-            });
-            this.booted = true;
-        }
+        if (!this.booted) this.boot();
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
+        if (this.audioExportResolve) {
+            this.errorAudioExport("Aborted exporting audio file");
+        }
     }
 
     stop() {
         this.worker.postMessage({ type: MsgTypes.STOP });
+        if (this.audioExportResolve) {
+            this.errorAudioExport("Aborted exporting audio file");
+        }
     }
 
     pause() {
         this.worker.postMessage({ type: MsgTypes.PAUSE });
+    }
+
+    exportWav(mml: string): Promise<ArrayBuffer[]> {
+        return this.exportAudio(mml, "wav");
+    }
+
+    exportMp3(mml: string, bitrate?: number): Promise<ArrayBuffer[]> {
+        return this.exportAudio(mml, "mp3", { bitrate: bitrate });
     }
 
     setMasterVolume(volume: number) {

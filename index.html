@@ -65,7 +65,7 @@
                     elem.removeChild(child);
                 }
             }
-            
+
             function onInput() {
                 var vol = E("volume").value;
                 flmml.setMasterVolume(parseInt(vol));
@@ -88,9 +88,38 @@
                 T("time", flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr());
             }
 
+            function downloadFile(data, fileName, mimeType) {
+                var blob = new Blob(data, { type: mimeType });
+                var reader = new FileReader();
+                reader.onload = () => {
+                    var a = document.createElement("a");
+                    a.href = reader.result;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+                reader.readAsDataURL(blob);
+            }
+
+            function downloadWav() {
+                flmml.exportWav(E("mml").value).then(data => {
+                    downloadFile(data, "output.wav", "audio/wav");
+                });
+            }
+
+            function downloadMp3() {
+                flmml.exportMp3(E("mml").value).then(data => {
+                    downloadFile(data, "output.mp3", "audio/x-mpeg-3");
+                });
+            }
+
             document.addEventListener("DOMContentLoaded", function () {
                 FlMML.prepare(".group");
-                flmml = new FlMML({ workerURL: "./dist/flmml-on-html5.worker.js" });
+                flmml = new FlMML({
+                    workerURL: "./dist/flmml-on-html5.worker.js",
+                    lamejsURL: "https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"
+                });
 
                 L("play", "click", function () {
                     flmml.play(E("mml").value);
@@ -98,6 +127,8 @@
                 L("pause", "click", flmml.pause.bind(flmml));
                 L("stop", "click", flmml.stop.bind(flmml));
                 L("volume", "input", onInput);
+                L("dlwav", "click", downloadWav);
+                L("dlmp3", "click", downloadMp3);
 
                 flmml.oncompilecomplete = onCompileComplete;
                 flmml.onbuffering = onBuffering;
@@ -114,6 +145,7 @@
         <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
         <span id="time">00:00/00:00</span>
         <input type="range" id="volume" min="0" max="127" step="1" value="100"><span id="display">Volume: 100</span><br>
+        <button id="dlwav">Download WAV</button><button id="dlmp3">Download MP3</button><br>
         <textarea id="warnings" rows="5" readonly>(Warnings)</textarea>
     </div>
     <h2>Link</h2>

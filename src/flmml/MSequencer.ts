@@ -26,6 +26,7 @@ export class MSequencer {
     protected bufferSize: number;
     protected bufferId: number;
     protected lastSample: Array<number>;
+    protected isExportingAudio: boolean;
 
     protected m_buffer: Array<Array<Float32Array>>;
     protected m_playSide: number;
@@ -73,7 +74,7 @@ export class MSequencer {
         return self.performance ? self.performance.now() : new Date().getTime();
     }
     
-    play(): void {
+    play(exportAudio: boolean = false): void {
         if (this.m_status === /*MSequencer.STATUS_PAUSE*/1) {
             var bufMSec: number = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0;
             this.m_status = /*MSequencer.STATUS_PLAY*/3;
@@ -88,6 +89,7 @@ export class MSequencer {
             }
             this.lastSample = [0.0, 0.0];
             this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
+            this.isExportingAudio = exportAudio;
             this.processStart();
         }
         this.m_lastTime = 0;
@@ -108,6 +110,7 @@ export class MSequencer {
     }
 
     pause(): void {
+        if (this.isExportingAudio) return;
         switch (this.m_status) {
             case /*MSequencer.STATUS_BUFFERING*/2:
                 this.m_waitPause = true;
@@ -221,7 +224,7 @@ export class MSequencer {
                         this.pause();
                         this.m_step = /*MSequencer.STEP_PRE*/1;
                     } else {
-                        this.worker.playSound();
+                        if (!this.isExportingAudio) this.worker.playSound();
                         this.processStart();
                     }
                 }
@@ -263,11 +266,13 @@ export class MSequencer {
         
         var bufSize: number = this.bufferSize;
         var rateRatio: number = AUDIO_BUFFER_SIZE / bufSize;
-        var sendBuf: Array<Float32Array> = data.retBuf || [new Float32Array(AUDIO_BUFFER_SIZE), new Float32Array(AUDIO_BUFFER_SIZE)];
+        var sendBuf: Float32Array[] =
+            data.retBuf ||
+            Array(2).fill(0).map(() => new Float32Array(this.isExportingAudio ? bufSize : AUDIO_BUFFER_SIZE));
         var base: number = bufSize * this.m_playSize;
         [0, 1].forEach(ch => {
             var samples: Float32Array = this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize);
-            if (bufSize === AUDIO_BUFFER_SIZE) {
+            if (bufSize === AUDIO_BUFFER_SIZE || this.isExportingAudio) {
                 sendBuf[ch].set(samples);
             } else {
                 this.convertRate(samples, sendBuf[ch], rateRatio, this.lastSample[ch]);
@@ -326,7 +331,10 @@ export class MSequencer {
             var globalMSec = this.m_globalSample / SEQUENCER_SAMPLE_RATE * 1000.0,
                 elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0,
                 bufMSec = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0;
-            this.m_maxNowMSec = Math.max(this.m_maxNowMSec, globalMSec + Math.min(elapsed, bufMSec));
+            this.m_maxNowMSec = Math.max(
+                this.m_maxNowMSec,
+                globalMSec + (this.isExportingAudio ? 0.0 : Math.min(elapsed, bufMSec))
+            );
             return this.m_maxNowMSec
         }
     }
