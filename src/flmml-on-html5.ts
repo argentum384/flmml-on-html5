@@ -19,7 +19,7 @@ export class FlMML {
     private lamejsURL: string;
     private events: { [key: string]: ((...args: any[]) => void)[] } = {};
 
-    private gain: GainNode;
+    private gainNode: GainNode;
     private workletNode: AudioWorkletNode;
     private workletModuleLoaded: boolean = false;
     
@@ -166,13 +166,13 @@ export class FlMML {
     }
 
     private playSound() {
-        if (this.gain || this.workletNode) return;
+        if (this.gainNode || this.workletNode) return;
 
         const audioCtx = FlMML.audioCtx;
 
-        const gain = this.gain = audioCtx.createGain();
-        gain.gain.value = this.volume / 127.0;
-        gain.connect(audioCtx.destination);
+        const gainNode = this.gainNode = audioCtx.createGain();
+        gainNode.gain.value = this.volume / 127.0;
+        gainNode.connect(audioCtx.destination);
 
         (async () => {
             // 初回のみ AudioWorklet にモジュール追加
@@ -196,7 +196,7 @@ export class FlMML {
                 numberOfOutputs: 1,
                 outputChannelCount: [2]
             });
-            workletNode.connect(gain);
+            workletNode.connect(gainNode);
 
             // Transfer MessagePort of AudioWorkletNode
             this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
@@ -204,7 +204,7 @@ export class FlMML {
     }
 
     private stopSound() {
-        if (this.gain) { this.gain.disconnect(); this.gain = null; }
+        if (this.gainNode) { this.gainNode.disconnect(); this.gainNode = null; }
         if (this.workletNode) { this.workletNode.disconnect(); this.workletNode = null; }
         this.worker.postMessage({ type: MsgTypes.STOPSOUND });
     }
@@ -285,7 +285,7 @@ export class FlMML {
 
     setMasterVolume(volume: number) {
         this.volume = volume;
-        if (this.gain) this.gain.gain.value = this.volume / 127.0;
+        if (this.gainNode) this.gainNode.gain.value = this.volume / 127.0;
     }
 
     isPlaying() {
