@@ -27,9 +27,9 @@ export class FlMMLWorker {
     }
 
     private onMessage(e: MessageEvent<any>): void {
-        var data: any = e.data,
-            type: number = data.type,
-            mml: MML = this.mml;
+        const data = e.data;
+        const type: number = data.type;
+        const mml = this.mml;
 
         switch (type) {
             case MsgTypes.BOOT:
@@ -105,7 +105,7 @@ export class FlMMLWorker {
     }
 
     compileComplete(): void {
-        var mml: MML = this.mml;
+        const mml = this.mml;
 
         postMessage({
             type: MsgTypes.COMPCOMP,
@@ -134,7 +134,7 @@ export class FlMMLWorker {
         postMessage({ type: MsgTypes.STOPSOUND });
     }
 
-    sendBuffer(buffer: Array<Float32Array>): void {
+    sendBuffer(buffer: Float32Array[]): void {
         if (this.audioExport) {
             this.audioExport.process(buffer);
             this.audioExport.request(buffer);
@@ -150,7 +150,7 @@ export class FlMMLWorker {
     }
 
     syncInfo(): void {
-        var mml: MML = this.mml;
+        const mml = this.mml;
         if (!mml) return;
 
         this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
