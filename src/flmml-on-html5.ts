@@ -120,15 +120,15 @@ export class FlMML {
                 this.metaComment = data.info.metaComment;
                 this.metaArtist = data.info.metaArtist;
                 this.metaCoding = data.info.metaCoding;
-                this.oncompilecomplete && this.oncompilecomplete();
+                if (this.oncompilecomplete) this.oncompilecomplete();
                 this.trigger("compilecomplete");
                 break;
             case MsgTypes.BUFRING:
-                this.onbuffering && this.onbuffering(data);
+                if (this.onbuffering) this.onbuffering(data);
                 this.trigger("buffering", { progress: data.progress });
                 break;
             case MsgTypes.COMPLETE:
-                this.oncomplete && this.oncomplete();
+                if (this.oncomplete) this.oncomplete();
                 this.trigger("complete");
                 break;
             case MsgTypes.SYNCINFO:
@@ -137,7 +137,7 @@ export class FlMML {
                 this.nowMSec = data.info.nowMSec;
                 this.nowTimeStr = data.info.nowTimeStr;
                 this.voiceCount = data.info.voiceCount;
-                this.onsyncinfo && this.onsyncinfo();
+                if (this.onsyncinfo) this.onsyncinfo();
                 this.trigger("syncinfo");
                 break;
             case MsgTypes.PLAYSOUND:
@@ -220,7 +220,7 @@ export class FlMML {
         }
 
         for (let i = 0, len = handlers.length; i < len; i++) {
-            handlers[i] && handlers[i].call(this, e);
+            if (handlers[i]) handlers[i].call(this, e);
         }
     }
 

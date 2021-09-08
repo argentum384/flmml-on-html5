@@ -35,7 +35,7 @@ export class FlMMLWorker {
             case MsgTypes.BOOT:
                 this.audioSampleRate = data.sampleRate;
                 this.mml = new MML(this);
-                data.lamejsURL && self.importScripts(data.lamejsURL);
+                if (data.lamejsURL) self.importScripts(data.lamejsURL);
                 break;
             case MsgTypes.PLAY:
                 if (!mml) break;
@@ -43,12 +43,14 @@ export class FlMMLWorker {
                 if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.STOP:
-                mml && mml.stop();
+                if (!mml) break;
+                mml.stop();
                 this.syncInfo();
                 if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.PAUSE:
-                mml && mml.pause();
+                if (!mml) break;
+                mml.pause();
                 this.syncInfo();
                 break;
             case MsgTypes.SYNCINFO:
@@ -67,7 +69,7 @@ export class FlMMLWorker {
                 this.workletPort.onmessage = e => { this.onrequestbuffer(e.data); };
                 break;
             case MsgTypes.STOPSOUND:
-                this.onstopsound && this.onstopsound();
+                if (this.onstopsound) this.onstopsound();
                 break;
             case MsgTypes.EXPORT:
                 if (!mml) {
