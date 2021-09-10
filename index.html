@@ -1,156 +1,152 @@
 ﻿<!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlMML on HTML5 Demo</title>
     <style>
-        body {
-            margin: 0.5em;
-            color: black;
-            background-color: white;
-            font-size: 16px;
-        }
-
-        h1 {
-            font-size: 1.4em;
-        }
-
-        div.group {
-            margin: 0 0 0 1em;
-        }
-
+        body { font-size: 16px; font-family: sans-serif; }
+        .container { width: 544px; }
         textarea {
-            width: 480px;
-            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
             font-family: monospace;
-            font-size: 16px;
+            font-size: 1em;
+            resize: none;
         }
-
-        button {
-            font-size: 16px;
+        .display { display: flex; justify-content: space-between; }
+        .display > *:first-child { flex-grow: 1; }
+        .display br { display: none; }
+        #voldisp {
+            display: inline-block;
+            width: 2.2em;
+            text-align: right;
         }
-
-        span#display {
-            font-size: 14px;
-        }
-
-        input#volume {
-            width: 120px;
+        .buttons-container { display: flex; justify-content: space-between; }
+        .buttons { display: flex; margin-bottom: 0.75em; }
+        .buttons > * { margin: 0 2px; }
+        .buttons > *:first-child { margin-left: 0; }
+        .buttons > *:last-child { margin-right: 0; }
+        .buttons1 > * { font-size: 1em; }
+        .buttons2 > * { font-size: 0.8em; }
+        #volume { width: 144px; }
+        @media screen and (max-width: 560px) {
+            body { font-size: 3.6vw; }
+            .container { width: auto; }
+            .display br { display: inline; }
+            .buttons-container { display: block; }
+            .buttons { width: auto; }
+            .buttons > * { flex-grow: 1; margin: 0 0.4em; }
+            .buttons1 > * { height: 4.8em; }
+            .buttons2 > * { height: 2.6em; }
+            #volume { width: 26vw; }
         }
     </style>
     <script src="./dist/flmml-on-html5.js"></script>
     <script>
         "use strict";
 
-        var flmml;
+        let flmml;
 
-        (function () {
-            function E(id) {
-                return document.getElementById(id);
+        // Shorthand of document.getElementById(id)
+        const E = id => document.getElementById(id);
+
+        // Shorthand of document.getElementById(id).addEventListener(type, listener)
+        const L = (id, type, listener) => {
+            E(id).addEventListener(type, listener);
+        };
+
+        const onInputVolume = () => {
+            const vol = E("volume").value;
+            flmml.setMasterVolume(parseInt(vol));
+            E("voldisp").textContent = vol;
+        };
+
+        const onBuffering = e => {
+            E("buffering").textContent = e.progress === 100 ? "" : "Buffering (" + e.progress + "%)";
+        };
+
+        const onCompileComplete = () => {
+            E("warnings").value = flmml.getWarnings();
+        };
+
+        const onSyncInfo = () => {
+            E("time").textContent = flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr();
+        };
+
+        const downloadFile = (data, fileName, mimeType) => {
+            const blob = new Blob(data, { type: mimeType });
+            const reader = new FileReader();
+            reader.onload = () => {
+                const a = document.createElement("a");
+                a.href = reader.result;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
+            reader.readAsDataURL(blob);
+        };
 
-            function L(id, type, func) {
-                E(id).addEventListener(type, func);
-            }
-
-            function T(id, txt) {
-                C(id);
-                E(id).appendChild(document.createTextNode(txt));
-            }
-
-            function C(id) {
-                var elem = E(id), child;
-                while ((child = elem.lastChild)) {
-                    elem.removeChild(child);
-                }
-            }
-
-            function onInput() {
-                var vol = E("volume").value;
-                flmml.setMasterVolume(parseInt(vol));
-                T("display", "Volume: " + vol);
-            }
-
-            function onBuffering(e) {
-                if (e.progress === 100) {
-                    onInput();
-                } else {
-                    T("display", "Buffering (" + e.progress + "%)");
-                }
-            }
-
-            function onCompileComplete() {
-                E("warnings").value = flmml.getWarnings();
-            }
-
-            function onSyncInfo() {
-                T("time", flmml.getNowTimeStr() + "/" + flmml.getTotalTimeStr());
-            }
-
-            function downloadFile(data, fileName, mimeType) {
-                var blob = new Blob(data, { type: mimeType });
-                var reader = new FileReader();
-                reader.onload = () => {
-                    var a = document.createElement("a");
-                    a.href = reader.result;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }
-                reader.readAsDataURL(blob);
-            }
-
-            function downloadWav() {
-                flmml.exportWav(E("mml").value).then(data => {
-                    downloadFile(data, "output.wav", "audio/wav");
-                });
-            }
-
-            function downloadMp3() {
-                flmml.exportMp3(E("mml").value).then(data => {
-                    downloadFile(data, "output.mp3", "audio/x-mpeg-3");
-                });
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                FlMML.prepare(".group");
-                flmml = new FlMML({
-                    workerURL: "./dist/flmml-on-html5.worker.js",
-                    lamejsURL: "https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"
-                });
-
-                L("play", "click", function () {
-                    flmml.play(E("mml").value);
-                });
-                L("pause", "click", flmml.pause.bind(flmml));
-                L("stop", "click", flmml.stop.bind(flmml));
-                L("volume", "input", onInput);
-                L("dlwav", "click", downloadWav);
-                L("dlmp3", "click", downloadMp3);
-
-                flmml.oncompilecomplete = onCompileComplete;
-                flmml.onbuffering = onBuffering;
-                flmml.onsyncinfo = onSyncInfo;
+        const downloadWav = () => {
+            flmml.exportWav(E("mml").value).then(data => {
+                downloadFile(data, "output.wav", "audio/wav");
             });
-        })();
+        };
+
+        const downloadMp3 = () => {
+            flmml.exportMp3(E("mml").value).then(data => {
+                downloadFile(data, "output.mp3", "audio/x-mpeg-3");
+            });
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            FlMML.prepare("button");
+            flmml = new FlMML({
+                workerURL: "./dist/flmml-on-html5.worker.js",
+                lamejsURL: "https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"
+            });
+            flmml.oncompilecomplete = onCompileComplete;
+            flmml.onbuffering = onBuffering;
+            flmml.onsyncinfo = onSyncInfo;
+
+            L("play", "click", () => { flmml.play(E("mml").value); });
+            L("pause", "click", () => { flmml.pause(); });
+            L("stop", "click", () => { flmml.stop(); });
+            L("volume", "input", onInputVolume);
+            L("dlwav", "click", downloadWav);
+            L("dlmp3", "click", downloadMp3);
+        });
     </script>
 </head>
 <body>
-    <h1>FlMML on HTML5 Demo</h1>
-    Sequencer demo:
-    <div class="group">
-        <textarea id="mml" rows="12">L8 O5CDEFGAB&lt;C</textarea><br>
-        <button id="play">Play</button><button id="pause">Pause</button><button id="stop">Stop</button>
-        <span id="time">00:00/00:00</span>
-        <input type="range" id="volume" min="0" max="127" step="1" value="100"><span id="display">Volume: 100</span><br>
-        <button id="dlwav">Download WAV</button><button id="dlmp3">Download MP3</button><br>
-        <textarea id="warnings" rows="5" readonly>(Warnings)</textarea>
+    <div class="container">
+        <h2>FlMML on HTML5 Demo</h2>
+        <textarea id="mml" rows="12">L8 O5CDEFGAB&lt;C</textarea>
+        <div class="display">
+            <div>
+                <span id="time">00:00/00:00</span><br>
+                <span id="buffering"></span><br>
+            </div>
+            <div>
+                <input type="range" id="volume" min="0" max="127" step="1" value="100">
+                <span>Volume:</span><span id="voldisp">100</span>
+            </div>
+        </div>
+        <div class="buttons-container">
+            <div class="buttons buttons1">
+                <button id="play">Play</button>
+                <button id="pause">Pause</button>
+                <button id="stop">Stop</button>
+            </div>
+            <div class="buttons buttons2">
+                <button id="dlwav">Download WAV</button>
+                <button id="dlmp3">Download MP3</button>
+            </div>
+        </div>
+        <textarea id="warnings" rows="5" placeholder="(Warnings)" readonly></textarea>
+        <hr>
+        <a href="https://github.com/argentum384/flmml-on-html5" target="_blank">Source (GitHub)</a>
     </div>
-    <h2>Link</h2>
-    <ul>
-        <li><a href="https://github.com/argentum384/flmml-on-html5">Source</a></li>
-    </ul>
 </body>
 </html>
