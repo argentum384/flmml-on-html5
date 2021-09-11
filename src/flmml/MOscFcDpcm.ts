@@ -161,30 +161,28 @@ export class MOscFcDpcm extends MOscMod {
             this.m_phase -= MOscFcDpcm.FC_DPCM_NEXT;
             //CPU負荷軽減のため
             //val = getValue();
-            {
-                if (this.m_length > 0) {
-                    if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
-                        if (this.m_wav < 126) this.m_wav += 2;
-                    } else {
-                        if (this.m_wav > 1) this.m_wav -= 2;
-                    }
-                    this.m_bit++;
-                    if (this.m_bit >= 32) {
-                        this.m_bit = 0;
-                        this.m_address++;
-                    }
-                    this.m_length--;
-                    if (this.m_length === 0) {
-                        if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
-                            this.m_address = 0;
-                            this.m_bit = 0;
-                            this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
-                        }
-                    }
-                    val = (this.m_wav - 64) / 64.0;
+            if (this.m_length > 0) {
+                if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
+                    if (this.m_wav < 126) this.m_wav += 2;
                 } else {
-                    val = (this.m_wav - 64) / 64.0;
+                    if (this.m_wav > 1) this.m_wav -= 2;
                 }
+                this.m_bit++;
+                if (this.m_bit >= 32) {
+                    this.m_bit = 0;
+                    this.m_address++;
+                }
+                this.m_length--;
+                if (this.m_length === 0) {
+                    if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
+                        this.m_address = 0;
+                        this.m_bit = 0;
+                        this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
+                    }
+                }
+                val = (this.m_wav - 64) / 64.0;
+            } else {
+                val = (this.m_wav - 64) / 64.0;
             }
         }
         return val;
@@ -197,30 +195,28 @@ export class MOscFcDpcm extends MOscMod {
             this.m_phase -= MOscFcDpcm.FC_DPCM_NEXT;
             //CPU負荷軽減のため
             //val = getValue();
-            {
-                if (this.m_length > 0) {
-                    if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
-                        if (this.m_wav < 126) this.m_wav += 2;
-                    } else {
-                        if (this.m_wav > 1) this.m_wav -= 2;
-                    }
-                    this.m_bit++;
-                    if (this.m_bit >= 32) {
-                        this.m_bit = 0;
-                        this.m_address++;
-                    }
-                    this.m_length--;
-                    if (this.m_length === 0) {
-                        if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
-                            this.m_address = 0;
-                            this.m_bit = 0;
-                            this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
-                        }
-                    }
-                    val = (this.m_wav - 64) / 64.0;
+            if (this.m_length > 0) {
+                if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
+                    if (this.m_wav < 126) this.m_wav += 2;
                 } else {
-                    val = (this.m_wav - 64) / 64.0;
+                    if (this.m_wav > 1) this.m_wav -= 2;
                 }
+                this.m_bit++;
+                if (this.m_bit >= 32) {
+                    this.m_bit = 0;
+                    this.m_address++;
+                }
+                this.m_length--;
+                if (this.m_length === 0) {
+                    if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
+                        this.m_address = 0;
+                        this.m_bit = 0;
+                        this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
+                    }
+                }
+                val = (this.m_wav - 64) / 64.0;
+            } else {
+                val = (this.m_wav - 64) / 64.0;
             }
         }
         this.m_ofs = ofs;
@@ -236,30 +232,28 @@ export class MOscFcDpcm extends MOscMod {
                 this.m_phase -= MOscFcDpcm.FC_DPCM_NEXT;
                 //CPU負荷軽減のため
                 //val = getValue();
-                {
-                    if (this.m_length > 0) {
-                        if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
-                            if (this.m_wav < 126) this.m_wav += 2;
-                        } else {
-                            if (this.m_wav > 1) this.m_wav -= 2;
-                        }
-                        this.m_bit++;
-                        if (this.m_bit >= 32) {
-                            this.m_bit = 0;
-                            this.m_address++;
-                        }
-                        this.m_length--;
-                        if (this.m_length === 0) {
-                            if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
-                                this.m_address = 0;
-                                this.m_bit = 0;
-                                this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
-                            }
-                        }
-                        val = (this.m_wav - 64) / 64.0;
+                if (this.m_length > 0) {
+                    if ((MOscFcDpcm.s_table[this.m_waveNo][this.m_address] >> this.m_bit) & 1) {
+                        if (this.m_wav < 126) this.m_wav += 2;
                     } else {
-                        val = (this.m_wav - 64) / 64.0;
+                        if (this.m_wav > 1) this.m_wav -= 2;
                     }
+                    this.m_bit++;
+                    if (this.m_bit >= 32) {
+                        this.m_bit = 0;
+                        this.m_address++;
+                    }
+                    this.m_length--;
+                    if (this.m_length === 0) {
+                        if (MOscFcDpcm.s_loopFg[this.m_waveNo]) {
+                            this.m_address = 0;
+                            this.m_bit = 0;
+                            this.m_length = MOscFcDpcm.s_length[this.m_waveNo];
+                        }
+                    }
+                    val = (this.m_wav - 64) / 64.0;
+                } else {
+                    val = (this.m_wav - 64) / 64.0;
                 }
             }
             samples[i] = val;

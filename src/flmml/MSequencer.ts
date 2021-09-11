@@ -1,8 +1,6 @@
 ﻿import { FlMMLWorker } from "../flmml-on-html5.worker";
-import {
-    SEQUENCER_SAMPLE_RATE,
-    AUDIO_BUFFER_SIZE
-} from "../common/Consts";
+import { SEQUENCER_SAMPLE_RATE, AUDIO_BUFFER_SIZE } from "../common/Consts";
+import { SampleDataEvent } from "../common/Types";
 import { MOscillator } from "./MOscillator";
 import { MChannel } from "./MChannel";
 import { MEnvelope } from "./MEnvelope";
@@ -46,7 +44,7 @@ export class MSequencer {
     protected m_maxProcTime: number;
     protected m_waitPause: boolean;
 
-    protected processAllBinded: Function;
+    protected processAllBinded: () => void;
 
     constructor(worker: FlMMLWorker) {
         this.worker = worker;
@@ -65,18 +63,17 @@ export class MSequencer {
         ];
         this.m_maxProcTime = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0 * 0.8;
         //this.m_lastTime = 0;
-        this.processAllBinded = this.processAll.bind(this);
-        this.worker.onrequestbuffer = this.onSampleData.bind(this);
+        this.processAllBinded = () => { this.processAll(); };
+        this.worker.onrequestbuffer = e => { this.onSampleData(e); };
         this.stop();
     }
     
-    static getTimer() {
+    static getTimer(): number {
         return self.performance ? self.performance.now() : new Date().getTime();
     }
     
     play(exportAudio: boolean = false): void {
         if (this.m_status === /*MSequencer.STATUS_PAUSE*/1) {
-            var bufMSec: number = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0;
             this.m_status = /*MSequencer.STATUS_PLAY*/3;
             this.worker.playSound();
             this.startProcTimer();
@@ -87,6 +84,7 @@ export class MSequencer {
             for (var i: number = 0; i < this.m_trackArr.length; i++) {
                 this.m_trackArr[i].seekTop();
             }
+            this.m_maxNowMSec = 0;
             this.lastSample = [0.0, 0.0];
             this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
             this.isExportingAudio = exportAudio;
@@ -140,7 +138,7 @@ export class MSequencer {
 
     private reqBuffering(): void {
         if (!this.m_buffTimer) {
-            this.m_buffTimer = setTimeout(this.onBufferingReq.bind(this) as Function, 0);
+            this.m_buffTimer = self.setTimeout(() => { this.onBufferingReq(); }, 0);
         }
     }
 
@@ -153,7 +151,7 @@ export class MSequencer {
     private startProcTimer(interval: number = 0): void {
         clearTimeout(this.m_procTimer);
         if (this.m_status === /*MSequencer.STATUS_STOP*/0) return;
-        this.m_procTimer = setTimeout(this.processAllBinded, interval);
+        this.m_procTimer = self.setTimeout(this.processAllBinded, interval);
     }
     
     // バッファ書き込みリクエスト
@@ -190,6 +188,10 @@ export class MSequencer {
                     infoInterval: number = this.worker.infoInterval,
                     infoTime: number = this.worker.lastInfoTime + infoInterval;
                 do {
+                    if (this.m_processTrack >= nLen) {
+                        this.m_step++;
+                        break;
+                    }
                     this.m_trackArr[this.m_processTrack].onSampleData(buffer, this.m_processOffset, this.m_processOffset + bLen);
                     this.m_processOffset += bLen;
                     if (this.m_processOffset >= sLen) {
@@ -198,10 +200,6 @@ export class MSequencer {
                     }
                     if (status === /*MSequencer.STATUS_BUFFERING*/2) {
                         this.worker.buffering((this.m_processTrack * sLen + this.m_processOffset) / (nLen * sLen) * 100.0 | 0);
-                    }
-                    if (this.m_processTrack >= nLen) {
-                        this.m_step++;
-                        break;
                     }
                     if (infoInterval > 0 && MSequencer.getTimer() > infoTime) {
                         this.worker.syncInfo();
@@ -232,9 +230,8 @@ export class MSequencer {
         }
     }
 
-    private onSampleData(e: MessageEvent<any>): void {
-        const data = e.data;
-        if (data.bufferId !== this.bufferId) return;
+    private onSampleData(e: SampleDataEvent): void {
+        if (e.bufferId !== this.bufferId) return;
 
         this.m_lastTime = MSequencer.getTimer();
         if (this.m_status < /*MSequencer.STATUS_PLAY*/3) return;
@@ -267,7 +264,7 @@ export class MSequencer {
         var bufSize: number = this.bufferSize;
         var rateRatio: number = AUDIO_BUFFER_SIZE / bufSize;
         var sendBuf: Float32Array[] =
-            data.retBuf ||
+            e.retBuf ||
             Array(2).fill(0).map(() => new Float32Array(this.isExportingAudio ? bufSize : AUDIO_BUFFER_SIZE));
         var base: number = bufSize * this.m_playSize;
         [0, 1].forEach(ch => {

@@ -1,10 +1,11 @@
-﻿export class MEvent {
+﻿const TEMPO_SCALE = 100; // bpm小数点第二位まで有効
+
+export class MEvent {
     private m_delta: number;
     private m_status: number;
     private m_data0: number;
     private m_data1: number;
     private m_tick: number;
-    private TEMPO_SCALE: number = 100; // bpm小数点第二位まで有効
 
     constructor(tick: number) {
         this.set(/*MStatus.NOP*/1, 0, 0);
@@ -19,7 +20,7 @@
     setEOT(): void { this.set(/*MStatus.EOT*/0, 0, 0); }
     setNoteOn(noteNo: number, vel: number): void { this.set(/*MStatus.NOTE_ON*/2, noteNo, vel); }
     setNoteOff(noteNo: number, vel: number): void { this.set(/*MStatus.NOTE_OFF*/3, noteNo, vel); }
-    setTempo(tempo: number): void { this.set(/*MStatus.TEMPO*/4, tempo * this.TEMPO_SCALE, 0); }
+    setTempo(tempo: number): void { this.set(/*MStatus.TEMPO*/4, tempo * TEMPO_SCALE, 0); }
     setVolume(vol: number): void { this.set(/*MStatus.VOLUME*/5, vol, 0); }
     setNote(noteNo: number): void { this.set(/*MStatus.NOTE*/6, noteNo, 0); }
     setForm(form: number, sub: number): void { this.set(/*MStatus.FORM*/7, form, sub); }
@@ -64,7 +65,7 @@
     getTick(): number { return this.m_tick; }
     getNoteNo(): number { return this.m_data0; }
     getVelocity(): number { return this.m_data1; }
-    getTempo(): number { return Math.floor(this.m_data0) / this.TEMPO_SCALE; }
+    getTempo(): number { return Math.floor(this.m_data0) / TEMPO_SCALE; }
     getVolume(): number { return this.m_data0; }
     getForm(): number { return this.m_data0; }
     getSubForm(): number { return this.m_data1; }

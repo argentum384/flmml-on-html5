@@ -162,41 +162,39 @@ export class MML {
                 this.m_tracks[this.m_trackNo].recExpression(o);
                 break;
             case 'e': // Envelope
-                (() => {
-                    var releasePos: number;
-                    var t: Array<number> = new Array<number>(), l: Array<number> = new Array<number>();
-                    this.next();
-                    o = this.getUInt(o);
-                    if (this.getChar() === ',') this.next();
-                    a = this.getUInt(a);
-                    releasePos = this.m_letter;
-                    while (true) {
-                        if (this.getChar() === ',') {
-                            this.next();
-                        } else {
-                            break;
-                        }
-                        releasePos = this.m_letter - 1;
-                        d = this.getUInt(d);
-                        if (this.getChar() === ',') {
-                            this.next();
-                        } else {
-                            this.m_letter = releasePos;
-                            break;
-                        }
-                        s = this.getUInt(s);
-                        t.push(d);
-                        l.push(s);
+                var releasePos: number;
+                var t: Array<number> = new Array<number>(), l: Array<number> = new Array<number>();
+                this.next();
+                o = this.getUInt(o);
+                if (this.getChar() === ',') this.next();
+                a = this.getUInt(a);
+                releasePos = this.m_letter;
+                while (true) {
+                    if (this.getChar() === ',') {
+                        this.next();
+                    } else {
+                        break;
                     }
-                    if (t.length === 0) {
-                        t.push(d);
-                        l.push(s);
+                    releasePos = this.m_letter - 1;
+                    d = this.getUInt(d);
+                    if (this.getChar() === ',') {
+                        this.next();
+                    } else {
+                        this.m_letter = releasePos;
+                        break;
                     }
-                    if (this.getChar() === ',') this.next();
-                    r = this.getUInt(r);
-                    //console.log("A"+a+",D"+d+",S"+s+",R"+r);
-                    this.m_tracks[this.m_trackNo].recEnvelope(o, a, t, l, r);
-                })();
+                    s = this.getUInt(s);
+                    t.push(d);
+                    l.push(s);
+                }
+                if (t.length === 0) {
+                    t.push(d);
+                    l.push(s);
+                }
+                if (this.getChar() === ',') this.next();
+                r = this.getUInt(r);
+                //console.log("A"+a+",D"+d+",S"+s+",R"+r);
+                this.m_tracks[this.m_trackNo].recEnvelope(o, a, t, l, r);
                 break;
             case 'm':
                 this.next();
@@ -291,56 +289,52 @@ export class MML {
                 this.m_tracks[this.m_trackNo].recDetune(o);
                 break;
             case 'l': // Low frequency oscillator (LFO)
-                (() => {
-                    var dp: number = 0, wd: number = 0, fm: number = 1, sf: number = 0, rv: number = 1, dl: number = 0, tm: number = 0, cn: number = 0, sw: number = 0;
+                var dp: number = 0, wd: number = 0, fm: number = 1, sf: number = 0, rv: number = 1, dl: number = 0, tm: number = 0, cn: number = 0, sw: number = 0;
+                this.next();
+                dp = this.getUInt(dp);
+                if (this.getChar() === ',') this.next();
+                wd = this.getUInt(wd);
+                if (this.getChar() === ',') {
                     this.next();
-                    dp = this.getUInt(dp);
-                    if (this.getChar() === ',') this.next();
-                    wd = this.getUInt(wd);
+                    if (this.getChar() === '-') { rv = -1; this.next(); }
+                    fm = (this.getUInt(fm) + 1) * rv;
+                    if (this.getChar() === '-') {
+                        this.next();
+                        sf = this.getUInt(0);
+                    }
                     if (this.getChar() === ',') {
                         this.next();
-                        if (this.getChar() === '-') { rv = -1; this.next(); }
-                        fm = (this.getUInt(fm) + 1) * rv;
-                        if (this.getChar() === '-') {
-                            this.next();
-                            sf = this.getUInt(0);
-                        }
+                        dl = this.getUInt(dl);
                         if (this.getChar() === ',') {
                             this.next();
-                            dl = this.getUInt(dl);
+                            tm = this.getUInt(tm);
                             if (this.getChar() === ',') {
                                 this.next();
-                                tm = this.getUInt(tm);
-                                if (this.getChar() === ',') {
-                                    this.next();
-                                    sw = this.getUInt(sw);
-                                }
+                                sw = this.getUInt(sw);
                             }
                         }
                     }
-                    //console.log("DePth"+dp+",WiDth"+wd+",ForM"+fm+",DeLay"+dl+",TiMe"+tm);
-                    this.m_tracks[this.m_trackNo].recLFO(dp, wd, fm, sf, dl, tm, sw);
-                })();
+                }
+                //console.log("DePth"+dp+",WiDth"+wd+",ForM"+fm+",DeLay"+dl+",TiMe"+tm);
+                this.m_tracks[this.m_trackNo].recLFO(dp, wd, fm, sf, dl, tm, sw);
                 break;
             case 'f': // Filter
-                (() => {
-                    var swt: number = 0, amt: number = 0, frq: number = 0, res: number = 0;
+                var swt: number = 0, amt: number = 0, frq: number = 0, res: number = 0;
+                this.next();
+                swt = this.getSInt(swt);
+                if (this.getChar() === ',') {
                     this.next();
-                    swt = this.getSInt(swt);
+                    amt = this.getSInt(amt);
                     if (this.getChar() === ',') {
                         this.next();
-                        amt = this.getSInt(amt);
+                        frq = this.getUInt(frq);
                         if (this.getChar() === ',') {
                             this.next();
-                            frq = this.getUInt(frq);
-                            if (this.getChar() === ',') {
-                                this.next();
-                                res = this.getUInt(res);
-                            }
+                            res = this.getUInt(res);
                         }
                     }
-                    this.m_tracks[this.m_trackNo].recLPF(swt, amt, frq, res);
-                })();
+                }
+                this.m_tracks[this.m_trackNo].recLPF(swt, amt, frq, res);
                 break;
             case 'q': // gate time 2
                 this.next();
@@ -379,39 +373,35 @@ export class MML {
                 // if (n === 2) add
                 break;
             case 'r': // Ring
-                (() => {
-                    sens = 0;
+                sens = 0;
+                this.next();
+                sens = this.getUInt(sens);
+                if (this.getChar() === ',') {
                     this.next();
-                    sens = this.getUInt(sens);
-                    if (this.getChar() === ',') {
-                        this.next();
-                        a = this.getUInt(a);
-                        if (a > this.m_maxPipe) a = this.m_maxPipe;
-                    }
-                    this.m_tracks[this.m_trackNo].recRing(sens, a);
-                })();
+                    a = this.getUInt(a);
+                    if (a > this.m_maxPipe) a = this.m_maxPipe;
+                }
+                this.m_tracks[this.m_trackNo].recRing(sens, a);
                 break;
             case 's': // Sync
-                {
-                    mode = 0;
+                mode = 0;
+                this.next();
+                mode = this.getUInt(mode);
+                if (this.getChar() === ',') {
                     this.next();
-                    mode = this.getUInt(mode);
-                    if (this.getChar() === ',') {
-                        this.next();
-                        a = this.getUInt(a);
-                        if (mode === 1) {
-                            // Sync out
-                            if (a > this.m_maxSyncSource) {
-                                this.m_maxSyncSource = a;
-                                if (this.m_maxSyncSource >= MML.MAX_SYNCSOURCE) this.m_maxSyncSource = a = MML.MAX_SYNCSOURCE;
-                            }
-                        } else if (mode === 2) {
-                            // Sync in
-                            if (a > this.m_maxSyncSource) a = this.m_maxSyncSource;
+                    a = this.getUInt(a);
+                    if (mode === 1) {
+                        // Sync out
+                        if (a > this.m_maxSyncSource) {
+                            this.m_maxSyncSource = a;
+                            if (this.m_maxSyncSource >= MML.MAX_SYNCSOURCE) this.m_maxSyncSource = a = MML.MAX_SYNCSOURCE;
                         }
+                    } else if (mode === 2) {
+                        // Sync in
+                        if (a > this.m_maxSyncSource) a = this.m_maxSyncSource;
                     }
-                    this.m_tracks[this.m_trackNo].recSync(mode, a);
                 }
+                this.m_tracks[this.m_trackNo].recSync(mode, a);
                 break;
             case 'u': // midi風なポルタメント
                 this.next();
@@ -566,11 +556,9 @@ export class MML {
                 this.m_tracks[this.m_trackNo].recChordEnd();
                 break;
             default:
-                {
-                    var cc: number = c.charCodeAt(0);
-                    if (cc < 128)
-                        this.warning(MWarning.UNKNOWN_COMMAND, c);
-                }
+                var cc: number = c.charCodeAt(0);
+                if (cc < 128)
+                    this.warning(MWarning.UNKNOWN_COMMAND, c);
                 break;
         }
     }
@@ -870,104 +858,103 @@ export class MML {
         }
 
         // POLY MODE
-        {
-            var usePoly: string = this.findMetaDescN("USING\\s+POLY");
-            usePoly = usePoly.replace("\r", "");
-            usePoly = usePoly.replace("\n", " ");
-            usePoly = usePoly.toLowerCase();
-            if (usePoly.length > 0) {
-                var ss: Array<string> = usePoly.split(" ");
-                if (ss.length < 1) {
-                    this.m_usingPoly = false;
+        var usePoly: string = this.findMetaDescN("USING\\s+POLY");
+        usePoly = usePoly.replace("\r", "");
+        usePoly = usePoly.replace("\n", " ");
+        usePoly = usePoly.toLowerCase();
+        if (usePoly.length > 0) {
+            var ss: Array<string> = usePoly.split(" ");
+            if (ss.length < 1) {
+                this.m_usingPoly = false;
+            }
+            else {
+                this.m_usingPoly = true;
+                this.m_polyVoice = Math.min(Math.max(1, parseInt(ss[0])), MML.MAX_POLYVOICE); // 1～MAX_POLYVOICE
+            }
+            for (i = 1; i < ss.length; i++) {
+                if (ss[i] === "force") {
+                    this.m_polyForce = true;
                 }
-                else {
-                    this.m_usingPoly = true;
-                    this.m_polyVoice = Math.min(Math.max(1, parseInt(ss[0])), MML.MAX_POLYVOICE); // 1～MAX_POLYVOICE
-                }
-                for (i = 1; i < ss.length; i++) {
-                    if (ss[i] === "force") {
-                        this.m_polyForce = true;
-                    }
-                }
-                if (this.m_polyVoice <= 1) {
-                    this.m_usingPoly = false;
-                    this.m_polyForce = false;
-                }
-                //console.log("using poly = " + this.m_usingPoly + ", max voice = " + this.m_polyVoice + ", force = " + this.m_polyForce);
+            }
+            if (this.m_polyVoice <= 1) {
+                this.m_usingPoly = false;
+                this.m_polyForce = false;
+            }
+            //console.log("using poly = " + this.m_usingPoly + ", max voice = " + this.m_polyVoice + ", force = " + this.m_polyForce);
+        }
+
+        // GB WAVE (ex. "#WAV10 0,0123456789abcdeffedcba9876543210")
+        exp = /^#WAV10\s.*$/gm;
+        matched = this.m_string.match(exp);
+        if (matched) {
+            for (i = 0; i < matched.length; i++) {
+                this.m_string = this.m_string.replace(exp, "");
+                //console.log(matched[i]);
+                var wav: Array<string> = matched[i].split(" ");
+                var wavs: string = "";
+                for (var j: number = 1; j < wav.length; j++) wavs += wav[j];
+                var arg: Array<string> = wavs.split(",");
+                var waveNo: number = parseInt(arg[0]);
+                if (waveNo < 0) waveNo = 0;
+                if (waveNo >= MOscGbWave.MAX_WAVE) waveNo = MOscGbWave.MAX_WAVE - 1;
+                //console.log(waveNo+":",arg[1].toLowerCase());
+                MOscGbWave.setWave(waveNo,
+                    (arg[1].toLowerCase() + "00000000000000000000000000000000").substr(0, 32));
             }
         }
-        // GB WAVE (ex. "#WAV10 0,0123456789abcdeffedcba9876543210")
-        {
-            exp = /^#WAV10\s.*$/gm;
-            matched = this.m_string.match(exp);
-            if (matched) {
-                for (i = 0; i < matched.length; i++) {
-                    this.m_string = this.m_string.replace(exp, "");
-                    //console.log(matched[i]);
-                    var wav: Array<string> = matched[i].split(" ");
-                    var wavs: string = "";
-                    for (var j: number = 1; j < wav.length; j++) wavs += wav[j];
-                    var arg: Array<string> = wavs.split(",");
-                    var waveNo: number = parseInt(arg[0]);
-                    if (waveNo < 0) waveNo = 0;
-                    if (waveNo >= MOscGbWave.MAX_WAVE) waveNo = MOscGbWave.MAX_WAVE - 1;
-                    //console.log(waveNo+":",arg[1].toLowerCase());
-                    MOscGbWave.setWave(waveNo,
-                        (arg[1].toLowerCase() + "00000000000000000000000000000000").substr(0, 32));
-                }
+        exp = /^#WAV13\s.*$/gm;
+        matched = this.m_string.match(exp);
+        if (matched) {
+            for (i = 0; i < matched.length; i++) {
+                this.m_string = this.m_string.replace(exp, "");
+                //console.log(matched[i]);
+                wav = matched[i].split(" ");
+                wavs = "";
+                for (j = 1; j < wav.length; j++) wavs += wav[j];
+                arg = wavs.split(",");
+                waveNo = parseInt(arg[0]);
+                if (waveNo < 0) waveNo = 0;
+                if (waveNo >= MOscWave.MAX_WAVE) waveNo = MOscWave.MAX_WAVE - 1;
+                //console.log(waveNo+":",arg[1].toLowerCase());
+                MOscWave.setWave(waveNo, arg[1].toLowerCase());
             }
-            exp = /^#WAV13\s.*$/gm;
-            matched = this.m_string.match(exp);
-            if (matched) {
-                for (i = 0; i < matched.length; i++) {
-                    this.m_string = this.m_string.replace(exp, "");
-                    //console.log(matched[i]);
-                    wav = matched[i].split(" ");
-                    wavs = "";
-                    for (j = 1; j < wav.length; j++) wavs += wav[j];
-                    arg = wavs.split(",");
-                    waveNo = parseInt(arg[0]);
-                    if (waveNo < 0) waveNo = 0;
-                    if (waveNo >= MOscWave.MAX_WAVE) waveNo = MOscWave.MAX_WAVE - 1;
-                    //console.log(waveNo+":",arg[1].toLowerCase());
-                    MOscWave.setWave(waveNo, arg[1].toLowerCase());
+        }
+
+        //2009.05.10 OffGao ADD START addDPCM
+        // DPCM WAVE (ex. "#WAV9 0,0123456789abcdeffedcba9876543210")
+        exp = /^#WAV9\s.*$/gm;
+        matched = this.m_string.match(exp);
+        if (matched) {
+            for (i = 0; i < matched.length; i++) {
+                this.m_string = this.m_string.replace(exp, "");
+                //console.log(matched[i]);
+                wav = matched[i].split(" ");
+                wavs = "";
+                for (j = 1; j < wav.length; j++) wavs += wav[j];
+                arg = wavs.split(",");
+                waveNo = parseInt(arg[0]);
+                if (waveNo < 0) waveNo = 0;
+                if (waveNo >= MOscFcDpcm.MAX_WAVE) waveNo = MOscFcDpcm.MAX_WAVE - 1;
+                var intVol: number = parseInt(arg[1]);
+                if (intVol < 0) intVol = 0;
+                if (intVol > 127) intVol = 127;
+                var loopFg: number = parseInt(arg[2]);
+                if (loopFg < 0) loopFg = 0;
+                if (loopFg > 1) loopFg = 1;
+                /*
+                var length: number = -1;
+                if (arg.length >= 5) {
+                    length = parseInt(arg[4]);
+                    if (length < 1) length = 1;
+                    if (length > 0xff) length = 0xff;
                 }
-            }
-            //2009.05.10 OffGao ADD START addDPCM
-            // DPCM WAVE (ex. "#WAV9 0,0123456789abcdeffedcba9876543210")
-            exp = /^#WAV9\s.*$/gm;
-            matched = this.m_string.match(exp);
-            if (matched) {
-                for (i = 0; i < matched.length; i++) {
-                    this.m_string = this.m_string.replace(exp, "");
-                    //console.log(matched[i]);
-                    wav = matched[i].split(" ");
-                    wavs = "";
-                    for (j = 1; j < wav.length; j++) wavs += wav[j];
-                    arg = wavs.split(",");
-                    waveNo = parseInt(arg[0]);
-                    if (waveNo < 0) waveNo = 0;
-                    if (waveNo >= MOscFcDpcm.MAX_WAVE) waveNo = MOscFcDpcm.MAX_WAVE - 1;
-                    var intVol: number = parseInt(arg[1]);
-                    if (intVol < 0) intVol = 0;
-                    if (intVol > 127) intVol = 127;
-                    var loopFg: number = parseInt(arg[2]);
-                    if (loopFg < 0) loopFg = 0;
-                    if (loopFg > 1) loopFg = 1;
-                    /*
-                    var length: number = -1;
-                    if (arg.length >= 5) {
-                        length = parseInt(arg[4]);
-                        if (length < 1) length = 1;
-                        if (length > 0xff) length = 0xff;
-                    }
-                    MOscFcDpcm.setWave(waveNo,intVol,loopFg,arg[3],length);
-                    */
-                    MOscFcDpcm.setWave(waveNo, intVol, loopFg, arg[3]);
-                }
+                MOscFcDpcm.setWave(waveNo,intVol,loopFg,arg[3],length);
+                */
+                MOscFcDpcm.setWave(waveNo, intVol, loopFg, arg[3]);
             }
         }
         //2009.05.10 OffGao ADD END addDPCM
+
         // macro
         this.begin();
         var top: boolean = true;
@@ -1289,7 +1276,7 @@ export class MML {
             return;
         }
         // 音声が停止するのを待つ
-        this.worker.onstopsound = this.play2.bind(this, str);
+        this.worker.onstopsound = () => { this.play2(str); };
         this.worker.stopSound();
     }
 

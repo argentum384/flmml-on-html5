@@ -1,5 +1,6 @@
 import { MsgTypes } from "./common/Consts";
 import { FlMMLAudioExportError } from "./common/Errors";
+import { SampleDataEvent } from "./common/Types";
 import { AudioExport } from "./audioExport/AudioExport";
 import { WavExport } from "./audioExport/WavExport";
 import { Mp3Export } from "./audioExport/Mp3Export";
@@ -15,27 +16,26 @@ export class FlMMLWorker {
     infoInterval: number;
     lastInfoTime: number;
     workletPort: MessagePort;
-    onInfoTimerBinded: Function;
+    onInfoTimerBinded: () => void;
 
-    onstopsound: Function = null;
-    onrequestbuffer: (e: MessageEvent<any>) => void = null;
+    onstopsound: () => void;
+    onrequestbuffer: (e: SampleDataEvent) => void;
 
     constructor() {
-        this.onInfoTimerBinded = this.onInfoTimer.bind(this);
-
-        addEventListener("message", this.onMessage.bind(this));
+        this.onInfoTimerBinded = () => { this.onInfoTimer(); };
+        addEventListener("message", e => { this.onMessage(e); });
     }
 
-    private onMessage(e: MessageEvent<any>) {
-        var data: any = e.data,
-            type: number = data.type,
-            mml: MML = this.mml;
+    private onMessage(e: MessageEvent<any>): void {
+        const data = e.data;
+        const type: number = data.type;
+        const mml = this.mml;
 
         switch (type) {
             case MsgTypes.BOOT:
                 this.audioSampleRate = data.sampleRate;
                 this.mml = new MML(this);
-                data.lamejsURL && self.importScripts(data.lamejsURL);
+                if (data.lamejsURL) self.importScripts(data.lamejsURL);
                 break;
             case MsgTypes.PLAY:
                 if (!mml) break;
@@ -43,12 +43,14 @@ export class FlMMLWorker {
                 if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.STOP:
-                mml && mml.stop();
+                if (!mml) break;
+                mml.stop();
                 this.syncInfo();
                 if (this.audioExport) this.completeAudioExport();
                 break;
             case MsgTypes.PAUSE:
-                mml && mml.pause();
+                if (!mml) break;
+                mml.pause();
                 this.syncInfo();
                 break;
             case MsgTypes.SYNCINFO:
@@ -56,7 +58,7 @@ export class FlMMLWorker {
                     this.infoInterval = data.interval;
                     clearInterval(this.tIDInfo);
                     if (this.infoInterval > 0 && this.mml && this.mml.isPlaying()) {
-                        this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
+                        this.tIDInfo = self.setInterval(this.onInfoTimerBinded, this.infoInterval);
                     }
                 } else {
                     this.syncInfo();
@@ -64,11 +66,10 @@ export class FlMMLWorker {
                 break;
             case MsgTypes.PLAYSOUND:
                 this.workletPort = data.workletPort;
-                this.workletPort.addEventListener("message", this.onrequestbuffer);
-                this.workletPort.start();
+                this.workletPort.onmessage = e => { this.onrequestbuffer(e.data); };
                 break;
             case MsgTypes.STOPSOUND:
-                this.onstopsound && this.onstopsound();
+                if (this.onstopsound) this.onstopsound();
                 break;
             case MsgTypes.EXPORT:
                 if (!mml) {
@@ -106,7 +107,7 @@ export class FlMMLWorker {
     }
 
     compileComplete(): void {
-        var mml: MML = this.mml;
+        const mml = this.mml;
 
         postMessage({
             type: MsgTypes.COMPCOMP,
@@ -129,13 +130,13 @@ export class FlMMLWorker {
 
     stopSound(): void {
         if (this.workletPort) {
-            this.workletPort.removeEventListener("message", this.onrequestbuffer);
+            this.workletPort.onmessage = null;
             this.workletPort.postMessage({ release: true });
         }
         postMessage({ type: MsgTypes.STOPSOUND });
     }
 
-    sendBuffer(buffer: Array<Float32Array>): void {
+    sendBuffer(buffer: Float32Array[]): void {
         if (this.audioExport) {
             this.audioExport.process(buffer);
             this.audioExport.request(buffer);
@@ -151,7 +152,7 @@ export class FlMMLWorker {
     }
 
     syncInfo(): void {
-        var mml: MML = this.mml;
+        const mml = this.mml;
         if (!mml) return;
 
         this.lastInfoTime = self.performance ? self.performance.now() : new Date().getTime();
@@ -169,7 +170,7 @@ export class FlMMLWorker {
 
     restartInfoTimer(): void {
         clearInterval(this.tIDInfo);
-        this.tIDInfo = setInterval(this.onInfoTimerBinded, this.infoInterval);
+        this.tIDInfo = self.setInterval(this.onInfoTimerBinded, this.infoInterval);
     }
 
     onInfoTimer(): void {

@@ -1,17 +1,11 @@
-import { MsgTypes, AUDIO_BUFFER_SIZE } from "./common/Consts";
+import { MsgTypes } from "./common/Consts";
+import { FlMMLOptions } from "./common/Types";
 import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 
 // CSS セレクタ文字列を指定した場合対象の DOM 要素クリック時に Web Audio 初期化処理を行う
 // (FlMML.prepare(playerSelectors) の呼び出しは不要になる)
 const PLAYER_SELECTORS: string = null;
-
-type FlMMLOptions = {
-    workerURL?: string,
-    infoInterval?: number,
-    crossOriginWorker?: boolean,
-    lamejsURL?: string
-};
 
 export class FlMML {
     private static readonly DEFAULT_INFO_INTERVAL = 125;
@@ -23,9 +17,9 @@ export class FlMML {
     private booted: boolean = false;
     private volume: number = 100.0;
     private lamejsURL: string;
-    private events: { [key: string]: Function[] } = {};
+    private events: { [key: string]: ((...args: any[]) => void)[] } = {};
 
-    private gain: GainNode;
+    private gainNode: GainNode;
     private workletNode: AudioWorkletNode;
     private workletModuleLoaded: boolean = false;
     
@@ -77,7 +71,7 @@ export class FlMML {
         });
     }
 
-    static prepare(playerSelectors: string) {
+    static prepare(playerSelectors: string): void {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
                 FlMML.hookInitWebAudio(playerSelectors);
@@ -109,11 +103,11 @@ export class FlMML {
             :
                 workerURL
         );
-        worker.addEventListener("message", this.onMessage.bind(this));
+        worker.addEventListener("message", e => { this.onMessage(e); });
         this.setInfoInterval(infoInterval);
     }
 
-    private onMessage(e: MessageEvent<any>) {
+    private onMessage(e: MessageEvent<any>): void {
         const data = e.data;
         const type = data.type;
 
@@ -126,15 +120,15 @@ export class FlMML {
                 this.metaComment = data.info.metaComment;
                 this.metaArtist = data.info.metaArtist;
                 this.metaCoding = data.info.metaCoding;
-                this.oncompilecomplete && this.oncompilecomplete();
+                if (this.oncompilecomplete) this.oncompilecomplete();
                 this.trigger("compilecomplete");
                 break;
             case MsgTypes.BUFRING:
-                this.onbuffering && this.onbuffering(data);
-                this.trigger("buffering", data);
+                if (this.onbuffering) this.onbuffering(data);
+                this.trigger("buffering", { progress: data.progress });
                 break;
             case MsgTypes.COMPLETE:
-                this.oncomplete && this.oncomplete();
+                if (this.oncomplete) this.oncomplete();
                 this.trigger("complete");
                 break;
             case MsgTypes.SYNCINFO:
@@ -143,7 +137,7 @@ export class FlMML {
                 this.nowMSec = data.info.nowMSec;
                 this.nowTimeStr = data.info.nowTimeStr;
                 this.voiceCount = data.info.voiceCount;
-                this.onsyncinfo && this.onsyncinfo();
+                if (this.onsyncinfo) this.onsyncinfo();
                 this.trigger("syncinfo");
                 break;
             case MsgTypes.PLAYSOUND:
@@ -162,7 +156,7 @@ export class FlMML {
         }
     }
 
-    private boot() {
+    private boot(): void {
         this.worker.postMessage({
             type: MsgTypes.BOOT,
             sampleRate: FlMML.audioCtx.sampleRate,
@@ -171,14 +165,14 @@ export class FlMML {
         this.booted = true;
     }
 
-    private playSound() {
-        if (this.gain || this.workletNode) return;
+    private playSound(): void {
+        if (this.gainNode || this.workletNode) return;
 
         const audioCtx = FlMML.audioCtx;
 
-        const gain = this.gain = audioCtx.createGain();
-        gain.gain.value = this.volume / 127.0;
-        gain.connect(audioCtx.destination);
+        const gainNode = this.gainNode = audioCtx.createGain();
+        gainNode.gain.value = this.volume / 127.0;
+        gainNode.connect(audioCtx.destination);
 
         (async () => {
             // 初回のみ AudioWorklet にモジュール追加
@@ -202,20 +196,20 @@ export class FlMML {
                 numberOfOutputs: 1,
                 outputChannelCount: [2]
             });
-            workletNode.connect(gain);
+            workletNode.connect(gainNode);
 
             // Transfer MessagePort of AudioWorkletNode
             this.worker.postMessage({ type: MsgTypes.PLAYSOUND, workletPort: workletNode.port }, [workletNode.port]);
         })();
     }
 
-    private stopSound() {
-        if (this.gain) { this.gain.disconnect(); this.gain = null; }
+    private stopSound(): void {
+        if (this.gainNode) { this.gainNode.disconnect(); this.gainNode = null; }
         if (this.workletNode) { this.workletNode.disconnect(); this.workletNode = null; }
         this.worker.postMessage({ type: MsgTypes.STOPSOUND });
     }
 
-    private trigger(type: string, args?: {}) {
+    private trigger(type: string, args?: {}): void {
         const handlers = this.events[type];
         if (!handlers) return;
 
@@ -226,7 +220,7 @@ export class FlMML {
         }
 
         for (let i = 0, len = handlers.length; i < len; i++) {
-            handlers[i] && handlers[i].call(this, e);
+            if (handlers[i]) handlers[i].call(this, e);
         }
     }
 
@@ -264,7 +258,7 @@ export class FlMML {
         this.audioExportReject = null;
     }
 
-    play(mml: string) {
+    play(mml: string): void {
         // Web Audio 初期化が間に合わなかった場合の救済措置
         // ここで初期化すると再生されない場合あり
         if (!FlMML.audioCtx) FlMML.initWebAudio();
@@ -273,11 +267,11 @@ export class FlMML {
         this.worker.postMessage({ type: MsgTypes.PLAY, mml: mml });
     }
 
-    stop() {
+    stop(): void {
         this.worker.postMessage({ type: MsgTypes.STOP });
     }
 
-    pause() {
+    pause(): void {
         this.worker.postMessage({ type: MsgTypes.PAUSE });
     }
 
@@ -289,68 +283,68 @@ export class FlMML {
         return this.exportAudio(mml, "mp3", { bitrate: bitrate });
     }
 
-    setMasterVolume(volume: number) {
+    setMasterVolume(volume: number): void {
         this.volume = volume;
-        if (this.gain) this.gain.gain.value = this.volume / 127.0;
+        if (this.gainNode) this.gainNode.gain.value = this.volume / 127.0;
     }
 
-    isPlaying() {
+    isPlaying(): boolean {
         return this._isPlaying;
     }
 
-    isPaused() {
+    isPaused(): boolean {
         return this._isPaused;
     }
 
-    getWarnings() {
+    getWarnings(): string {
         return this.warnings;
     }
 
-    getTotalMSec() {
+    getTotalMSec(): number {
         return Math.floor(this.totalMSec);
     }
 
-    getTotalTimeStr() {
+    getTotalTimeStr(): string {
         return this.totalTimeStr;
     }
 
-    getNowMSec() {
+    getNowMSec(): number {
         return Math.floor(this.nowMSec);
     }
 
-    getNowTimeStr() {
+    getNowTimeStr(): string {
         return this.nowTimeStr;
     }
 
-    getVoiceCount() {
+    getVoiceCount(): number {
         return this.voiceCount;
     }
 
-    getMetaTitle() {
+    getMetaTitle(): string {
         return this.metaTitle;
     }
 
-    getMetaComment() {
+    getMetaComment(): string {
         return this.metaComment;
     }
 
-    getMetaArtist() {
+    getMetaArtist(): string {
         return this.metaArtist;
     }
 
-    getMetaCoding() {
+    getMetaCoding(): string {
         return this.metaCoding;
     }
 
-    setInfoInterval(interval: number) {
+    setInfoInterval(interval: number): void {
         this.worker.postMessage({ type: MsgTypes.SYNCINFO, interval: interval });
     }
 
-    syncInfo() {
+    syncInfo(): void {
         this.worker.postMessage({ type: MsgTypes.SYNCINFO, interval: null });
     }
 
-    addEventListener(type: string, listener: Function) {
+    addEventListener(type: string, listener: (...args: any[]) => void): boolean {
         let handlers = this.events[type];
 
         if (!handlers) handlers = this.events[type] = [];
@@ -361,7 +355,7 @@ export class FlMML {
         return true;
     }
 
-    removeEventListener(type: string, listener: Function) {
+    removeEventListener(type: string, listener: (...args: any[]) => void): boolean {
         const handlers = this.events[type];
 
         if (!handlers) return false;
@@ -374,11 +368,16 @@ export class FlMML {
         return false;
     }
 
-    release() {
+    release(): void {
         this.stopSound();
         this.worker.terminate();
     }
 }
+
+export {
+    FlMMLOptions,
+    FlMMLAudioExportError
+};
 
 // v1.x 系後方互換
 export const FlMMLonHTML5 = FlMML;
