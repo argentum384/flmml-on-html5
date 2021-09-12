@@ -28,8 +28,9 @@
         .buttons > *:first-child { margin-left: 0; }
         .buttons > *:last-child { margin-right: 0; }
         .buttons1 > * { font-size: 1em; }
-        .buttons2 > * { font-size: 0.8em; }
+        .buttons2 > * { font-size: 0.875em; }
         #volume { width: 144px; }
+        #version { font-size: 0.875em; }
         @media screen and (max-width: 560px) {
             body { font-size: 3.6vw; }
             .container { width: auto; }
@@ -45,6 +46,8 @@
     <script src="./dist/flmml-on-html5.js"></script>
     <script>
         "use strict";
+
+        const githubURL = "https://github.com/argentum384/flmml-on-html5";
 
         let flmml;
 
@@ -116,6 +119,21 @@
             L("volume", "input", onInputVolume);
             L("dlwav", "click", downloadWav);
             L("dlmp3", "click", downloadMp3);
+
+            // Show current version
+            if (location.href.match(/^https?:\/\/localhost/)) {
+                E("version").textContent = "(localhost)";
+            } else {
+                fetch("./package.json")
+                    .then(response => response.json())
+                    .then(({version}) => {
+                        E("version").insertAdjacentHTML("beforeend", `
+                            <a href="${githubURL}/releases/tag/v${version}" target="_blank">
+                                v${version}
+                            </a>
+                        `);
+                    });
+            }
         });
     </script>
 </head>
@@ -146,7 +164,7 @@
         </div>
         <textarea id="warnings" rows="5" placeholder="(Warnings)" readonly></textarea>
         <hr>
-        <a href="https://github.com/argentum384/flmml-on-html5" target="_blank">Source (GitHub)</a>
+        <div id="version" target="_blank"></div>
     </div>
 </body>
 </html>

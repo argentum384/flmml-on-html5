@@ -16,19 +16,16 @@ v2.0.0 から[オーディオファイル出力](https://github.com/argentum384/
 **※v1.x 系で付属していたプレイヤーUIは v2.0.0 で削除されました**
 
 ## 対応ブラウザ
-* 動作確認済み
-    * Chrome
-    * Chrome for Android
-    * FireFox
-    * Opera
-    * Safari
-    * iOS Safari
-    * Microsoft Edge
-    * Android Browser \(Android 5.x 以降\)
-* 非対応確認済み
-    * Internet Explorer
-    * Android Browser \(Android 4.x 以前\)
-    * Opera Mini
+* Chrome
+* Chrome for Android
+* FireFox
+* FireFox for Android
+* Microsoft Edge
+* Opera
+* Opera Mobile
+* Safari \(14.1 以降\)
+* Safari on iOS \(iOS 14.5 以降\)
+* Android Browser \(Android 5.x 以降\)
 
 ## 使い方
 シーケンサの詳細な仕様は[wiki](https://github.com/argentum384/flmml-on-html5/wiki)をご覧下さい。  
