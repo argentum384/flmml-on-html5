@@ -1,8 +1,5 @@
 export const SAMPLE_RATE = 44100;
 
-// AudioWorklet のバッファサイズ 128 の倍数にする
-export const AUDIO_BUFFER_SIZE = 8192;
-
 export const MsgTypes = {
     BOOT     :  1, // Main->Worker
     PLAY     :  2, // Main->Worker

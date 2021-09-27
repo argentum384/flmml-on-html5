@@ -7,15 +7,19 @@ import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
 // (FlMML.prepare(playerSelectors) の呼び出しは不要になる)
 const PLAYER_SELECTORS: string = null;
 
-export class FlMML {
-    private static readonly DEFAULT_INFO_INTERVAL = 125;
-    private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
+const DEFAULT_INFO_INTERVAL = 125;
+const DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
+const DEFAULT_BUFFER_SIZE = 8192;
+const DEFAULT_BUFFER_MULTIPLE = 32;
 
+export class FlMML {
     private static audioCtx: AudioContext;
 
     private worker: Worker;
     private booted: boolean = false;
     private volume: number = 100.0;
+    private bufferSize: number;
+    private bufferMultiple: number;
     private lamejsURL: string;
     private events: { [key: string]: ((...args: any[]) => void)[] } = {};
 
@@ -83,16 +87,26 @@ export class FlMML {
         }
     }
 
-    constructor(options: FlMMLOptions | string = FlMML.DEFAULT_WORKER_URL) {
+    constructor(options: FlMMLOptions | string = DEFAULT_WORKER_URL) {
         // 引数が文字列の場合 workerURL のみ指定されたものとみなす
         if (typeof options === "string") {
             options = { workerURL: options };
         }
-        const workerURL = options.workerURL || FlMML.DEFAULT_WORKER_URL;
+        const workerURL = options.workerURL || DEFAULT_WORKER_URL;
         const infoInterval = options.infoInterval >= 0 ?
             options.infoInterval
         :
-            FlMML.DEFAULT_INFO_INTERVAL
+            DEFAULT_INFO_INTERVAL
+        ;
+        this.bufferSize = options.bufferSize >= 128 ?
+            Math.floor(options.bufferSize - options.bufferSize % 128)
+        :
+            DEFAULT_BUFFER_SIZE
+        ;
+        this.bufferMultiple = options.bufferMultiple >= 1 ?
+            Math.floor(options.bufferMultiple)
+        :
+            DEFAULT_BUFFER_MULTIPLE
         ;
         this.lamejsURL = options.lamejsURL;
 
@@ -161,6 +175,8 @@ export class FlMML {
     private boot(): void {
         this.worker.postMessage({
             type: MsgTypes.BOOT,
+            bufferSize: this.bufferSize,
+            bufferMultiple: this.bufferMultiple,
             lamejsURL: this.lamejsURL
         });
         this.booted = true;

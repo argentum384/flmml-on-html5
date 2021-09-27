@@ -14,6 +14,8 @@ export class FlMMLWorker {
 
     infoInterval: number;
     lastInfoTime: number;
+    bufferSize: number;
+    bufferMultiple: number;
     workletPort: MessagePort;
     onInfoTimerBinded: () => void;
 
@@ -32,6 +34,8 @@ export class FlMMLWorker {
 
         switch (type) {
             case MsgTypes.BOOT:
+                this.bufferSize = data.bufferSize;
+                this.bufferMultiple = data.bufferMultiple;
                 this.mml = new MML(this);
                 if (data.lamejsURL) self.importScripts(data.lamejsURL);
                 break;

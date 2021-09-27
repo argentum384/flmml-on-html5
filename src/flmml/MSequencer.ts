@@ -1,5 +1,5 @@
 ﻿import { FlMMLWorker } from "../flmml-on-html5.worker";
-import { SAMPLE_RATE, AUDIO_BUFFER_SIZE } from "../common/Consts";
+import { SAMPLE_RATE } from "../common/Consts";
 import { SampleDataEvent } from "../common/Types";
 import { MOscillator } from "./MOscillator";
 import { MChannel } from "./MChannel";
@@ -7,8 +7,6 @@ import { MEnvelope } from "./MEnvelope";
 import { MTrack } from "./MTrack";
 
 export class MSequencer {
-    protected static readonly MULTIPLE: number = 32;
-    
     //protected static readonly STATUS_STOP:      number = 0;
     //protected static readonly STATUS_PAUSE:     number = 1;
     //protected static readonly STATUS_BUFFERING: number = 2;
@@ -22,6 +20,7 @@ export class MSequencer {
 
     protected worker: FlMMLWorker;
     protected bufferSize: number;
+    protected bufferMultiple: number;
     protected bufferId: number;
     protected isExportingAudio: boolean;
 
@@ -47,8 +46,9 @@ export class MSequencer {
 
     constructor(worker: FlMMLWorker) {
         this.worker = worker;
-        this.bufferSize = AUDIO_BUFFER_SIZE;
-        var sLen: number = this.bufferSize * MSequencer.MULTIPLE;
+        this.bufferSize = worker.bufferSize;
+        this.bufferMultiple = worker.bufferMultiple;
+        var sLen: number = this.bufferSize * this.bufferMultiple;
         MChannel.boot(sLen);
         MOscillator.boot();
         MEnvelope.boot();
@@ -162,7 +162,7 @@ export class MSequencer {
     private processAll(): void {
         var buffer: Array<Float32Array> = this.m_buffer[1 - this.m_playSide],
             bufSize: number = this.bufferSize,
-            sLen: number = bufSize * MSequencer.MULTIPLE,
+            sLen: number = bufSize * this.bufferMultiple,
             bLen: number = Math.min(bufSize * 4, sLen),
             nLen: number = this.m_trackArr.length;
 
@@ -173,7 +173,7 @@ export class MSequencer {
                 buffer[1].fill(0.0);
                 if (nLen > 0) {
                     var track: MTrack = this.m_trackArr[MTrack.TEMPO_TRACK];
-                    track.onSampleData(null, 0, bufSize * MSequencer.MULTIPLE, true);
+                    track.onSampleData(null, 0, bufSize * this.bufferMultiple, true);
                 }
                 this.m_processTrack = MTrack.FIRST_TRACK;
                 this.m_processOffset = 0;
@@ -238,7 +238,7 @@ export class MSequencer {
             this.worker.complete();
             return;
         }
-        if (this.m_playSize >= MSequencer.MULTIPLE) {
+        if (this.m_playSize >= this.bufferMultiple) {
             // バッファ完成済みの場合
             if (this.m_step === /*MSequencer.STEP_COMPLETE*/4) {
                 this.m_playSide = 1 - this.m_playSide;
