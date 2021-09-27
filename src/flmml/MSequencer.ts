@@ -23,7 +23,6 @@ export class MSequencer {
     protected worker: FlMMLWorker;
     protected bufferSize: number;
     protected bufferId: number;
-    protected lastSample: Array<number>;
     protected isExportingAudio: boolean;
 
     protected m_buffer: Array<Array<Float32Array>>;
@@ -48,7 +47,7 @@ export class MSequencer {
 
     constructor(worker: FlMMLWorker) {
         this.worker = worker;
-        this.bufferSize = Math.round(AUDIO_BUFFER_SIZE * SEQUENCER_SAMPLE_RATE / worker.audioSampleRate);
+        this.bufferSize = AUDIO_BUFFER_SIZE;
         var sLen: number = this.bufferSize * MSequencer.MULTIPLE;
         MChannel.boot(sLen);
         MOscillator.boot();
@@ -85,7 +84,6 @@ export class MSequencer {
                 this.m_trackArr[i].seekTop();
             }
             this.m_maxNowMSec = 0;
-            this.lastSample = [0.0, 0.0];
             this.m_status = /*MSequencer.STATUS_BUFFERING*/2;
             this.isExportingAudio = exportAudio;
             this.processStart();
@@ -262,39 +260,19 @@ export class MSequencer {
         }
         
         var bufSize: number = this.bufferSize;
-        var rateRatio: number = AUDIO_BUFFER_SIZE / bufSize;
         var sendBuf: Float32Array[] =
             e.retBuf ||
-            Array(2).fill(0).map(() => new Float32Array(this.isExportingAudio ? bufSize : AUDIO_BUFFER_SIZE));
+            Array(2).fill(0).map(() => new Float32Array(bufSize));
         var base: number = bufSize * this.m_playSize;
         [0, 1].forEach(ch => {
             var samples: Float32Array = this.m_buffer[this.m_playSide][ch].subarray(base, base + bufSize);
-            if (bufSize === AUDIO_BUFFER_SIZE || this.isExportingAudio) {
-                sendBuf[ch].set(samples);
-            } else {
-                this.convertRate(samples, sendBuf[ch], rateRatio, this.lastSample[ch]);
-                this.lastSample[ch] = samples[samples.length - 1];
-            }
+            sendBuf[ch].set(samples);
         });
         this.worker.sendBuffer(sendBuf);
         this.bufferId++;
 
         this.m_playSize++;
         this.m_globalSample += bufSize;
-    }
-
-    private convertRate(samplesIn: Float32Array, samplesOut: Float32Array, ratio: number, last: number): void {
-        var xa: number = (samplesOut.length - 1) / ratio % 1;
-        last = last == null ? 0.0 : last;
-        for (var i: number = 0; i < samplesOut.length; i++) {
-            var x: number = i / ratio - xa;
-            // 線形補間
-            var x0: number = Math.floor(x);
-            var x1: number = Math.ceil(x);
-            var y0: number = x0 < 0.0 ? last : samplesIn[x0]
-            var y1: number = samplesIn[x1];
-            samplesOut[i] = x0 === x1 ? y0 : y0 + (y1 - y0) * (x - x0);
-        }
     }
 
     createPipes(num: number): void {
