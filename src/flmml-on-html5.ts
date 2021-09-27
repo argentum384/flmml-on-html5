@@ -10,12 +10,16 @@ const PLAYER_SELECTORS: string = null;
 export class FlMML {
     private static readonly DEFAULT_INFO_INTERVAL = 125;
     private static readonly DEFAULT_WORKER_URL = "flmml-on-html5.worker.js";
+    private static readonly DEFAULT_BUFFER_SIZE = 8192;
+    private static readonly DEFAULT_BUFFER_MULTIPLE = 32;
 
     private static audioCtx: AudioContext;
 
     private worker: Worker;
     private booted: boolean = false;
     private volume: number = 100.0;
+    private bufferSize: number;
+    private bufferMultiple: number;
     private lamejsURL: string;
     private events: { [key: string]: ((...args: any[]) => void)[] } = {};
 
@@ -94,6 +98,16 @@ export class FlMML {
         :
             FlMML.DEFAULT_INFO_INTERVAL
         ;
+        this.bufferSize = options.bufferSize >= 128 ?
+            Math.floor(options.bufferSize - options.bufferSize % 128)
+        :
+            FlMML.DEFAULT_BUFFER_SIZE
+        ;
+        this.bufferMultiple = options.bufferMultiple >= 1 ?
+            Math.floor(options.bufferMultiple)
+        :
+            FlMML.DEFAULT_BUFFER_MULTIPLE
+        ;
         this.lamejsURL = options.lamejsURL;
 
         const worker = this.worker = new Worker(
@@ -161,6 +175,8 @@ export class FlMML {
     private boot(): void {
         this.worker.postMessage({
             type: MsgTypes.BOOT,
+            bufferSize: this.bufferSize,
+            bufferMultiple: this.bufferMultiple,
             lamejsURL: this.lamejsURL
         });
         this.booted = true;
