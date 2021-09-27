@@ -1,4 +1,4 @@
-﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+﻿import { SAMPLE_RATE } from "../common/Consts";
 import { MOscMod } from "./MOscMod";
 
 /**
@@ -12,7 +12,7 @@ export class MOscFcDpcm extends MOscMod {
     static readonly FC_DPCM_PHASE_SFT: number = 2;
     static readonly FC_DPCM_MAX_LEN: number = 0xff1;//(0xff * 0x10) + 1 ファミコン準拠の最大レングス
     static readonly FC_DPCM_TABLE_MAX_LEN: number = (MOscFcDpcm.FC_DPCM_MAX_LEN >> 2) + 2;
-    static readonly FC_DPCM_NEXT: number = SEQUENCER_SAMPLE_RATE << MOscFcDpcm.FC_DPCM_PHASE_SFT;
+    static readonly FC_DPCM_NEXT: number = SAMPLE_RATE << MOscFcDpcm.FC_DPCM_PHASE_SFT;
     protected m_readCount: number = 0; //次の波形生成までのカウント値
     protected m_address: number = 0;   //読み込み中のアドレス位置
     protected m_bit: number = 0;       //読み込み中のビット位置

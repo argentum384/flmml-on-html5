@@ -1,4 +1,4 @@
-export const SEQUENCER_SAMPLE_RATE = 44100;
+export const SAMPLE_RATE = 44100;
 
 // AudioWorklet のバッファサイズ 128 の倍数にする
 export const AUDIO_BUFFER_SIZE = 8192;

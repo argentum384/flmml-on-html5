@@ -1,4 +1,4 @@
-import { MsgTypes, SEQUENCER_SAMPLE_RATE } from "./common/Consts";
+import { MsgTypes, SAMPLE_RATE } from "./common/Consts";
 import { FlMMLOptions } from "./common/Types";
 import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
@@ -50,7 +50,7 @@ export class FlMML {
         // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
         // 必要になったタイミングで生成する
         const audioCtx = FlMML.audioCtx = new AudioContext({
-            sampleRate: SEQUENCER_SAMPLE_RATE
+            sampleRate: SAMPLE_RATE
         });
 
         // iOS/Chrome向けWeb Audioアンロック処理

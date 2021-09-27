@@ -1,5 +1,5 @@
 ﻿import { FlMMLWorker } from "../flmml-on-html5.worker";
-import { SEQUENCER_SAMPLE_RATE, AUDIO_BUFFER_SIZE } from "../common/Consts";
+import { SAMPLE_RATE, AUDIO_BUFFER_SIZE } from "../common/Consts";
 import { SampleDataEvent } from "../common/Types";
 import { MOscillator } from "./MOscillator";
 import { MChannel } from "./MChannel";
@@ -60,7 +60,7 @@ export class MSequencer {
             [new Float32Array(sLen), new Float32Array(sLen)],
             [new Float32Array(sLen), new Float32Array(sLen)]
         ];
-        this.m_maxProcTime = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0 * 0.8;
+        this.m_maxProcTime = this.bufferSize / SAMPLE_RATE * 1000.0 * 0.8;
         //this.m_lastTime = 0;
         this.processAllBinded = () => { this.processAll(); };
         this.worker.onrequestbuffer = e => { this.onSampleData(e); };
@@ -233,7 +233,7 @@ export class MSequencer {
 
         this.m_lastTime = MSequencer.getTimer();
         if (this.m_status < /*MSequencer.STATUS_PLAY*/3) return;
-        if (this.m_globalSample / SEQUENCER_SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
+        if (this.m_globalSample / SAMPLE_RATE * 1000.0 >= this.m_totalMSec) {
             this.stop();
             this.worker.complete();
             return;
@@ -303,9 +303,9 @@ export class MSequencer {
         if (this.m_status === /*MSequencer.STATUS_STOP*/0) {
             return 0.0;
         } else {
-            var globalMSec = this.m_globalSample / SEQUENCER_SAMPLE_RATE * 1000.0,
+            var globalMSec = this.m_globalSample / SAMPLE_RATE * 1000.0,
                 elapsed = this.m_lastTime ? MSequencer.getTimer() - this.m_lastTime : 0.0,
-                bufMSec = this.bufferSize / SEQUENCER_SAMPLE_RATE * 1000.0;
+                bufMSec = this.bufferSize / SAMPLE_RATE * 1000.0;
             this.m_maxNowMSec = Math.max(
                 this.m_maxNowMSec,
                 globalMSec + (this.isExportingAudio ? 0.0 : Math.min(elapsed, bufMSec))
