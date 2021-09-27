@@ -1,4 +1,4 @@
-﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+﻿import { SAMPLE_RATE } from "../common/Consts";
 import { MOscMod } from "./MOscMod";
 import { OPM } from "../fmgenAs/OPM";
 
@@ -94,7 +94,7 @@ export class MOscOPM extends MOscMod {
     constructor() {
         super();
         MOscOPM.boot();
-        this.m_fm.Init(MOscOPM.OPM_CLOCK, SEQUENCER_SAMPLE_RATE);
+        this.m_fm.Init(MOscOPM.OPM_CLOCK, SAMPLE_RATE);
         this.m_fm.Reset();
         this.m_fm.SetVolume(MOscOPM.s_comGain);
         this.setOpMask(15);

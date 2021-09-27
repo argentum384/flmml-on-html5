@@ -1,4 +1,4 @@
-import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+import { SAMPLE_RATE } from "../common/Consts";
 import { FlMMLAudioExportError } from "../common/Errors";
 import { AudioExport } from "./AudioExport";
 
@@ -13,7 +13,7 @@ export class Mp3Export extends AudioExport {
         if (!self.lamejs || !self.lamejs.Mp3Encoder) {
             throw new FlMMLAudioExportError("lamejs is not imported");
         }
-        this.mp3Encoder = new lamejs.Mp3Encoder(2, SEQUENCER_SAMPLE_RATE, bitrate);
+        this.mp3Encoder = new lamejs.Mp3Encoder(2, SAMPLE_RATE, bitrate);
         this.mp3Data = [];
     }
 

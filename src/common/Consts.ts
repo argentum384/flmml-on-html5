@@ -1,9 +1,7 @@
-export const SEQUENCER_SAMPLE_RATE = 44100;
+export const SAMPLE_RATE = 44100;
 
-// 以下2点を満たすために 640 の倍数にする
-// * AudioWorklet のバッファサイズ 128 の倍数にする
-// * レート 44100 Hz → 48000, 96000, ... Hz 変換で誤差出ないようにする
-export const AUDIO_BUFFER_SIZE = 7680;
+// AudioWorklet のバッファサイズ 128 の倍数にする
+export const AUDIO_BUFFER_SIZE = 8192;
 
 export const MsgTypes = {
     BOOT     :  1, // Main->Worker

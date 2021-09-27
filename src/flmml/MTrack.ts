@@ -1,4 +1,4 @@
-﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+﻿import { SAMPLE_RATE } from "../common/Consts";
 import { IChannel } from "./IChannel";
 import { MChannel } from "./MChannel";
 import { MEvent } from "./MEvent";
@@ -123,7 +123,7 @@ export class MTrack {
                                 break;
                             case /*MStatus.LFO_DPWD*/17:
                                 this.m_lfoWidth = e.getLFOWidth() * this.m_spt;
-                                this.m_ch.setLFODPWD(e.getLFODepth(), SEQUENCER_SAMPLE_RATE / this.m_lfoWidth);
+                                this.m_ch.setLFODPWD(e.getLFODepth(), SAMPLE_RATE / this.m_lfoWidth);
                                 break;
                             case /*MStatus.LFO_DLTM*/18:
                                 this.m_ch.setLFODLTM(e.getLFODelay() * this.m_spt, e.getLFOTime() * this.m_lfoWidth);
@@ -286,7 +286,7 @@ export class MTrack {
     }
 
     recRestMSec(msec: number): void {
-        var len: number = (msec * SEQUENCER_SAMPLE_RATE / (this.m_spt * 1000)) | 0;
+        var len: number = (msec * SAMPLE_RATE / (this.m_spt * 1000)) | 0;
         this.seek(len);
     }
 
@@ -576,14 +576,14 @@ export class MTrack {
 
         this.recRestMSec(3000);
         this.recEOT();
-        globalSample += 3 * SEQUENCER_SAMPLE_RATE;
+        globalSample += 3 * SAMPLE_RATE;
 
-        this.m_totalMSec = globalSample * 1000.0 / SEQUENCER_SAMPLE_RATE;
+        this.m_totalMSec = globalSample * 1000.0 / SAMPLE_RATE;
     }
     // calc number of samples per tick
     private calcSpt(bpm: number): number {
         var tps: number = bpm * 96.0 / 60.0; // ticks per second (quater note = 96ticks)
-        return SEQUENCER_SAMPLE_RATE / tps;              // samples per tick
+        return SAMPLE_RATE / tps;              // samples per tick
     }
     // set tempo
     private playTempo(bpm: number): void {

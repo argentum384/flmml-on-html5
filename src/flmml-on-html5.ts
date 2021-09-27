@@ -1,4 +1,4 @@
-import { MsgTypes } from "./common/Consts";
+import { MsgTypes, SAMPLE_RATE } from "./common/Consts";
 import { FlMMLOptions } from "./common/Types";
 import { FlMMLAudioExportError } from "./common/Errors";
 import { FlMMLWorkletScript } from "../src_generated/FlMMLWorkletScript";
@@ -49,7 +49,9 @@ export class FlMML {
         // Web Audioコンテキスト生成
         // iOS14.5以上では AudioContext 生成時点で他アプリのバックグラウンド再生が止まるので、
         // 必要になったタイミングで生成する
-        const audioCtx = FlMML.audioCtx = new AudioContext();
+        const audioCtx = FlMML.audioCtx = new AudioContext({
+            sampleRate: SAMPLE_RATE
+        });
 
         // iOS/Chrome向けWeb Audioアンロック処理
         const bufSrcDmy = audioCtx.createBufferSource();
@@ -159,7 +161,6 @@ export class FlMML {
     private boot(): void {
         this.worker.postMessage({
             type: MsgTypes.BOOT,
-            sampleRate: FlMML.audioCtx.sampleRate,
             lamejsURL: this.lamejsURL
         });
         this.booted = true;

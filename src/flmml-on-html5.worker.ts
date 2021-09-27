@@ -12,7 +12,6 @@ export class FlMMLWorker {
 
     private tIDInfo: number;
 
-    audioSampleRate: number;
     infoInterval: number;
     lastInfoTime: number;
     workletPort: MessagePort;
@@ -33,7 +32,6 @@ export class FlMMLWorker {
 
         switch (type) {
             case MsgTypes.BOOT:
-                this.audioSampleRate = data.sampleRate;
                 this.mml = new MML(this);
                 if (data.lamejsURL) self.importScripts(data.lamejsURL);
                 break;

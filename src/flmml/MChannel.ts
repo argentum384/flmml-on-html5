@@ -1,4 +1,4 @@
-﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+﻿import { SAMPLE_RATE } from "../common/Consts";
 import { IChannel } from "./IChannel";
 import { MEnvelope } from "./MEnvelope";
 import { MFilter } from "./MFilter";
@@ -353,7 +353,7 @@ export class MChannel implements IChannel {
         this.m_osc2Connect = (depth === 0) ? 0 : 1;
         this.m_oscMod2.setFrequency(freq);
         this.m_oscMod2.resetPhase();
-        (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / SEQUENCER_SAMPLE_RATE);
+        (<MOscNoise>this.m_oscSet2.getMod(MOscillator.NOISE)).setNoiseFreq(freq / SAMPLE_RATE);
     }
 
     setLFODLTM(delay: number, time: number): void {
@@ -495,7 +495,7 @@ export class MChannel implements IChannel {
 
     protected getNextCutoff(): number {
         var cut: number = this.m_lpfFrq + this.m_lpfAmt * this.m_envelope2.getNextAmplitudeLinear();
-        cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
+        cut = MChannel.getFrequency(cut) * this.m_oscMod1.getFrequency() * (2.0 * Math.PI / (SAMPLE_RATE * 440.0));
         if (cut < (1.0 / 127.0)) cut = 0.0;
         return cut;
     }

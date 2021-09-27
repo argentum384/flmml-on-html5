@@ -1,4 +1,4 @@
-﻿import { SEQUENCER_SAMPLE_RATE } from "../common/Consts";
+﻿import { SAMPLE_RATE } from "../common/Consts";
 import { MChannel } from "./MChannel";
 import { MEnvelope } from "./MEnvelope";
 
@@ -62,7 +62,7 @@ export class MFilter {
         var i: number;
         var fb: number;
         var cut: number;
-        var k: number = key * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
+        var k: number = key * (2.0 * Math.PI / (SAMPLE_RATE * 440.0));
         if (amt > 0.0001 || amt < -0.0001) {
             for (i = start; i < end; i++) {
                 cut = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
@@ -91,7 +91,7 @@ export class MFilter {
 
     lpf2(samples: Float32Array, start: number, end: number, envelope: MEnvelope, frq: number, amt: number, res: number, key: number): void {
         var t1: number = this.m_t1, t2: number = this.m_t2, b0: number = this.m_b0, b1: number = this.m_b1, b2: number = this.m_b2, b3: number = this.m_b3, b4: number = this.m_b4;
-        var k: number = key * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
+        var k: number = key * (2.0 * Math.PI / (SAMPLE_RATE * 440.0));
         for (var i: number = start; i < end; i++) {
             var cut: number = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
             if (cut < (1.0 / 127.0)) cut = 0.0;
@@ -126,7 +126,7 @@ export class MFilter {
         var i: number;
         var fb: number;
         var cut: number;
-        var k: number = key * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
+        var k: number = key * (2.0 * Math.PI / (SAMPLE_RATE * 440.0));
         var input: number;
         if (amt > 0.0001 || amt < -0.0001) {
             for (i = start; i < end; i++) {
@@ -159,7 +159,7 @@ export class MFilter {
 
     hpf2(samples: Float32Array, start: number, end: number, envelope: MEnvelope, frq: number, amt: number, res: number, key: number): void {
         var t1: number = this.m_t1, t2: number = this.m_t2, b0: number = this.m_b0, b1: number = this.m_b1, b2: number = this.m_b2, b3: number = this.m_b3, b4: number = this.m_b4;
-        var k: number = key * (2.0 * Math.PI / (SEQUENCER_SAMPLE_RATE * 440.0));
+        var k: number = key * (2.0 * Math.PI / (SAMPLE_RATE * 440.0));
         for (var i: number = start; i < end; i++) {
             var cut: number = MChannel.getFrequency(frq + amt * envelope.getNextAmplitudeLinear()) * k;
             if (cut < (1.0 / 127.0)) cut = 0.0;
