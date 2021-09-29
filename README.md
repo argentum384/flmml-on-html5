@@ -99,3 +99,5 @@ yarn start
 
 ## 謝辞
 [FlMML](https://flmml.codeplex.com/)作者のおー氏をはじめとしたFlMMLのコミッターの皆様、ならびに FlMML on HTML5 の不具合を報告頂いたユーザーの皆様、そのほか FlMML \/ FlMML on HTML5 の発展に関わるすべての方々に感謝します。
+
+MP3 ファイル出力に [lamejs](https://github.com/zhuker/lamejs/) を利用しています \(外部のスクリプトとして読み込むためソースコードは同梱していません\) 。
