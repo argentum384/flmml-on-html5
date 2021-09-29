@@ -1,85 +1,83 @@
-﻿/// <reference path="MOscMod.ts" />
+﻿import { MOscMod } from "./MOscMod";
 
-module flmml {
-    export class MOscNoise extends MOscMod {
-        static readonly TABLE_MSK: number = MOscNoise.TABLE_LEN - 1;
-        static readonly NOISE_PHASE_SFT: number = 30;
-        static readonly NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;0
-        protected m_noiseFreq: number;
-        protected m_counter: number;
-        protected m_resetPhase: boolean;
-        static s_init: number = 0;
-        static s_table: Array<number> = new Array<number>(MOscNoise.TABLE_LEN);
+export class MOscNoise extends MOscMod {
+    static readonly TABLE_MSK: number = MOscNoise.TABLE_LEN - 1;
+    static readonly NOISE_PHASE_SFT: number = 30;
+    static readonly NOISE_PHASE_MSK: number = (1 << MOscNoise.NOISE_PHASE_SFT) - 1;
+    protected m_noiseFreq: number;
+    protected m_counter: number;
+    protected m_resetPhase: boolean;
+    static s_init: number = 0;
+    static s_table: Array<number> = new Array<number>(MOscNoise.TABLE_LEN);
 
-        constructor() {
-            MOscNoise.boot();
-            super();
-            this.setNoiseFreq(1.0);
-            this.m_phase = 0;
-            this.m_counter = 0;
-            this.m_resetPhase = true;
+    constructor() {
+        MOscNoise.boot();
+        super();
+        this.setNoiseFreq(1.0);
+        this.m_phase = 0;
+        this.m_counter = 0;
+        this.m_resetPhase = true;
+    }
+
+    disableResetPhase(): void {
+        this.m_resetPhase = false;
+    }
+
+    static boot(): void {
+        if (this.s_init) return;
+        for (var i: number = 0; i < this.TABLE_LEN; i++) {
+            this.s_table[i] = Math.random() * 2.0 - 1.0;
         }
+        this.s_init = 1;
+    }
 
-        disableResetPhase(): void {
-            this.m_resetPhase = false;
-        }
+    resetPhase(): void {
+        if (this.m_resetPhase) this.m_phase = 0;
+        //this.m_counter = 0;
+    }
 
-        static boot(): void {
-            if (this.s_init) return;
-            for (var i: number = 0; i < this.TABLE_LEN; i++) {
-                this.s_table[i] = Math.random() * 2.0 - 1.0;
-            }
-            this.s_init = 1;
-        }
+    addPhase(time: number): void {
+        this.m_counter = (this.m_counter + this.m_freqShift * time);
+        this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
+        this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
+    }
 
-        resetPhase(): void {
-            if (this.m_resetPhase) this.m_phase = 0;
-            //this.m_counter = 0;
-        }
+    getNextSample(): number {
+        var val: number = MOscNoise.s_table[this.m_phase];
+        this.m_counter = (this.m_counter + this.m_freqShift);
+        this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
+        this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
+        return val;
+    }
 
-        addPhase(time: number): void {
-            this.m_counter = (this.m_counter + this.m_freqShift * time);
-            this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
-            this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
-        }
+    getNextSampleOfs(ofs: number): number {
+        var val: number = MOscNoise.s_table[(this.m_phase + (ofs << MOscNoise.PHASE_SFT)) & MOscNoise.TABLE_MSK];
+        this.m_counter = (this.m_counter + this.m_freqShift);
+        this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
+        this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
+        return val;
+    }
 
-        getNextSample(): number {
-            var val: number = MOscNoise.s_table[this.m_phase];
+    getSamples(samples: Float32Array, start: number, end: number): void {
+        var i: number;
+        for (i = start; i < end; i++) {
+            samples[i] = MOscNoise.s_table[this.m_phase];
             this.m_counter = (this.m_counter + this.m_freqShift);
             this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
             this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
-            return val;
         }
+    }
 
-        getNextSampleOfs(ofs: number): number {
-            var val: number = MOscNoise.s_table[(this.m_phase + (ofs << MOscNoise.PHASE_SFT)) & MOscNoise.TABLE_MSK];
-            this.m_counter = (this.m_counter + this.m_freqShift);
-            this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
-            this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
-            return val;
-        }
+    setFrequency(frequency: number): void {
+        this.m_frequency = frequency;
+    }
 
-        getSamples(samples: Float32Array, start: number, end: number): void {
-            var i: number;
-            for (i = start; i < end; i++) {
-                samples[i] = MOscNoise.s_table[this.m_phase];
-                this.m_counter = (this.m_counter + this.m_freqShift);
-                this.m_phase = (this.m_phase + (this.m_counter >> MOscNoise.NOISE_PHASE_SFT)) & MOscNoise.TABLE_MSK;
-                this.m_counter &= MOscNoise.NOISE_PHASE_MSK;
-            }
-        }
+    setNoiseFreq(frequency: number): void {
+        this.m_noiseFreq = frequency * (1 << MOscNoise.NOISE_PHASE_SFT);
+        this.m_freqShift = this.m_noiseFreq;
+    }
 
-        setFrequency(frequency: number): void {
-            this.m_frequency = frequency;
-        }
-
-        setNoiseFreq(frequency: number): void {
-            this.m_noiseFreq = frequency * (1 << MOscNoise.NOISE_PHASE_SFT);
-            this.m_freqShift = this.m_noiseFreq;
-        }
-
-        restoreFreq(): void {
-            this.m_freqShift = this.m_noiseFreq;
-        }
+    restoreFreq(): void {
+        this.m_freqShift = this.m_noiseFreq;
     }
 }

@@ -1,6 +1,8 @@
 Thumbs.db
 .DS_Store
 node_modules/
+src/
 src_generated/
-dist/
+bin/
+index.html
 *.log
