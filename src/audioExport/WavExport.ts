@@ -56,8 +56,8 @@ export class WavExport extends AudioExport {
             dataView.setUint8(i, HEADER[i]);
         }
         dataView.setUint32(0x04, HEADER.length + this.dataBytes - 8, true);  // 04 - 07: ファイルサイズ - 8
-        dataView.setUint32(0x18, SAMPLE_RATE, true);               // 18 - 1B: サンプリングレート
-        dataView.setUint32(0x1C, SAMPLE_RATE * BLOCK_ALIGN, true); // 1C - 1F: データ深度
+        dataView.setUint32(0x18, SAMPLE_RATE, true);                         // 18 - 1B: サンプリングレート
+        dataView.setUint32(0x1C, SAMPLE_RATE * BLOCK_ALIGN, true);           // 1C - 1F: データ深度
         dataView.setUint32(0x28, this.dataBytes, true);                      // 28 - 2B: サンプルデータサイズ
 
         self.clearInterval(this.tID);
