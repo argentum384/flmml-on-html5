@@ -652,7 +652,7 @@ export class MML {
         var intick: number = tick;
         while (c === '.') {
             this.next();
-            intick /= 2;
+            intick = Math.floor(intick / 2);
             tick += intick;
             c = this.getChar();
         }
