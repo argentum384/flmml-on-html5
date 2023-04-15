@@ -93,6 +93,9 @@ export class MOscOPM extends MOscMod {
 
     constructor() {
         super();
+        // 最初のノート周波数が440Hzの場合にKCKF書き込みが働くよう上書き
+        this.m_frequency = 0;
+
         MOscOPM.boot();
         this.m_fm.Init(MOscOPM.OPM_CLOCK, SAMPLE_RATE);
         this.m_fm.Reset();
