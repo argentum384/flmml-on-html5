@@ -245,6 +245,10 @@ export class MSequencer {
                 this.m_playSize = 0;
                 this.processStart();
             }
+            // バッファ完成後処理待ちの場合
+            else if (this.m_step === /*MSequencer.STEP_POST*/3) {
+                return;
+            }
             // バッファが未完成の場合
             else {
                 this.reqBuffering();
